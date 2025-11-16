@@ -2,7 +2,7 @@
 name = "perexchange"
 version = "1.0.0"
 description = "A simple library for fetching and analyzing Peruvian exchange rates (PEN-USD)"
-readme = "README.md"
+readme = "readme.md"
 requires-python = ">=3.9"
 
 authors = [
