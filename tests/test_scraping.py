@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
 import pytest
@@ -11,19 +11,19 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 def load_fixture(filename):
     fixture_path = FIXTURES_DIR / filename
-    with open(fixture_path, 'r', encoding='utf-8') as f:
+    with open(fixture_path, "r", encoding="utf-8") as f:
         return f.read()
 
 
 @pytest.mark.asyncio
 async def test_happy_path():
-    html = load_fixture('happy_path.html')
-    
+    html = load_fixture("happy_path.html")
+
     mock_response = AsyncMock()
     mock_response.text = html
-    mock_response.raise_for_status = AsyncMock(return_value=None)
+    mock_response.raise_for_status = Mock(return_value=None)
 
-    with patch('httpx.AsyncClient') as mock_client:
+    with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         rates = await fetch_rates()
@@ -36,13 +36,13 @@ async def test_happy_path():
 
 @pytest.mark.asyncio
 async def test_malformed_data_skips_invalid():
-    html = load_fixture('malformed_data.html')
-    
+    html = load_fixture("malformed_data.html")
+
     mock_response = AsyncMock()
     mock_response.text = html
-    mock_response.raise_for_status = AsyncMock(return_value=None)
+    mock_response.raise_for_status = Mock(return_value=None)
 
-    with patch('httpx.AsyncClient') as mock_client:
+    with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         rates = await fetch_rates()
@@ -52,13 +52,13 @@ async def test_malformed_data_skips_invalid():
 
 @pytest.mark.asyncio
 async def test_missing_data_still_parses():
-    html = load_fixture('missing_data.html')
-    
+    html = load_fixture("missing_data.html")
+
     mock_response = AsyncMock()
     mock_response.text = html
-    mock_response.raise_for_status = AsyncMock(return_value=None)
+    mock_response.raise_for_status = Mock(return_value=None)
 
-    with patch('httpx.AsyncClient') as mock_client:
+    with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         rates = await fetch_rates()
@@ -69,13 +69,13 @@ async def test_missing_data_still_parses():
 
 @pytest.mark.asyncio
 async def test_empty_html():
-    html = load_fixture('empty.html')
-    
+    html = load_fixture("empty.html")
+
     mock_response = AsyncMock()
     mock_response.text = html
-    mock_response.raise_for_status = AsyncMock(return_value=None)
+    mock_response.raise_for_status = Mock(return_value=None)
 
-    with patch('httpx.AsyncClient') as mock_client:
+    with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         with pytest.raises(ValueError, match="No exchange houses found"):
@@ -84,7 +84,7 @@ async def test_empty_html():
 
 @pytest.mark.asyncio
 async def test_retry_on_http_error():
-    with patch('httpx.AsyncClient') as mock_client:
+    with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(
             side_effect=[
                 httpx.HTTPError("Connection failed"),
@@ -101,10 +101,10 @@ async def test_retry_on_http_error():
 
 @pytest.mark.asyncio
 async def test_timeout_configuration():
-    with patch('httpx.AsyncClient') as mock_client:
+    with patch("httpx.AsyncClient") as mock_client:
         mock_response = AsyncMock()
         mock_response.text = "<html><body></body></html>"
-        mock_response.raise_for_status = AsyncMock(return_value=None)
+        mock_response.raise_for_status = Mock(return_value=None)
 
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
