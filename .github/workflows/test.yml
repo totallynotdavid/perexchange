@@ -30,7 +30,7 @@ jobs:
         run: pytest -v -m "not integration"
 
   test-integration:
-    name: Integration Tests
+    name: integration tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
