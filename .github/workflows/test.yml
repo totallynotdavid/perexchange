@@ -14,6 +14,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +32,9 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     if:
       github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
       github.ref == 'refs/heads/main'
