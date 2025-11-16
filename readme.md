@@ -1,5 +1,8 @@
 # [pkg]: perexchange
 
+[![CodeQL](https://github.com/totallynotdavid/perexchange/actions/workflows/codeql.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/codeql.yml)
+[![tests](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml)
+
 Peruvian dollar exchange rates (from cuantoestaeldolar.pe). One file, three deps (httpx,
 beautifulsoup4 and lxml), async. To install it, just run:
 
