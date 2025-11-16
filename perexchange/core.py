@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from statistics import mean
 from typing import List, Literal, Optional
 
@@ -71,7 +71,7 @@ async def fetch_rates(
                 if not change_buttons:
                     raise ValueError("No exchange houses found in HTML")
 
-                timestamp = datetime.now(UTC)
+                timestamp = datetime.now(timezone.utc)
                 rates = []
 
                 for button in change_buttons:
