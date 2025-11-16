@@ -9,7 +9,10 @@ run = "uv run pytest"
 
 [tasks.test-integration]
 description = "Run integration tests agains the actual website"
-run = "uv run pytest -m integration"
+run = [
+  "curl -o tests/fixtures/exchange_page.html https://cuantoestaeldolar.pe/cambio-de-dolar-online",
+  "uv run pytest -m integration",
+]
 
 [tasks.test-full]
 description = "Run all tests"
