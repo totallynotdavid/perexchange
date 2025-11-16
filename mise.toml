@@ -8,7 +8,7 @@ ruff = "0.14.5"
 [tasks.update]
 description = "Update project dependencies"
 alias = "u"
-run = "uv sync -U"
+run = "uv sync --extra dev -U"
 
 [tasks.outdated]
 description = "Check for outdated dependencies"
