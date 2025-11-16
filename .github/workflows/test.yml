@@ -34,9 +34,13 @@ jobs:
 
       - uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.xml,./junit.xml
+          files: ./coverage.xml
+          report_type: coverage
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: ./junit.xml
           report_type: test_results
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-integration:
     name: integration tests
