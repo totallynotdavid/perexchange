@@ -2,3 +2,15 @@
 uv = "0.9.9"
 black = "25.11.0"
 ruff = "0.14.5"
+
+[tasks.test]
+description = "Run unit tests (should be fast)"
+run = "uv run pytest"
+
+[tasks.test-integration]
+description = "Run integration tests agains the actual website"
+run = "uv run pytest -m integration"
+
+[tasks.test-full]
+description = "Run all tests"
+run = "uv run pytest tests/"
