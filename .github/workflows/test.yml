@@ -36,6 +36,7 @@ jobs:
         with:
           files: ./coverage.xml,./junit.xml
           report_type: test_results
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-integration:
     name: integration tests
