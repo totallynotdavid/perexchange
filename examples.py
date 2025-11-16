@@ -5,13 +5,14 @@ Quick-start examples. Just run: python examples.py (or uv run python examples.py
 import asyncio
 import json
 from datetime import datetime
+
 from perexchange import (
+    calculate_average,
+    calculate_spread,
     fetch_rates,
     find_best_buy,
     find_best_sell,
     get_top_n,
-    calculate_average,
-    calculate_spread,
 )
 
 
