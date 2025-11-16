@@ -63,10 +63,10 @@ async def fetch_rates(
                 response.raise_for_status()
                 html_content = response.text
 
-                soup = BeautifulSoup(html_content, 'lxml')
+                soup = BeautifulSoup(html_content, "lxml")
 
                 # Find all "CAMBIAR" buttons as stable anchors
-                change_buttons = soup.find_all('a', string='CAMBIAR')
+                change_buttons = soup.find_all("a", string="CAMBIAR")
 
                 if not change_buttons:
                     raise ValueError("No exchange houses found in HTML")
@@ -77,13 +77,13 @@ async def fetch_rates(
                 for button in change_buttons:
                     try:
                         # The card is the grandparent of the button element
-                        card = button.find_parent('div').find_parent('div')
+                        card = button.find_parent("div").find_parent("div")
                         if not card:
                             continue
 
                         # Get name from img alt attribute
-                        img_tag = card.find('img')
-                        name = img_tag['alt'].strip() if img_tag else None
+                        img_tag = card.find("img")
+                        name = img_tag["alt"].strip() if img_tag else None
 
                         if not name:
                             continue
@@ -97,13 +97,13 @@ async def fetch_rates(
 
                         # Get buy rate
                         buy_rate_elem = buy_block.find(
-                            'p', class_=lambda c: c and c.startswith('ValueCurrency_item_cost__')
+                            "p", class_=lambda c: c and c.startswith("ValueCurrency_item_cost__")
                         )
                         buy_price = float(buy_rate_elem.text) if buy_rate_elem else None
 
                         # Get sell rate
                         sell_rate_elem = sell_block.find(
-                            'p', class_=lambda c: c and c.startswith('ValueCurrency_item_cost__')
+                            "p", class_=lambda c: c and c.startswith("ValueCurrency_item_cost__")
                         )
                         sell_price = float(sell_rate_elem.text) if sell_rate_elem else None
 
