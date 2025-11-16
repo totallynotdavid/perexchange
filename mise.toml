@@ -1,14 +1,40 @@
+[settings]
+python.uv_venv_auto = true
+
 [tools]
 uv = "0.9.9"
 black = "25.11.0"
 ruff = "0.14.5"
 
+[tasks.update]
+description = "Update project dependencies"
+alias = "u"
+run = "uv sync -U"
+
+[tasks.outdated]
+description = "Check for outdated dependencies"
+alias = "o"
+run = "uv pip list --outdated"
+
+[tasks.export-deps]
+description = "Export production dependencies to requirements.txt"
+alias = "ed"
+run = "uv export --format requirements-txt --no-hashes --no-header --no-dev --no-annotate --output-file requirements.txt"
+
+[tasks.lint-format]
+description = "Format and lint code, applying fixes"
+alias = "f"
+run = [
+  "ruff format .",
+  "ruff check --fix --unsafe-fixes .",
+]
+
 [tasks.test]
-description = "Run unit tests (should be fast)"
+description = "Run unit tests"
 run = "uv run pytest"
 
 [tasks.test-integration]
-description = "Run integration tests agains the actual website"
+description = "Run integration tests against the actual website"
 run = [
   "curl -o tests/fixtures/exchange_page.html https://cuantoestaeldolar.pe/cambio-de-dolar-online",
   "uv run pytest -m integration",
