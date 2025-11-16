@@ -20,9 +20,9 @@ dependencies = [
 [project.scripts]
 perexchange = "perexchange.cli:main"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "pre-commit>=4.0.1",
+    "mypy>=1.11.0",
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
@@ -87,3 +87,23 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.mypy]
+files = ["perexchange", "tests"]
+mypy_path = ["perexchange", "tests"]
+# explicit_package_bases = true
+strict = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]
+exclude = [
+    "examples.py"
+]
+
+# [[tool.mypy.overrides]]
+# module = [
+#
+# ]
+# ignore_missing_imports = true
