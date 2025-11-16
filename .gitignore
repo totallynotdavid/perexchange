@@ -2,3 +2,7 @@
 
 # Generated files by scripts
 *.json
+
+# Coverage artifacts
+.coverage
+*.xml
