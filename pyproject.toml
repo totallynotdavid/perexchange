@@ -1,12 +1,81 @@
+[tool.uv.workspace]
+members = ["pkg/*"]
+
 [project]
 name = "perexchange-monorepo"
 version = "1.0.0"
 description = "Monorepo for perexchange project"
 requires-python = ">=3.9"
 
-[tool.black]
-skip-string-normalization = true
-line-length = 100
+maintainers = [
+    { name = "David Duran", email = "dadch1404@gmail.com" },
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.11.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+]
 
 [tool.ruff]
 line-length = 100
+
+lint.select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "C",
+    "B",
+]
+lint.ignore = [
+    "E501",
+    "C901",
+]
+
+[tool.ruff.lint.isort]
+order-by-type = true
+relative-imports-order = "closest-to-furthest"
+extra-standard-library = ["typing"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+markers = [
+    "integration: marks tests that hit the actual website (deselect with '-m \"not integration\"')",
+]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "-m", "not integration",
+]
+
+[tool.coverage.run]
+source = ["perexchange"]
+omit = ["tests/*", "**/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+files = ["perexchange", "tests"]
+strict = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]

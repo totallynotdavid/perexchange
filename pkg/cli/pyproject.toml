@@ -17,6 +17,9 @@ dependencies = [
 [project.scripts]
 perexchange = "perexchange_cli.main:main"
 
+[tool.uv.sources]
+perexchange = { workspace = true }
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
