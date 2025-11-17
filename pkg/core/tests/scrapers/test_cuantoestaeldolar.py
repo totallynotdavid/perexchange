@@ -9,7 +9,7 @@ from perexchange.scrapers.cuantoestaeldolar import (
     fetch_cuantoestaeldolar,
 )
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures" / "cuantoestaeldolar"
+FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "cuantoestaeldolar"
 
 
 def load_fixture(filename):

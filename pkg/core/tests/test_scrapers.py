@@ -6,7 +6,7 @@ import pytest
 
 from perexchange.scrapers.cuantoestaeldolar import fetch_cuantoestaeldolar
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures"
+FIXTURES_DIR = Path(__file__).parent / "fixtures" / "cuantoestaeldolar"
 
 
 def load_fixture(filename):
@@ -78,7 +78,7 @@ async def test_empty_html():
     with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
-        with pytest.raises(ValueError, match="No exchange houses found"):
+        with pytest.raises(ValueError, match="website structure may have changed"):
             await fetch_cuantoestaeldolar()
 
 
