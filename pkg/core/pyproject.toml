@@ -37,16 +37,16 @@ line-length = 100
 line-length = 100
 
 lint.select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
+    "E",
+    "W",
+    "F",
+    "I",
+    "C",
+    "B",
 ]
 lint.ignore = [
-    "E501",  # line too long, handled by black
-    "C901",  # too complex
+    "E501",
+    "C901",
 ]
 
 [tool.ruff.lint.isort]
@@ -54,7 +54,6 @@ order-by-type = true
 relative-imports-order = "closest-to-furthest"
 extra-standard-library = ["typing"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
-known-first-party = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -65,7 +64,6 @@ asyncio_mode = "auto"
 markers = [
     "integration: marks tests that hit the actual website (deselect with '-m \"not integration\"')",
 ]
-# Run unit tests by default, skip integration tests (CI reasons)
 addopts = [
     "-v",
     "--strict-markers",
@@ -87,20 +85,9 @@ exclude_lines = [
 
 [tool.mypy]
 files = ["perexchange", "tests"]
-mypy_path = ["perexchange", "tests"]
-# explicit_package_bases = true
 strict = true
 enable_error_code = [
     "ignore-without-code",
     "redundant-expr",
     "truthy-bool",
 ]
-exclude = [
-    "examples.py"
-]
-
-# [[tool.mypy.overrides]]
-# module = [
-#
-# ]
-# ignore_missing_imports = true
