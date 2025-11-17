@@ -1,20 +1,16 @@
 import asyncio
 import sys
-from typing import Optional
 
-from .core import (
+import httpx
+
+from perexchange import (
     calculate_average,
     calculate_spread,
     fetch_rates,
     find_best_buy,
     find_best_sell,
-    get_top_n,
 )
-
-
-def print_rate(rate, operation: str = "buy"):
-    price = rate.buy_price if operation == "buy" else rate.sell_price
-    print(f"  {rate.name}: S/ {price:.4f}")
+from perexchange.analysis import get_top_n
 
 
 def print_separator():
@@ -128,7 +124,7 @@ def print_help():
     print("  perexchange top-sell")
 
 
-async def run_command(command: Optional[str] = None):
+async def run_command(command: str | None = None):
     if command is None or command == "help" or command == "--help" or command == "-h":
         print_help()
         return
@@ -151,7 +147,7 @@ async def run_command(command: Optional[str] = None):
             print("Run 'perexchange help' for usage information.")
             sys.exit(1)
 
-    except Exception as e:
+    except (httpx.HTTPError, ValueError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

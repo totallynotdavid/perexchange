@@ -2,43 +2,36 @@
 python.uv_venv_auto = true
 
 [tools]
-uv = "0.9.9"
+uv = "0.9.10"
 ruff = "0.14.5"
 
-[tasks.update]
-description = "Update project dependencies"
-alias = "u"
-run = "uv sync --extra dev -U"
-
-[tasks.outdated]
-description = "Check for outdated dependencies"
-alias = "o"
-run = "uv pip list --outdated"
-
-[tasks.export-deps]
-description = "Export production dependencies to requirements.txt"
-alias = "ed"
-run = "uv export --format requirements-txt --no-hashes --no-header --no-dev --no-annotate --output-file requirements.txt"
-
-[tasks.lint-format]
-description = "Format and lint code, applying fixes"
-alias = "f"
-run = [
-  "ruff format .",
-  "ruff check --fix --unsafe-fixes .",
-]
+[tasks.sync]
+description = "Sync dependencies for all packages and dev"
+run = "uv sync --all-packages --extra dev"
 
 [tasks.test]
-description = "Run unit tests"
-run = "uv run pytest"
+description = "Run tests for core package"
+run = "uv run pytest pkg/core"
 
 [tasks.test-integration]
-description = "Run integration tests against the actual website"
-run = [
-  "curl -o tests/fixtures/exchange_page.html https://cuantoestaeldolar.pe/cambio-de-dolar-online",
-  "uv run pytest -m integration",
-]
+description = "Run integration tests for core package"
+run = "uv run pytest pkg/core -m integration"
 
-[tasks.test-full]
-description = "Run all tests"
-run = "uv run pytest tests/"
+[tasks.lint-format]
+description = "Lint and format all packages"
+run = ["ruff format . && ruff check --fix ."]
+
+[tasks.update]
+description = "Update dependencies for all packages"
+alias = "u"
+run = ["uv sync --all-packages --extra dev -U"]
+
+[tasks.export-deps]
+description = "Export production dependencies for core"
+run = "uv export --format requirements-txt --no-hashes --no-header --no-dev --no-annotate --output-file requirements.txt"
+dir = "pkg/core"
+
+[tasks.build-core]
+description = "Build core package"
+run = "uv build"
+dir = "pkg/core"

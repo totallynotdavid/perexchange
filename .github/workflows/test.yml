@@ -24,7 +24,9 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: pip install -e .[dev]
+        run: |
+          pip install -r pkg/core/requirements.txt
+          pip install -e .[dev]
 
       - name: Run unit tests
         run: |
@@ -58,7 +60,9 @@ jobs:
         with:
           python-version: "3.14.0"
 
-      - run: pip install -e .[dev]
+      - run: |
+          pip install -r pkg/core/requirements.txt
+          pip install -e .[dev]
 
       - id: integration_tests
         run: pytest -v -m integration --tb=short

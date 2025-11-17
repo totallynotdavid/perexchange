@@ -1,6 +1,6 @@
 import pytest
 
-from perexchange.core import ExchangeRate, fetch_rates
+from perexchange import ExchangeRate, fetch_rates
 
 
 @pytest.mark.integration
@@ -33,10 +33,8 @@ async def test_real_website_data_quality():
 @pytest.mark.asyncio
 async def test_real_website_no_duplicates():
     rates = await fetch_rates()
-
     names = [r.name for r in rates]
     unique_names = set(names)
-
     assert len(names) == len(unique_names)
 
 

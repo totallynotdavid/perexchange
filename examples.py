@@ -1,19 +1,42 @@
 """
-Quick-start examples. Just run: python examples.py (or uv run python examples.py)
+Quick-start examples. Run: python examples.py (or uv run python examples.py)
+
 """
 
 import asyncio
 import json
-from datetime import datetime
+import pathlib
+
+from datetime import datetime, timezone
+from statistics import mean
 
 from perexchange import (
-    calculate_average,
-    calculate_spread,
     fetch_rates,
     find_best_buy,
     find_best_sell,
-    get_top_n,
 )
+
+
+def get_top_n(rates, n=3, operation="buy"):
+    """Get top N rates by buy or sell price."""
+    if operation == "buy":
+        return sorted(rates, key=lambda r: r.buy_price)[:n]
+    return sorted(rates, key=lambda r: r.sell_price, reverse=True)[:n]
+
+
+def calculate_average(rates, operation="buy"):
+    """Calculate average buy or sell price."""
+    if operation == "buy":
+        prices = [r.buy_price for r in rates]
+    else:
+        prices = [r.sell_price for r in rates]
+    return mean(prices) if prices else None
+
+
+def calculate_spread(rates):
+    """Calculate average spread."""
+    spreads = [r.spread for r in rates]
+    return mean(spreads) if spreads else None
 
 
 async def best_prices():
@@ -23,34 +46,35 @@ async def best_prices():
     buy = find_best_buy(rates)
     sell = find_best_sell(rates)
 
-    print("Best buy :", f"{buy.name:<20} S/ {buy.buy_price}")
-    print("Best sell:", f"{sell.name:<20} S/ {sell.sell_price}")
+    print("Best buy :", f"{buy.name:<20} S/ {buy.buy_price:.4f}")
+    print("Best sell:", f"{sell.name:<20} S/ {sell.sell_price:.4f}")
     print()
 
 
-async def top_three():
-    """Rank the three cheapest places to buy and the three best places to sell."""
+async def top_five():
+    """Rank the five cheapest places to buy and the five best places to sell."""
     rates = await fetch_rates()
 
-    print("Top 3 BUY")
-    for i, r in enumerate(get_top_n(rates, 3, "buy"), 1):
-        print(f"  {i}. {r.name:<20} S/ {r.buy_price}")
+    print("Top 5 BUY")
+    for i, r in enumerate(get_top_n(rates, 5, "buy"), 1):
+        print(f"  {i}. {r.name:<20} S/ {r.buy_price:.4f}")
 
-    print("\nTop 3 SELL")
-    for i, r in enumerate(get_top_n(rates, 3, "sell"), 1):
-        print(f"  {i}. {r.name:<20} S/ {r.sell_price}")
+    print("\nTop 5 SELL")
+    for i, r in enumerate(get_top_n(rates, 5, "sell"), 1):
+        print(f"  {i}. {r.name:<20} S/ {r.sell_price:.4f}")
 
     print()
 
 
-async def stats():
+async def market_stats():
     """Print simple market statistics."""
     rates = await fetch_rates()
 
     print("Market snapshot")
-    print("  Avg buy : S/ ", calculate_average(rates, "buy"))
-    print("  Avg sell: S/ ", calculate_average(rates, "sell"))
-    print("  Spread  : S/ ", calculate_spread(rates))
+    print(f"  Exchange houses: {len(rates)}")
+    print(f"  Avg buy : S/ {calculate_average(rates, 'buy'):.4f}")
+    print(f"  Avg sell: S/ {calculate_average(rates, 'sell'):.4f}")
+    print(f"  Avg spread: S/ {calculate_spread(rates):.4f}")
     print()
 
 
@@ -60,16 +84,16 @@ async def low_spread():
 
     print("Lowest spreads")
     for r in sorted(rates, key=lambda x: x.spread)[:5]:
-        print(f"  {r.name:<20} spread S/ {r.spread}")
+        print(f"  {r.name:<20} spread S/ {r.spread:.4f}")
     print()
 
 
-async def dump_json():
+async def export_json():
     """Save current rates to exchange_rates.json."""
     rates = await fetch_rates()
 
     payload = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "rates": [
             {
                 "name": r.name,
@@ -81,36 +105,21 @@ async def dump_json():
         ],
     }
 
-    with open("exchange_rates.json", "w") as f:
+    with pathlib.Path("exchange_rates.json").open("w") as f:
         json.dump(payload, f, indent=2)
 
     print(f"Saved {len(rates)} records to exchange_rates.json")
     print()
 
 
-async def poll():
-    """Poll every 10 s for 30 s and print the best buy price."""
-    import time
-
-    stop = time.time() + 30
-    while time.time() < stop:
-        rates = await fetch_rates()
-        best = find_best_buy(rates)
-        print(datetime.now().strftime("%H:%M:%S"), "-", best.name, "S/", best.buy_price)
-        await asyncio.sleep(10)
-
-
 async def main():
-    print("perexchange quick-start\n")
+    print("perexchange quick-start examples\n")
 
     await best_prices()
-    await top_three()
-    await stats()
+    await top_five()
+    await market_stats()
     await low_spread()
-    await dump_json()
-
-    # Uncomment to see the polling demo
-    # await poll()
+    await export_json()
 
 
 if __name__ == "__main__":

@@ -6,6 +6,6 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "pip"
-    directory: "/"
+    directory: "/pkg/core"
     schedule:
       interval: "weekly"
