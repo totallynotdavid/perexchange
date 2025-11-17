@@ -4,6 +4,8 @@ Quick-start examples. Just run: python examples.py (or uv run python examples.py
 
 import asyncio
 import json
+import pathlib
+
 from datetime import datetime
 
 from perexchange import (
@@ -81,7 +83,7 @@ async def dump_json():
         ],
     }
 
-    with open("exchange_rates.json", "w") as f:
+    with pathlib.Path("exchange_rates.json").open("w") as f:
         json.dump(payload, f, indent=2)
 
     print(f"Saved {len(rates)} records to exchange_rates.json")

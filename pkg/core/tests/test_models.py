@@ -23,7 +23,7 @@ def test_exchange_rate_repr():
     timestamp = datetime.now(UTC)
     rate = ExchangeRate("Test House", 3.50, 3.55, timestamp)
     repr_str = repr(rate)
-    
+
     assert "Test House" in repr_str
     assert "3.5000" in repr_str
     assert "3.5500" in repr_str

@@ -1,6 +1,5 @@
 import asyncio
 import sys
-from typing import Optional
 
 from perexchange import (
     calculate_average,
@@ -128,7 +127,7 @@ def print_help():
     print("  perexchange top-sell")
 
 
-async def run_command(command: Optional[str] = None):
+async def run_command(command: str | None = None):
     if command is None or command == "help" or command == "--help" or command == "-h":
         print_help()
         return

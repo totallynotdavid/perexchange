@@ -48,7 +48,7 @@ def test_handles_special_characters_in_names():
 
     special_char_house = next(
         (r for r in rates if "Câmbio" in r.name or "&" in r.name),
-        None
+        None,
     )
     assert special_char_house is not None
 
@@ -103,9 +103,7 @@ async def test_fails_fast_on_parsing_errors():
         mock_response.text = "<html><body>No exchange houses here</body></html>"
         mock_response.raise_for_status = Mock(return_value=None)
 
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-            return_value=mock_response
-        )
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         with pytest.raises(ValueError, match="website structure may have changed"):
             await fetch_cuantoestaeldolar(max_retries=3, retry_delay=0.01)

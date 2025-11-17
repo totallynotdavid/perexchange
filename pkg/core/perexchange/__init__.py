@@ -6,7 +6,7 @@ from .scrapers import ALL_SCRAPERS
 async def fetch_rates(scrapers=None):
     """
     Fetch exchange rates from all or specified scrapers.
-    
+
     Failed scrapers are silently skipped to allow partial results.
     Production applications should implement proper error logging.
     """

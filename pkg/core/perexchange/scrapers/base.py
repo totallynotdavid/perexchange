@@ -15,5 +15,5 @@ class ExchangeRateScraper(Protocol):
         self,
         timeout: float = 10.0,
         max_retries: int = 3,
-    ) -> List[ExchangeRate]:
+    ) -> List[ExchangeRate]:  # fmt: skip
         ...

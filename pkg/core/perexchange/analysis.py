@@ -17,9 +17,9 @@ def find_best_sell(rates: List[ExchangeRate]) -> Optional[ExchangeRate]:
 
 
 def get_top_n(
-    rates: List[ExchangeRate], 
-    n: int = 3, 
-    operation: Literal["buy", "sell"] = "buy"
+    rates: List[ExchangeRate],
+    n: int = 3,
+    operation: Literal["buy", "sell"] = "buy",
 ) -> List[ExchangeRate]:
     if not rates:
         return []
@@ -33,8 +33,8 @@ def get_top_n(
 
 
 def calculate_average(
-    rates: List[ExchangeRate], 
-    operation: Literal["buy", "sell"] = "buy"
+    rates: List[ExchangeRate],
+    operation: Literal["buy", "sell"] = "buy",
 ) -> Optional[float]:
     if not rates:
         return None
