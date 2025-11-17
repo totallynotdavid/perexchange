@@ -7,13 +7,8 @@ from perexchange import (
     fetch_rates,
     find_best_buy,
     find_best_sell,
-    get_top_n,
 )
-
-
-def print_rate(rate, operation: str = "buy"):
-    price = rate.buy_price if operation == "buy" else rate.sell_price
-    print(f"  {rate.name}: S/ {price:.4f}")
+from perexchange.analysis import get_top_n
 
 
 def print_separator():
