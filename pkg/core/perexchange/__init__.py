@@ -1,6 +1,6 @@
-from .analysis import find_best_buy, find_best_sell
-from .models import ExchangeRate
-from .scrapers import ALL_SCRAPERS
+from perexchange.analysis import find_best_buy, find_best_sell
+from perexchange.models import ExchangeRate
+from perexchange.scrapers import ALL_SCRAPERS
 
 
 async def fetch_rates(scrapers=None):

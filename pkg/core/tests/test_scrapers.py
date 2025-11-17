@@ -1,3 +1,5 @@
+import contextlib
+
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -119,9 +121,7 @@ async def test_timeout_configuration():
             return_value=mock_response
         )
 
-        try:
+        with contextlib.suppress(ValueError):
             await fetch_cuantoestaeldolar(timeout=5.0)
-        except ValueError:
-            pass
 
         mock_client.assert_called_with(timeout=5.0)

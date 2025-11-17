@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from ..models import ExchangeRate
+from perexchange.models import ExchangeRate
 
 
 class ExchangeRateScraper(Protocol):

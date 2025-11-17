@@ -1,4 +1,4 @@
-from .cuantoestaeldolar import fetch_cuantoestaeldolar
+from perexchange.scrapers.cuantoestaeldolar import fetch_cuantoestaeldolar
 
 
 ALL_SCRAPERS = [

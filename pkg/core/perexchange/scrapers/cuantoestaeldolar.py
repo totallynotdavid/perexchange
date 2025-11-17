@@ -6,7 +6,7 @@ import httpx
 
 from bs4 import BeautifulSoup
 
-from ..models import ExchangeRate
+from perexchange.models import ExchangeRate
 
 
 DEFAULT_URL = "https://cuantoestaeldolar.pe/cambio-de-dolar-online"
@@ -36,10 +36,11 @@ async def fetch_cuantoestaeldolar(
 
         except (ValueError, AttributeError, TypeError, IndexError) as e:
             # Parsing errors indicate website structure changed (fail immediately)
-            raise ValueError(
+            msg = (
                 f"Failed to parse exchange rates from {url}. "
                 "The website structure may have changed."
-            ) from e
+            )
+            raise ValueError(msg) from e
 
     raise last_error
 
@@ -49,7 +50,8 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
     change_buttons = soup.find_all("a", string="CAMBIAR")
 
     if not change_buttons:
-        raise ValueError("No exchange houses found in HTML")
+        msg = "No exchange houses found in HTML"
+        raise ValueError(msg)
 
     timestamp = datetime.now(timezone.utc)
     rates = []
@@ -63,7 +65,8 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
             continue
 
     if not rates:
-        raise ValueError("No valid exchange rates parsed")
+        msg = "No valid exchange rates parsed"
+        raise ValueError(msg)
 
     return rates
 

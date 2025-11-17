@@ -1,7 +1,7 @@
 from statistics import mean
 from typing import Literal
 
-from .models import ExchangeRate
+from perexchange.models import ExchangeRate
 
 
 def find_best_buy(rates: list[ExchangeRate]) -> ExchangeRate | None:
