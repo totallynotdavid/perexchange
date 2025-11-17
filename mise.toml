@@ -5,9 +5,17 @@ python.uv_venv_auto = true
 uv = "0.9.9"
 ruff = "0.14.5"
 
+[tasks.sync]
+description = "Sync dependencies for all packages and dev"
+run = "uv sync --all-packages --extra dev"
+
 [tasks.test]
 description = "Run tests for core package"
 run = "uv run pytest pkg/core"
+
+[tasks.test-integration]
+description = "Run integration tests for core package"
+run = "uv run pytest pkg/core -m integration"
 
 [tasks.lint-format]
 description = "Lint and format all packages"
@@ -16,7 +24,7 @@ run = ["ruff format . && ruff check --fix ."]
 [tasks.update]
 description = "Update dependencies for all packages"
 alias = "u"
-run = "uv sync -U"
+run = ["uv sync --all-packages --extra dev -U"]
 
 [tasks.export-deps]
 description = "Export production dependencies for core"
