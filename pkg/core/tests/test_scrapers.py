@@ -6,12 +6,13 @@ import pytest
 
 from perexchange.scrapers.cuantoestaeldolar import fetch_cuantoestaeldolar
 
+
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "cuantoestaeldolar"
 
 
 def load_fixture(filename):
     fixture_path = FIXTURES_DIR / filename
-    with open(fixture_path, "r", encoding="utf-8") as f:
+    with Path(fixture_path).open("r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -24,7 +25,9 @@ async def test_happy_path():
     mock_response.raise_for_status = Mock(return_value=None)
 
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=mock_response
+        )
 
         rates = await fetch_cuantoestaeldolar()
         assert len(rates) == 2
@@ -43,7 +46,9 @@ async def test_malformed_data_skips_invalid():
     mock_response.raise_for_status = Mock(return_value=None)
 
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=mock_response
+        )
 
         rates = await fetch_cuantoestaeldolar()
         assert len(rates) == 1
@@ -59,7 +64,9 @@ async def test_missing_data_still_parses():
     mock_response.raise_for_status = Mock(return_value=None)
 
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=mock_response
+        )
 
         rates = await fetch_cuantoestaeldolar()
         assert len(rates) == 2
@@ -76,7 +83,9 @@ async def test_empty_html():
     mock_response.raise_for_status = Mock(return_value=None)
 
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=mock_response
+        )
 
         with pytest.raises(ValueError, match="website structure may have changed"):
             await fetch_cuantoestaeldolar()
@@ -106,7 +115,9 @@ async def test_timeout_configuration():
         mock_response.text = "<html><body></body></html>"
         mock_response.raise_for_status = Mock(return_value=None)
 
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=mock_response
+        )
 
         try:
             await fetch_cuantoestaeldolar(timeout=5.0)

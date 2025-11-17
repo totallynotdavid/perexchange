@@ -1,11 +1,13 @@
 import asyncio
+
 from datetime import datetime, timezone
-from typing import List
 
 import httpx
+
 from bs4 import BeautifulSoup
 
 from ..models import ExchangeRate
+
 
 DEFAULT_URL = "https://cuantoestaeldolar.pe/cambio-de-dolar-online"
 
@@ -15,7 +17,7 @@ async def fetch_cuantoestaeldolar(
     timeout: float = 10.0,
     max_retries: int = 3,
     retry_delay: float = 0.5,
-) -> List[ExchangeRate]:
+) -> list[ExchangeRate]:
     last_error = None
 
     for attempt in range(max_retries):
@@ -42,7 +44,7 @@ async def fetch_cuantoestaeldolar(
     raise last_error
 
 
-def _parse_html(html_content: str) -> List[ExchangeRate]:
+def _parse_html(html_content: str) -> list[ExchangeRate]:
     soup = BeautifulSoup(html_content, "lxml")
     change_buttons = soup.find_all("a", string="CAMBIAR")
 

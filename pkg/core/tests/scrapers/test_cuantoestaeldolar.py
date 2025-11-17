@@ -9,11 +9,12 @@ from perexchange.scrapers.cuantoestaeldolar import (
     fetch_cuantoestaeldolar,
 )
 
+
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "cuantoestaeldolar"
 
 
 def load_fixture(filename):
-    with open(FIXTURES_DIR / filename, "r", encoding="utf-8") as f:
+    with Path(FIXTURES_DIR / filename).open("r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -103,7 +104,9 @@ async def test_fails_fast_on_parsing_errors():
         mock_response.text = "<html><body>No exchange houses here</body></html>"
         mock_response.raise_for_status = Mock(return_value=None)
 
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=mock_response
+        )
 
         with pytest.raises(ValueError, match="website structure may have changed"):
             await fetch_cuantoestaeldolar(max_retries=3, retry_delay=0.01)

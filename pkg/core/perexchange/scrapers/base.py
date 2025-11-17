@@ -1,4 +1,4 @@
-from typing import List, Protocol
+from typing import Protocol
 
 from ..models import ExchangeRate
 
@@ -15,5 +15,5 @@ class ExchangeRateScraper(Protocol):
         self,
         timeout: float = 10.0,
         max_retries: int = 3,
-    ) -> List[ExchangeRate]:  # fmt: skip
+    ) -> list[ExchangeRate]:  # fmt: skip
         ...

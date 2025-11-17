@@ -1,26 +1,26 @@
 from statistics import mean
-from typing import List, Literal, Optional
+from typing import Literal
 
 from .models import ExchangeRate
 
 
-def find_best_buy(rates: List[ExchangeRate]) -> Optional[ExchangeRate]:
+def find_best_buy(rates: list[ExchangeRate]) -> ExchangeRate | None:
     if not rates:
         return None
     return min(rates, key=lambda r: r.buy_price)
 
 
-def find_best_sell(rates: List[ExchangeRate]) -> Optional[ExchangeRate]:
+def find_best_sell(rates: list[ExchangeRate]) -> ExchangeRate | None:
     if not rates:
         return None
     return max(rates, key=lambda r: r.sell_price)
 
 
 def get_top_n(
-    rates: List[ExchangeRate],
+    rates: list[ExchangeRate],
     n: int = 3,
     operation: Literal["buy", "sell"] = "buy",
-) -> List[ExchangeRate]:
+) -> list[ExchangeRate]:
     if not rates:
         return []
 
@@ -33,9 +33,9 @@ def get_top_n(
 
 
 def calculate_average(
-    rates: List[ExchangeRate],
+    rates: list[ExchangeRate],
     operation: Literal["buy", "sell"] = "buy",
-) -> Optional[float]:
+) -> float | None:
     if not rates:
         return None
 
@@ -43,18 +43,18 @@ def calculate_average(
     return mean(prices)
 
 
-def calculate_spread(rates: List[ExchangeRate]) -> Optional[float]:
+def calculate_spread(rates: list[ExchangeRate]) -> float | None:
     if not rates:
         return None
     return mean(r.spread for r in rates)
 
 
 def filter_by_price_range(
-    rates: List[ExchangeRate],
+    rates: list[ExchangeRate],
     operation: Literal["buy", "sell"],
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-) -> List[ExchangeRate]:
+    min_price: float | None = None,
+    max_price: float | None = None,
+) -> list[ExchangeRate]:
     filtered = rates
     price_attr = "buy_price" if operation == "buy" else "sell_price"
 
