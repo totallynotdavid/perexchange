@@ -2,12 +2,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from perexchange import (
-    ExchangeRate,
-    find_best_buy,
-    find_best_sell,
-    get_top_n,
-)
+from perexchange import ExchangeRate, find_best_buy, find_best_sell
+from perexchange.analysis import get_top_n
 
 
 @pytest.fixture
@@ -40,3 +36,11 @@ def test_get_top_buy(sample_rates):
     assert top_3[0].name == "House A"
     assert top_3[1].name == "House C"
     assert top_3[2].name == "House E"
+
+
+def test_find_best_buy_empty_list():
+    assert find_best_buy([]) is None
+
+
+def test_find_best_sell_empty_list():
+    assert find_best_sell([]) is None

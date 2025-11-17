@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timezone
 from typing import List
 
 import httpx
@@ -13,17 +14,8 @@ async def fetch_cuantoestaeldolar(
     url: str = DEFAULT_URL,
     timeout: float = 10.0,
     max_retries: int = 3,
-    retry_delay: float = 1.0,
+    retry_delay: float = 0.5,
 ) -> List[ExchangeRate]:
-    """
-    Fetch current exchange rates by scraping the website.
-
-    Args:
-        url: Website URL to scrape
-        timeout: Request timeout in seconds
-        max_retries: Maximum number of retry attempts
-        retry_delay: Initial delay between retries (exponential backoff)
-    """
     last_error = None
 
     for attempt in range(max_retries):
@@ -31,79 +23,82 @@ async def fetch_cuantoestaeldolar(
             async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.get(url)
                 response.raise_for_status()
-                html_content = response.text
+                return _parse_html(response.text)
 
-                soup = BeautifulSoup(html_content, "lxml")
-
-                # Find all "CAMBIAR" buttons as stable anchors
-                change_buttons = soup.find_all("a", string="CAMBIAR")
-
-                if not change_buttons:
-                    raise ValueError("No exchange houses found in HTML")
-
-                from datetime import datetime, timezone
-
-                timestamp = datetime.now(timezone.utc)
-                rates = []
-
-                for button in change_buttons:
-                    try:
-                        # The card is the grandparent of the button element
-                        card = button.find_parent("div").find_parent("div")
-                        if not card:
-                            continue
-
-                        # Get name from img alt attribute
-                        img_tag = card.find("img")
-                        name = img_tag["alt"].strip() if img_tag else None
-
-                        if not name:
-                            continue
-
-                        # Find buy and sell rate blocks
-                        buy_block = card.select_one('div[class*="_content_buy__"]')
-                        sell_block = card.select_one('div[class*="_content_sale__"]')
-
-                        if not buy_block or not sell_block:
-                            continue
-
-                        # Get buy rate
-                        buy_rate_elem = buy_block.find(
-                            "p", class_=lambda c: c and c.startswith("ValueCurrency_item_cost__")
-                        )
-                        buy_price = float(buy_rate_elem.text) if buy_rate_elem else None
-
-                        # Get sell rate
-                        sell_rate_elem = sell_block.find(
-                            "p", class_=lambda c: c and c.startswith("ValueCurrency_item_cost__")
-                        )
-                        sell_price = float(sell_rate_elem.text) if sell_rate_elem else None
-
-                        # Validate prices
-                        if not buy_price or not sell_price or buy_price <= 0 or sell_price <= 0:
-                            continue
-
-                        rates.append(
-                            ExchangeRate(
-                                name=name,
-                                buy_price=buy_price,
-                                sell_price=sell_price,
-                                timestamp=timestamp,
-                            )
-                        )
-                    except (AttributeError, ValueError, TypeError, IndexError):
-                        continue
-
-                if not rates:
-                    raise ValueError("No valid exchange rates parsed")
-
-                return rates
-
-        except (httpx.HTTPError, ValueError) as e:
+        except httpx.HTTPError as e:
             last_error = e
             if attempt < max_retries - 1:
                 wait_time = retry_delay * (2**attempt)
                 await asyncio.sleep(wait_time)
             continue
 
+        except (ValueError, AttributeError, TypeError, IndexError) as e:
+            # Parsing errors indicate website structure changed (fail immediately)
+            raise ValueError(
+                f"Failed to parse exchange rates from {url}. "
+                "The website structure may have changed."
+            ) from e
+
     raise last_error
+
+
+def _parse_html(html_content: str) -> List[ExchangeRate]:
+    soup = BeautifulSoup(html_content, "lxml")
+    change_buttons = soup.find_all("a", string="CAMBIAR")
+
+    if not change_buttons:
+        raise ValueError("No exchange houses found in HTML")
+
+    timestamp = datetime.now(timezone.utc)
+    rates = []
+
+    for button in change_buttons:
+        try:
+            rate = _extract_rate_from_card(button, timestamp)
+            if rate:
+                rates.append(rate)
+        except (AttributeError, ValueError, TypeError, IndexError):
+            continue
+
+    if not rates:
+        raise ValueError("No valid exchange rates parsed")
+
+    return rates
+
+
+def _extract_rate_from_card(button, timestamp: datetime):
+    card = button.find_parent("div").find_parent("div")
+    if not card:
+        return None
+
+    img_tag = card.find("img")
+    name = img_tag["alt"].strip() if img_tag else None
+    if not name:
+        return None
+
+    # Using partial class matching to handle CSS hash changes
+    buy_block = card.select_one('div[class*="_content_buy__"]')
+    sell_block = card.select_one('div[class*="_content_sale__"]')
+
+    if not buy_block or not sell_block:
+        return None
+
+    buy_rate_elem = buy_block.find(
+        "p", class_=lambda c: c and c.startswith("ValueCurrency_item_cost__")
+    )
+    buy_price = float(buy_rate_elem.text) if buy_rate_elem else None
+
+    sell_rate_elem = sell_block.find(
+        "p", class_=lambda c: c and c.startswith("ValueCurrency_item_cost__")
+    )
+    sell_price = float(sell_rate_elem.text) if sell_rate_elem else None
+
+    if not buy_price or not sell_price or buy_price <= 0 or sell_price <= 0:
+        return None
+
+    return ExchangeRate(
+        name=name,
+        buy_price=buy_price,
+        sell_price=sell_price,
+        timestamp=timestamp,
+    )
