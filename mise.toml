@@ -5,40 +5,26 @@ python.uv_venv_auto = true
 uv = "0.9.9"
 ruff = "0.14.5"
 
-[tasks.update]
-description = "Update project dependencies"
-alias = "u"
-run = "uv sync --extra dev -U"
-
-[tasks.outdated]
-description = "Check for outdated dependencies"
-alias = "o"
-run = "uv pip list --outdated"
-
-[tasks.export-deps]
-description = "Export production dependencies to requirements.txt"
-alias = "ed"
-run = "uv export --format requirements-txt --no-hashes --no-header --no-dev --no-annotate --output-file requirements.txt"
+[tasks.test]
+description = "Run tests for core package"
+run = "uv run pytest"
+dir = "pkg/core"
 
 [tasks.lint-format]
-description = "Format and lint code, applying fixes"
-alias = "f"
-run = [
-  "ruff format .",
-  "ruff check --fix --unsafe-fixes .",
-]
+description = "Lint and format all packages"
+run = ["ruff format . && ruff check --fix ."]
 
-[tasks.test]
-description = "Run unit tests"
-run = "uv run pytest"
+[tasks.update]
+description = "Update dependencies for all packages"
+alias = "u"
+run = "uv sync -U"
 
-[tasks.test-integration]
-description = "Run integration tests against the actual website"
-run = [
-  "curl -o tests/fixtures/exchange_page.html https://cuantoestaeldolar.pe/cambio-de-dolar-online",
-  "uv run pytest -m integration",
-]
+[tasks.export-deps]
+description = "Export production dependencies for core"
+run = "uv export --format requirements-txt --no-hashes --no-header --no-dev --no-annotate --output-file requirements.txt"
+dir = "pkg/core"
 
-[tasks.test-full]
-description = "Run all tests"
-run = "uv run pytest tests/"
+[tasks.build-core]
+description = "Build core package"
+run = "uv build"
+dir = "pkg/core"
