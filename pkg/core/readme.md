@@ -1,51 +1,51 @@
 # [pkg]: perexchange
 
-Core library for fetching and analyzing Peruvian dollar (PEN-USD) exchange rates from
-different exchange houses.
+This package contains the core functionality for retrieving and analyzing Peruvian
+exchange rates. It is the library published to PyPI.
 
-## Installation
+To install the library, run:
 
 ```bash
 pip install perexchange
 ```
 
-## Usage
+Quick usage example:
 
 ```python
 import asyncio
 from perexchange import fetch_rates, find_best_buy, find_best_sell
 
 async def main():
-    # Fetch current exchange rates
     rates = await fetch_rates()
-
-    # Find best places to buy/sell
-    best_buy = find_best_buy(rates)
-    best_sell = find_best_sell(rates)
-
-    print(f"Best buy: {best_buy.name} at S/ {best_buy.buy_price:.4f}")
-    print(f"Best sell: {best_sell.name} at S/ {best_sell.sell_price:.4f}")
+    print(find_best_buy(rates))
 
 asyncio.run(main())
 ```
 
 ## API Reference
 
-Core functions:
+Core Functions:
 
-- `fetch_rates(scrapers=None)` - Fetch rates from all scrapers or specified ones
-- `fetch_cuantoestaeldolar()` - Fetch rates from cuantoestaeldolar.pe
+1. `fetch_rates(scrapers=None)` returns a list of `ExchangeRate` objects.
+2. `find_best_buy(rates)` returns the entry with the lowest buy price.
+3. `find_best_sell(rates)` returns the entry with the highest sell price.
 
-Analysis functions:
+Data Model:
 
-- `find_best_buy(rates)` - Find exchange house with lowest buy price
-- `find_best_sell(rates)` - Find exchange house with highest sell price
-- `get_top_n(rates, n=3, operation="buy")` - Get top N exchange houses
-- `calculate_average(rates, operation="buy")` - Calculate average price
-- `calculate_spread(rates)` - Calculate average spread
-- `filter_by_price_range(rates, operation, min_price, max_price)` - Filter by price range
+```python
+ExchangeRate
+    name: str
+    buy_price: float
+    sell_price: float
+    timestamp: datetime
+    spread: float (sell_price - buy_price)
+```
 
-Data model:
+Internal functions:
 
-- `ExchangeRate` - Dataclass with name, buy_price, sell_price, timestamp, and spread
-  property
+```python
+get_top_n(rates, n, operation)
+calculate_average(rates, operation)
+calculate_spread(rates)
+filter_by_price_range(rates, operation, min_price, max_price)
+```
