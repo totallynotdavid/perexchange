@@ -1,0 +1,45 @@
+name: core (ci/cd)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pkg/core/**'
+      - '.github/workflows/core-ci.yml'
+  pull_request:
+    paths:
+      - 'pkg/core/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14.0'
+      - name: Install dependencies
+        working-directory: pkg/core
+        run: pip install -r requirements.txt
+      - working-directory: pkg/core
+        run: pytest
+
+  publish:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14.0'
+      - name: Install build
+        run: pip install build
+      - name: Build package
+        working-directory: pkg/core
+        run: python -m build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: pkg/core/dist/
+          password: ${{ secrets.PYPI_API_TOKEN }}
