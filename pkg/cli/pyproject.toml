@@ -1,0 +1,22 @@
+[project]
+name = "perexchange-cli"
+version = "1.0.0"
+description = "CLI tool for perexchange (dev/local use only)"
+requires-python = ">=3.9"
+
+authors = [
+    { name = "David Duran", email = "dadch1404@gmail.com" }
+]
+
+license = { text = "MIT" }
+
+dependencies = [
+    "perexchange>=1.0.0",
+]
+
+[project.scripts]
+perexchange = "perexchange_cli.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

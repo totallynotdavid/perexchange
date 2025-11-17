@@ -1,0 +1,107 @@
+[project]
+name = "perexchange"
+version = "1.0.0"
+description = "Core library for fetching Peruvian exchange rates"
+readme = "readme.md"
+requires-python = ">=3.9"
+
+authors = [
+    { name = "David Duran", email = "dadch1404@gmail.com" }
+]
+
+license = { text = "MIT" }
+
+dependencies = [
+    "beautifulsoup4>=4.14.2",
+    "httpx>=0.27.2",
+    "lxml>=6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.11.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+skip-string-normalization = true
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+lint.select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+]
+lint.ignore = [
+    "E501",  # line too long, handled by black
+    "C901",  # too complex
+]
+
+[tool.ruff.lint.isort]
+order-by-type = true
+relative-imports-order = "closest-to-furthest"
+extra-standard-library = ["typing"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+known-first-party = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+markers = [
+    "integration: marks tests that hit the actual website (deselect with '-m \"not integration\"')",
+]
+# Run unit tests by default, skip integration tests (CI reasons)
+addopts = [
+    "-v",
+    "--strict-markers",
+    "-m", "not integration",
+]
+
+[tool.coverage.run]
+source = ["perexchange"]
+omit = ["tests/*", "**/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+files = ["perexchange", "tests"]
+mypy_path = ["perexchange", "tests"]
+# explicit_package_bases = true
+strict = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]
+exclude = [
+    "examples.py"
+]
+
+# [[tool.mypy.overrides]]
+# module = [
+#
+# ]
+# ignore_missing_imports = true
