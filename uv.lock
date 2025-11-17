@@ -6,6 +6,13 @@ resolution-markers = [
     "python_full_version < '3.10'",
 ]
 
+[manifest]
+members = [
+    "perexchange",
+    "perexchange-cli",
+    "perexchange-monorepo",
+]
+
 [[package]]
 name = "anyio"
 version = "4.11.0"
@@ -590,12 +597,35 @@ wheels = [
 [[package]]
 name = "perexchange"
 version = "1.0.0"
-source = { editable = "." }
+source = { editable = "pkg/core" }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "httpx" },
     { name = "lxml" },
 ]
+
+[package.metadata]
+requires-dist = [
+    { name = "beautifulsoup4", specifier = ">=4.14.2" },
+    { name = "httpx", specifier = ">=0.27.2" },
+    { name = "lxml", specifier = ">=6.0.2" },
+]
+
+[[package]]
+name = "perexchange-cli"
+version = "1.0.0"
+source = { editable = "pkg/cli" }
+dependencies = [
+    { name = "perexchange" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "perexchange", editable = "pkg/core" }]
+
+[[package]]
+name = "perexchange-monorepo"
+version = "1.0.0"
+source = { virtual = "." }
 
 [package.optional-dependencies]
 dev = [
@@ -609,9 +639,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "beautifulsoup4", specifier = ">=4.14.2" },
-    { name = "httpx", specifier = ">=0.27.2" },
-    { name = "lxml", specifier = ">=6.0.2" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
