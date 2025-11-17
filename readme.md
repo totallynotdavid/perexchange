@@ -1,49 +1,48 @@
-# [pkg]: perexchange
+# [monorepo]: perexchange
 
 [![CodeQL](https://github.com/totallynotdavid/perexchange/actions/workflows/codeql.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/codeql.yml)
 [![tests](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/totallynotdavid/perexchange/graph/badge.svg?token=KYQVD9QU30)](https://codecov.io/gh/totallynotdavid/perexchange)
 
-Peruvian dollar exchange rates (from cuantoestaeldolar.pe). One file, three deps (httpx,
-beautifulsoup4 and lxml), async. To install it, just run:
+A small library and optional CLI for fetching Peruvian exchange rates. Only three runtime
+dependencies: httpx, beautifulsoup4, and lxml.
 
-```
-uv pip install perexchange
+## Install
+
+Library:
+
+```bash
+pip install perexchange
 ```
 
-You can use it like this:
+CLI (optional):
+
+```bash
+cd pkg/cli
+uv pip install -e .
+```
+
+## Use
+
+Python:
 
 ```python
 import perexchange as px
 
 rates = await px.fetch_rates()
-px.find_best_buy(rates)     # ExchangeRate(name='Kambista', buy_price=3.725, …)
+print(px.find_best_buy(rates))
 ```
 
-See quick examples on how to use it [examples.py](examples.py) or run
-`python -m perexchange --help`.
-
-## CLI
-
-Arguments: `px best-buy | best-sell | top-buy | stats | fetch`
+CLI:
 
 ```bash
-perexchange fetch       # Show all current rates
-perexchange best-buy    # Best place to buy
-perexchange best-sell   # Best place to sell
-perexchange top-buy     # Top 5 places to buy
-perexchange top-sell    # Top 5 places to sell
-perexchange stats       # Show statistics
-perexchange help        # Show help
+perexchange best-buy
 ```
 
-## Functions
+## Hack
 
-fetch_rates() -> list[ExchangeRate]  
-find_best_buy(rates) -> ExchangeRate | None  
-find_best_sell(rates) -> ExchangeRate | None  
-get_top_n(rates, n=3, op='buy'|'sell') -> list[ExchangeRate]  
-calculate_average(rates, op) -> float | None  
-calculate_spread(rates) -> float | None
-
-ExchangeRate has `.name`, `.buy_price`, `.sell_price`, `.spread`.
+```bash
+mise run test         # run tests
+mise run lint-format  # lint + format
+mise run build-core   # build wheel into dist/
+```
