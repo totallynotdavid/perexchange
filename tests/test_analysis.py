@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from perexchange.core import (
+from perexchange import (
     ExchangeRate,
     find_best_buy,
     find_best_sell,

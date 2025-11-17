@@ -1,6 +1,6 @@
 import pytest
 
-from perexchange.core import ExchangeRate, fetch_rates
+from perexchange import ExchangeRate, fetch_rates
 
 
 @pytest.mark.integration

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import httpx
 import pytest
 
-from perexchange.core import fetch_rates
+from perexchange.scrapers.cuantoestaeldolar import fetch_cuantoestaeldolar
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -26,7 +26,7 @@ async def test_happy_path():
     with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
-        rates = await fetch_rates()
+        rates = await fetch_cuantoestaeldolar()
         assert len(rates) == 2
         assert rates[0].name == "CambiaFX"
         assert rates[0].buy_price == 3.352
@@ -45,7 +45,7 @@ async def test_malformed_data_skips_invalid():
     with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
-        rates = await fetch_rates()
+        rates = await fetch_cuantoestaeldolar()
         assert len(rates) == 1
         assert rates[0].name == "Okane"
 
@@ -61,7 +61,7 @@ async def test_missing_data_still_parses():
     with patch("httpx.AsyncClient") as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
-        rates = await fetch_rates()
+        rates = await fetch_cuantoestaeldolar()
         assert len(rates) == 2
         assert rates[0].name == "Inka Money"
         assert rates[1].name == "Rextie"
@@ -79,7 +79,7 @@ async def test_empty_html():
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         with pytest.raises(ValueError, match="No exchange houses found"):
-            await fetch_rates()
+            await fetch_cuantoestaeldolar()
 
 
 @pytest.mark.asyncio
@@ -94,7 +94,7 @@ async def test_retry_on_http_error():
         )
 
         with pytest.raises(httpx.HTTPError):
-            await fetch_rates(max_retries=3, retry_delay=0.01)
+            await fetch_cuantoestaeldolar(max_retries=3, retry_delay=0.01)
 
         assert mock_client.return_value.__aenter__.return_value.get.call_count == 3
 
@@ -109,7 +109,7 @@ async def test_timeout_configuration():
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         try:
-            await fetch_rates(timeout=5.0)
+            await fetch_cuantoestaeldolar(timeout=5.0)
         except ValueError:
             pass
 

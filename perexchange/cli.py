@@ -2,7 +2,7 @@ import asyncio
 import sys
 from typing import Optional
 
-from .core import (
+from perexchange import (
     calculate_average,
     calculate_spread,
     fetch_rates,
