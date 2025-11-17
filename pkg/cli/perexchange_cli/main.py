@@ -1,6 +1,8 @@
 import asyncio
 import sys
 
+import httpx
+
 from perexchange import (
     calculate_average,
     calculate_spread,
@@ -145,7 +147,7 @@ async def run_command(command: str | None = None):
             print("Run 'perexchange help' for usage information.")
             sys.exit(1)
 
-    except Exception as e:
+    except (httpx.HTTPError, ValueError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

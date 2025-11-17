@@ -1,3 +1,5 @@
+import httpx
+
 from perexchange.analysis import find_best_buy, find_best_sell
 from perexchange.models import ExchangeRate
 from perexchange.scrapers import ALL_SCRAPERS
@@ -18,7 +20,7 @@ async def fetch_rates(scrapers=None):
         try:
             rates = await scraper_fn()
             all_rates.extend(rates)
-        except Exception:
+        except (httpx.HTTPError, ValueError):
             continue
 
     return all_rates
