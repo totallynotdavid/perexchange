@@ -21,7 +21,7 @@ run = "uv run pytest pkg/core -m integration"
 description = "Format all packages"
 run = "ruff format . && ruff check --fix ."
 
-[tasks.mypy]
+[tasks.lint]
 description = "Run type checking"
 run = "uv run mypy"
 
