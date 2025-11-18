@@ -8,6 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
       - uses: actions/checkout@v5
 
@@ -62,7 +65,7 @@ jobs:
         with:
           name: dist
           path: dist
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
         with:
           files: dist/*
           generate_release_notes: true
