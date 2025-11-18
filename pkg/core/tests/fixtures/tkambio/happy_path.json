@@ -1,0 +1,13 @@
+{
+  "buying_rate": 3.348,
+  "selling_rate": 3.378,
+  "text_updated_at": "12 horas",
+  "outdates_in": 6240,
+  "discounts": [
+    { "min_amount": 5000, "buying_rate": 3.351, "selling_rate": 3.375 },
+    { "min_amount": 10000, "buying_rate": 3.352, "selling_rate": 3.374 }
+  ],
+  "ibk_buying_rate": 0,
+  "ibk_selling_rate": 0,
+  "campaigns": []
+}

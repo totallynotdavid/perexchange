@@ -1,0 +1,8 @@
+{
+  "buying_rate": "not_a_number",
+  "selling_rate": 3.378,
+  "discounts": [
+    { "min_amount": "invalid", "buying_rate": 3.351, "selling_rate": 3.375 },
+    { "min_amount": 10000, "buying_rate": 3.352, "selling_rate": 3.374 }
+  ]
+}
