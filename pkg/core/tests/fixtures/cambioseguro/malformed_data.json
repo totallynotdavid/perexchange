@@ -1,0 +1,13 @@
+{
+  "error": false,
+  "message": "Ok",
+  "status": 200,
+  "data": {
+    "purchase_price": "not_a_number",
+    "sale_price": 3.373,
+    "purchase_price_comparative": 3.3426,
+    "sale_price_comparative": 3.3959,
+    "purchase_price_paralelo": null,
+    "sale_price_paralelo": 3.3929
+  }
+}
