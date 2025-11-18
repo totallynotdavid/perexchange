@@ -108,7 +108,10 @@ async def test_fails_fast_on_parsing_errors():
             return_value=mock_response
         )
 
-        with pytest.raises(ValueError, match="website structure may have changed"):
+        with pytest.raises(
+            ValueError,
+            match=r"Failed to parse exchange rates.*structure may have changed",
+        ):
             await fetch_cuantoestaeldolar(max_retries=3, retry_delay=0.01)
 
         # Only one attempt - no retries for parsing errors

@@ -95,7 +95,10 @@ async def test_fails_fast_on_parsing_errors():
             return_value=mock_api_response
         )
 
-        with pytest.raises(ValueError, match="API structure may have changed"):
+        with pytest.raises(
+            ValueError,
+            match=r"Failed to parse exchange rates.*structure may have changed",
+        ):
             await fetch_westernunion(max_retries=3, retry_delay=0.01)
 
         # Only one attempt
