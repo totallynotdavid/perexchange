@@ -6,7 +6,7 @@ from typing import Protocol, TypeVar
 
 import httpx
 
-from perexchange.core import ExchangeRate
+from perexchange.models import ExchangeRate
 
 
 T = TypeVar("T")

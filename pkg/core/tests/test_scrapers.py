@@ -89,7 +89,10 @@ async def test_empty_html():
             return_value=mock_response
         )
 
-        with pytest.raises(ValueError, match="website structure may have changed"):
+        with pytest.raises(
+            ValueError,
+            match=r"Failed to parse exchange rates.*structure may have changed",
+        ):
             await fetch_cuantoestaeldolar()
 
 
@@ -124,4 +127,8 @@ async def test_timeout_configuration():
         with contextlib.suppress(ValueError):
             await fetch_cuantoestaeldolar(timeout=5.0)
 
-        mock_client.assert_called_with(timeout=5.0)
+        mock_client.assert_called_with(
+            timeout=5.0,
+            limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+            http2=True,
+        )

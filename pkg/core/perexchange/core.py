@@ -1,34 +1,12 @@
 import asyncio
 
 from collections.abc import Sequence
-from dataclasses import dataclass
-from datetime import datetime
 
 import httpx
 
+from perexchange.models import ExchangeRate
 from perexchange.scrapers import get_scrapers
 from perexchange.scrapers.base import ExchangeRateScraper
-
-
-@dataclass(frozen=True)
-class ExchangeRate:
-    """Exchange rate from a single provider."""
-
-    name: str
-    buy_price: float  # Price to BUY dollars (sell soles)
-    sell_price: float  # Price to SELL dollars (buy soles)
-    timestamp: datetime
-
-    @property
-    def spread(self) -> float:
-        """Difference between buy and sell price."""
-        return self.sell_price - self.buy_price
-
-    def __repr__(self) -> str:
-        return (
-            f"ExchangeRate({self.name!r}, "
-            f"buy={self.buy_price:.4f}, sell={self.sell_price:.4f})"
-        )
 
 
 async def fetch_rates(
