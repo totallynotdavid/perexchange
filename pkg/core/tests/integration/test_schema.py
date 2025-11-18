@@ -112,8 +112,7 @@ async def test_tucambista_api_schema():
         "GET",
         url,
         headers={
-            "accept": "application/json, text/plain, */*",
-            "origin": "https://tucambista.pe",
+            "ocp-apim-subscription-key": "e4b6947d96a940e7bb8b39f462bcc56d;product=tucambista-production",
         },
     )
     data = response.json()
