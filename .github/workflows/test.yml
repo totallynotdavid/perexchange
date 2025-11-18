@@ -32,12 +32,12 @@ jobs:
           pytest -v -m "not integration" --cov=perexchange --cov-report=xml
           --junitxml=junit.xml
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 #v5.5.1
         with:
           files: ./coverage.xml
           report_type: coverage
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 #v5.5.1
         with:
           files: ./junit.xml
           report_type: test_results
