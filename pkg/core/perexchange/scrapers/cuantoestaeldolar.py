@@ -7,7 +7,7 @@ import httpx
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from perexchange.models import ExchangeRate
+from perexchange.core import ExchangeRate
 
 
 URL = "https://cuantoestaeldolar.pe/cambio-de-dolar-online"

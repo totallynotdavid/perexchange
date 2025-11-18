@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 
-from perexchange.models import ExchangeRate
+from perexchange.core import ExchangeRate
 
 
 URL = "https://api.cambioseguro.com/api/v1.1/config/rates"
