@@ -1,1 +1,4 @@
-{"bidRate":"not_a_number","offerRate":3.375}
+{
+  "bidRate": "not_a_number",
+  "offerRate": 3.375
+}
