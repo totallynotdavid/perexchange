@@ -8,7 +8,6 @@ from perexchange.scrapers.tucambista import fetch_tucambista
 from perexchange.scrapers.westernunion import fetch_westernunion
 
 
-# Registry of all available scrapers
 _SCRAPERS: dict[str, ExchangeRateScraper] = {
     "cambioseguro": fetch_cambioseguro,
     "cuantoestaeldolar": fetch_cuantoestaeldolar,

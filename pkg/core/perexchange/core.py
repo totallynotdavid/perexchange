@@ -51,13 +51,8 @@ async def fetch_rates(
         List of ExchangeRate objects. Empty list if all houses fail.
 
     Example:
-        >>> # Fetch all houses
         >>> rates = await fetch_rates()
-        >>>
-        >>> # Fetch specific houses only
         >>> rates = await fetch_rates(houses=["tkambio", "cambioseguro"])
-        >>>
-        >>> # Find best buy price
         >>> best = min(rates, key=lambda r: r.buy_price)
         >>> print(f"Best: {best.name} at S/{best.buy_price}")
 
@@ -67,11 +62,9 @@ async def fetch_rates(
     """
     scrapers = get_scrapers(houses)
 
-    # Run all scrapers concurrently
     tasks = [_safe_fetch(scraper, timeout, max_retries) for scraper in scrapers]
     results = await asyncio.gather(*tasks)
 
-    # Flatten results (each scraper returns list[ExchangeRate])
     return [rate for result in results for rate in result]
 
 

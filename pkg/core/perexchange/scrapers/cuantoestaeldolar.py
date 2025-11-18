@@ -1,5 +1,3 @@
-import asyncio
-
 from datetime import datetime, timezone
 
 import httpx
@@ -8,6 +6,7 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from perexchange.core import ExchangeRate
+from perexchange.scrapers.base import fetch_with_retry
 
 
 URL = "https://cuantoestaeldolar.pe/cambio-de-dolar-online"
@@ -18,34 +17,12 @@ async def fetch_cuantoestaeldolar(
     max_retries: int = 3,
     retry_delay: float = 0.5,
 ) -> list[ExchangeRate]:
-    last_error = None
+    async def _fetch(client: httpx.AsyncClient) -> list[ExchangeRate]:
+        response = await client.get(URL)
+        response.raise_for_status()
+        return _parse_html(response.text)
 
-    for attempt in range(max_retries):
-        try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                response = await client.get(URL)
-                response.raise_for_status()
-                return _parse_html(response.text)
-
-        except httpx.HTTPError as e:
-            last_error = e
-            if attempt < max_retries - 1:
-                wait_time = retry_delay * (2**attempt)
-                await asyncio.sleep(wait_time)
-            continue
-
-        except (ValueError, AttributeError, TypeError, IndexError) as e:
-            # Parsing errors indicate website structure changed (fail immediately)
-            msg = (
-                f"Failed to parse exchange rates from {URL}. "
-                "The website structure may have changed."
-            )
-            raise ValueError(msg) from e
-
-    if last_error is None:
-        msg = "Failed to fetch rates: no attempts were made"
-        raise ValueError(msg)
-    raise last_error
+    return await fetch_with_retry(_fetch, timeout, max_retries, retry_delay, URL)
 
 
 def _parse_html(html_content: str) -> list[ExchangeRate]:
@@ -90,7 +67,6 @@ def _extract_rate_from_card(button: Tag, timestamp: datetime) -> ExchangeRate | 
     if not name:
         return None
 
-    # Using partial class matching to handle CSS hash changes
     buy_block = card.select_one('div[class*="_content_buy__"]')
     sell_block = card.select_one('div[class*="_content_sale__"]')
 
