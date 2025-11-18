@@ -1,5 +1,5 @@
 def pytest_configure(config):
     config.addinivalue_line(
         "markers",
-        "integration: marks tests as integration tests (slow, hits real website)",
+        "integration: marks tests as integration tests (slow, hits real websites)",
     )
