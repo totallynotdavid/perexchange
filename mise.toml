@@ -23,7 +23,7 @@ run = "ruff format . && ruff check --fix ."
 
 [tasks.mypy]
 description = "Run type checking"
-run = "uv run mypy pkg/core/perexchange"
+run = "uv run mypy"
 
 [tasks.update]
 description = "Update dependencies for all packages"
