@@ -1,0 +1,33 @@
+{
+  "DT_Compra": 3.352,
+  "DT_Venta": 3.374,
+  "TCB_Compra": 3.32,
+  "TCB_Venta": 3.43,
+  "TC_Compra": 3.363,
+  "TC_Venta": 3.366,
+  "Spread_Compra": 0.011,
+  "Spread_Venta": 0.008,
+  "EResponseServicesGeneral": {
+    "Success": false,
+    "CodigoError": null,
+    "Message": null,
+    "MessageExcepcion": null,
+    "Codigo": 0,
+    "TitleMessage": null,
+    "Email": null,
+    "Nombre": null,
+    "actProBlocked": 0,
+    "scoreBlocked": 0,
+    "Token": null,
+    "MinutosBloqueo": 0,
+    "limit": 0,
+    "limitSTR": null,
+    "flagCantidadSuperada": false,
+    "flagEmailValidated": null,
+    "PreviousEmail": null,
+    "flagPorcentajeSuperado": null,
+    "flagEmailExiste": null,
+    "seBloqueoScreening": false,
+    "flagExpirado": null
+  }
+}
