@@ -42,6 +42,9 @@ async def fetch_cuantoestaeldolar(
             )
             raise ValueError(msg) from e
 
+    if last_error is None:
+        msg = "Failed to fetch rates: no attempts were made"
+        raise ValueError(msg)
     raise last_error
 
 
@@ -71,7 +74,7 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
     return rates
 
 
-def _extract_rate_from_card(button, timestamp: datetime):
+def _extract_rate_from_card(button, timestamp: datetime) -> ExchangeRate | None:
     card = button.find_parent("div").find_parent("div")
     if not card:
         return None
