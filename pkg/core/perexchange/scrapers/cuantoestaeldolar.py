@@ -10,11 +10,10 @@ from bs4.element import Tag
 from perexchange.models import ExchangeRate
 
 
-DEFAULT_URL = "https://cuantoestaeldolar.pe/cambio-de-dolar-online"
+URL = "https://cuantoestaeldolar.pe/cambio-de-dolar-online"
 
 
 async def fetch_cuantoestaeldolar(
-    url: str = DEFAULT_URL,
     timeout: float = 10.0,
     max_retries: int = 3,
     retry_delay: float = 0.5,
@@ -24,7 +23,7 @@ async def fetch_cuantoestaeldolar(
     for attempt in range(max_retries):
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
-                response = await client.get(url)
+                response = await client.get(URL)
                 response.raise_for_status()
                 return _parse_html(response.text)
 
@@ -38,7 +37,7 @@ async def fetch_cuantoestaeldolar(
         except (ValueError, AttributeError, TypeError, IndexError) as e:
             # Parsing errors indicate website structure changed (fail immediately)
             msg = (
-                f"Failed to parse exchange rates from {url}. "
+                f"Failed to parse exchange rates from {URL}. "
                 "The website structure may have changed."
             )
             raise ValueError(msg) from e

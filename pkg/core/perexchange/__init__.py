@@ -1,15 +1,15 @@
 from collections.abc import Sequence
-from typing import Any
 
 import httpx
 
 from perexchange.analysis import find_best_buy, find_best_sell
 from perexchange.models import ExchangeRate
 from perexchange.scrapers import ALL_SCRAPERS
+from perexchange.scrapers.base import ExchangeRateScraper
 
 
 async def fetch_rates(
-    scrapers: Sequence[Any] | None = None,
+    scrapers: Sequence[ExchangeRateScraper] | None = None,
 ) -> list[ExchangeRate]:
     """
     Fetch exchange rates from all or specified scrapers.
@@ -17,11 +17,12 @@ async def fetch_rates(
     Failed scrapers are silently skipped to allow partial results.
     Production applications should implement proper error logging.
     """
-    if scrapers is None:
-        scrapers = ALL_SCRAPERS
+    scrapers_to_use: Sequence[ExchangeRateScraper] = (
+        scrapers if scrapers is not None else ALL_SCRAPERS
+    )
 
     all_rates: list[ExchangeRate] = []
-    for scraper_fn in scrapers:
+    for scraper_fn in scrapers_to_use:
         try:
             rates = await scraper_fn()
             all_rates.extend(rates)
