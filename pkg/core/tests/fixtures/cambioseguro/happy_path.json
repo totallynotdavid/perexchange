@@ -1,0 +1,17 @@
+{
+  "error": false,
+  "message": "Ok",
+  "status": 200,
+  "data": {
+    "sunat_purchase_price": 3.365,
+    "sunat_sale_price": 3.374,
+    "status": true,
+    "_id": "698b9143ab2e7b4469320157",
+    "purchase_price": 3.353,
+    "sale_price": 3.373,
+    "purchase_price_comparative": 3.3426,
+    "sale_price_comparative": 3.3959,
+    "purchase_price_paralelo": 3.3388,
+    "sale_price_paralelo": 3.3929
+  }
+}
