@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import httpx
 
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from perexchange.models import ExchangeRate
 
@@ -42,12 +43,15 @@ async def fetch_cuantoestaeldolar(
             )
             raise ValueError(msg) from e
 
+    if last_error is None:
+        msg = "Failed to fetch rates: no attempts were made"
+        raise ValueError(msg)
     raise last_error
 
 
 def _parse_html(html_content: str) -> list[ExchangeRate]:
     soup = BeautifulSoup(html_content, "lxml")
-    change_buttons = soup.find_all("a", string="CAMBIAR")
+    change_buttons = soup.find_all("a", string="CAMBIAR")  # type: ignore[call-overload]
 
     if not change_buttons:
         msg = "No exchange houses found in HTML"
@@ -71,13 +75,19 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
     return rates
 
 
-def _extract_rate_from_card(button, timestamp: datetime):
-    card = button.find_parent("div").find_parent("div")
+def _extract_rate_from_card(button: Tag, timestamp: datetime) -> ExchangeRate | None:
+    parent = button.find_parent("div")
+    if not parent:
+        return None
+    card = parent.find_parent("div")
     if not card:
         return None
 
     img_tag = card.find("img")
-    name = img_tag["alt"].strip() if img_tag else None
+    if not img_tag:
+        return None
+    alt_attr = img_tag.get("alt")
+    name = alt_attr.strip() if isinstance(alt_attr, str) else None
     if not name:
         return None
 

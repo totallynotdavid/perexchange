@@ -85,7 +85,7 @@ extra-standard-library = ["typing"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["pkg/core/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -100,8 +100,8 @@ addopts = [
 ]
 
 [tool.coverage.run]
-source = ["perexchange"]
-omit = ["tests/*", "**/__pycache__/*"]
+source = ["pkg/core/perexchange"]
+omit = ["pkg/core/tests/*", "**/__pycache__/*"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -113,7 +113,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-files = ["perexchange", "tests"]
+files = ["pkg/core/perexchange"]
 strict = true
 enable_error_code = [
     "ignore-without-code",
