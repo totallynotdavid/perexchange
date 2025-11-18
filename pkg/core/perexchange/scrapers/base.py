@@ -1,3 +1,4 @@
+from collections.abc import Awaitable
 from typing import Protocol
 
 from perexchange.models import ExchangeRate
@@ -7,13 +8,13 @@ class ExchangeRateScraper(Protocol):
     """
     Protocol defining the interface all scrapers must implement.
 
-    This is not enforced at runtime but serves as documentation
-    and enables static type checking.
+    All scrapers are async functions with standardized parameters.
     """
 
-    async def __call__(
+    def __call__(
         self,
         timeout: float = 10.0,
         max_retries: int = 3,
-    ) -> list[ExchangeRate]:  # fmt: skip
+        retry_delay: float = 0.5,
+    ) -> Awaitable[list[ExchangeRate]]:  # fmt: skip
         ...

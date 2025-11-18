@@ -8,11 +8,10 @@ import httpx
 from perexchange.models import ExchangeRate
 
 
-DEFAULT_URL = "https://tkambio.com/wp-admin/admin-ajax.php"
+URL = "https://tkambio.com/wp-admin/admin-ajax.php"
 
 
 async def fetch_tkambio(
-    url: str = DEFAULT_URL,
     timeout: float = 10.0,
     max_retries: int = 3,
     retry_delay: float = 0.5,
@@ -27,7 +26,7 @@ async def fetch_tkambio(
                     "X-Requested-With": "XMLHttpRequest",
                 }
                 data = {"action": "get_exchange_rate"}
-                response = await client.post(url, headers=headers, data=data)
+                response = await client.post(URL, headers=headers, data=data)
                 response.raise_for_status()
                 return _parse_json(response.json())
 
@@ -40,7 +39,7 @@ async def fetch_tkambio(
 
         except (ValueError, KeyError, TypeError) as e:
             msg = (
-                f"Failed to parse exchange rates from {url}. "
+                f"Failed to parse exchange rates from {URL}. "
                 "The API structure may have changed."
             )
             raise ValueError(msg) from e

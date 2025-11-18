@@ -8,11 +8,10 @@ import httpx
 from perexchange.models import ExchangeRate
 
 
-DEFAULT_URL = "https://apim.tucambista.pe/api/rates"
+URL = "https://apim.tucambista.pe/api/rates"
 
 
 async def fetch_tucambista(
-    url: str = DEFAULT_URL,
     timeout: float = 10.0,
     max_retries: int = 3,
     retry_delay: float = 0.5,
@@ -24,10 +23,9 @@ async def fetch_tucambista(
             async with httpx.AsyncClient(timeout=timeout) as client:
                 headers = {
                     "accept": "application/json, text/plain, */*",
-                    "channel": "web",
-                    "ocp-apim-subscription-key": "e4b6947d96a940e7bb8b39f462bcc56d;product=tucambista-production",
+                    "origin": "https://tucambista.pe",
                 }
-                response = await client.get(url, headers=headers)
+                response = await client.get(URL, headers=headers)
                 response.raise_for_status()
                 return _parse_json(response.json())
 
@@ -40,7 +38,7 @@ async def fetch_tucambista(
 
         except (ValueError, KeyError, TypeError) as e:
             msg = (
-                f"Failed to parse exchange rates from {url}. "
+                f"Failed to parse exchange rates from {URL}. "
                 "The API structure may have changed."
             )
             raise ValueError(msg) from e

@@ -8,11 +8,10 @@ import httpx
 from perexchange.models import ExchangeRate
 
 
-DEFAULT_URL = "https://api.cambioseguro.com/api/v1.1/config/rates"
+URL = "https://api.cambioseguro.com/api/v1.1/config/rates"
 
 
 async def fetch_cambioseguro(
-    url: str = DEFAULT_URL,
     timeout: float = 10.0,
     max_retries: int = 3,
     retry_delay: float = 0.5,
@@ -22,7 +21,7 @@ async def fetch_cambioseguro(
     for attempt in range(max_retries):
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
-                response = await client.get(url)
+                response = await client.get(URL)
                 response.raise_for_status()
                 return _parse_json(response.json())
 
@@ -35,7 +34,7 @@ async def fetch_cambioseguro(
 
         except (ValueError, KeyError, TypeError) as e:
             msg = (
-                f"Failed to parse exchange rates from {url}. "
+                f"Failed to parse exchange rates from {URL}. "
                 "The API structure may have changed."
             )
             raise ValueError(msg) from e
