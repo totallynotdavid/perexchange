@@ -19,8 +19,7 @@ async def fetch_tucambista(
         response = await client.get(
             URL,
             headers={
-                "accept": "application/json, text/plain, */*",
-                "origin": "https://tucambista.pe",
+                "ocp-apim-subscription-key": "e4b6947d96a940e7bb8b39f462bcc56d;product=tucambista-production",
             },
         )
         response.raise_for_status()
