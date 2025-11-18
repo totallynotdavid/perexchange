@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from perexchange.core import ExchangeRate
+from perexchange.models import ExchangeRate
 from perexchange.scrapers.base import fetch_with_retry
 
 

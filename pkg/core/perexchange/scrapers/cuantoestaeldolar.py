@@ -5,7 +5,7 @@ import httpx
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from perexchange.core import ExchangeRate
+from perexchange.models import ExchangeRate
 from perexchange.scrapers.base import fetch_with_retry
 
 

@@ -8,7 +8,8 @@ Example:
     >>> print(f"{best.name}: S/{best.buy_price}")
 """
 
-from perexchange.core import ExchangeRate, fetch_rates
+from perexchange.core import fetch_rates
+from perexchange.models import ExchangeRate
 
 
 __version__ = "1.0.0"
