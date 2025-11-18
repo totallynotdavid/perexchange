@@ -9,10 +9,14 @@ authors = [
     { name = "David Duran", email = "dadch1404@gmail.com" }
 ]
 
-license = { text = "MIT" }
+license = "MIT"
 
 dependencies = [
     "beautifulsoup4>=4.14.2",
     "httpx>=0.27.2",
     "lxml>=6.0.2",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*"]

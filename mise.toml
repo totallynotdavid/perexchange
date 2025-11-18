@@ -17,9 +17,9 @@ run = "uv run pytest pkg/core"
 description = "Run integration tests for core package"
 run = "uv run pytest pkg/core -m integration"
 
-[tasks.lint-format]
-description = "Lint and format all packages"
-run = ["ruff format . && ruff check --fix ."]
+[tasks.format]
+description = "Format all packages"
+run = "ruff format . && ruff check --fix ."
 
 [tasks.update]
 description = "Update dependencies for all packages"
@@ -31,7 +31,27 @@ description = "Export production dependencies for core"
 run = "uv export --format requirements-txt --no-hashes --no-header --no-dev --no-annotate --output-file requirements.txt"
 dir = "pkg/core"
 
-[tasks.build-core]
+[tasks.build]
 description = "Build core package"
 run = "uv build"
 dir = "pkg/core"
+
+[tasks.ci-check]
+description = "Run a fast set of checks similar to CI (format, lint, unit tests)"
+depends = ["format", "lint", "test"]
+
+[tasks.build-check]
+description = "Build and verify package contents"
+run = "uv run python tools/build_check.py"
+
+[tasks.pre-push]
+description = "Run before pushing: being quick: format, lint, test"
+depends = ["format", "lint", "test"]
+
+[tasks.release]
+description = "Full release process: update version, build, commit, tag, push (usage: mise run release VERSION=1.2.3)"
+run = "uv run python tools/release.py --version \"$VERSION\""
+
+[tasks.update-version]
+description = "Update version in pyproject.toml (usage: mise run update-version VERSION=1.2.3)"
+run = "uv run python tools/update_version.py --version \"$VERSION\""
