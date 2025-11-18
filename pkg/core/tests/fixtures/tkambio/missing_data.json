@@ -1,0 +1,4 @@
+{
+  "selling_rate": 3.378,
+  "discounts": [{ "min_amount": 5000, "buying_rate": 3.351, "selling_rate": 3.375 }]
+}
