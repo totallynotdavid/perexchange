@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 
-from perexchange.models import ExchangeRate
+from perexchange.core import ExchangeRate
 
 
 PAGE_URL = "https://www.westernunionperu.pe/cambiodemoneda"
