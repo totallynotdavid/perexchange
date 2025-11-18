@@ -1,11 +1,10 @@
-import asyncio
-
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 
 from perexchange.core import ExchangeRate
+from perexchange.scrapers.base import fetch_with_retry
 
 
 URL = "https://apim.tucambista.pe/api/rates"
@@ -16,37 +15,18 @@ async def fetch_tucambista(
     max_retries: int = 3,
     retry_delay: float = 0.5,
 ) -> list[ExchangeRate]:
-    last_error = None
+    async def _fetch(client: httpx.AsyncClient) -> list[ExchangeRate]:
+        response = await client.get(
+            URL,
+            headers={
+                "accept": "application/json, text/plain, */*",
+                "origin": "https://tucambista.pe",
+            },
+        )
+        response.raise_for_status()
+        return _parse_json(response.json())
 
-    for attempt in range(max_retries):
-        try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                headers = {
-                    "accept": "application/json, text/plain, */*",
-                    "origin": "https://tucambista.pe",
-                }
-                response = await client.get(URL, headers=headers)
-                response.raise_for_status()
-                return _parse_json(response.json())
-
-        except httpx.HTTPError as e:
-            last_error = e
-            if attempt < max_retries - 1:
-                wait_time = retry_delay * (2**attempt)
-                await asyncio.sleep(wait_time)
-            continue
-
-        except (ValueError, KeyError, TypeError) as e:
-            msg = (
-                f"Failed to parse exchange rates from {URL}. "
-                "The API structure may have changed."
-            )
-            raise ValueError(msg) from e
-
-    if last_error is None:
-        msg = "Failed to fetch rates: no attempts were made"
-        raise ValueError(msg)
-    raise last_error
+    return await fetch_with_retry(_fetch, timeout, max_retries, retry_delay, URL)
 
 
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:

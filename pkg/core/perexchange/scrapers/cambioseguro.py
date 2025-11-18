@@ -1,11 +1,10 @@
-import asyncio
-
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 
 from perexchange.core import ExchangeRate
+from perexchange.scrapers.base import fetch_with_retry
 
 
 URL = "https://api.cambioseguro.com/api/v1.1/config/rates"
@@ -16,91 +15,59 @@ async def fetch_cambioseguro(
     max_retries: int = 3,
     retry_delay: float = 0.5,
 ) -> list[ExchangeRate]:
-    last_error = None
+    async def _fetch(client: httpx.AsyncClient) -> list[ExchangeRate]:
+        response = await client.get(URL)
+        response.raise_for_status()
+        return _parse_json(response.json())
 
-    for attempt in range(max_retries):
-        try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                response = await client.get(URL)
-                response.raise_for_status()
-                return _parse_json(response.json())
-
-        except httpx.HTTPError as e:
-            last_error = e
-            if attempt < max_retries - 1:
-                wait_time = retry_delay * (2**attempt)
-                await asyncio.sleep(wait_time)
-            continue
-
-        except (ValueError, KeyError, TypeError) as e:
-            msg = (
-                f"Failed to parse exchange rates from {URL}. "
-                "The API structure may have changed."
-            )
-            raise ValueError(msg) from e
-
-    if last_error is None:
-        msg = "Failed to fetch rates: no attempts were made"
-        raise ValueError(msg)
-    raise last_error
+    return await fetch_with_retry(_fetch, timeout, max_retries, retry_delay, URL)
 
 
 def _parse_json(response_data: dict[str, Any]) -> list[ExchangeRate]:
     timestamp = datetime.now(timezone.utc)
     rates = []
-
     data = response_data.get("data", {})
 
-    # Main rate
-    try:
-        buy_price = float(data["purchase_price"])
-        sell_price = float(data["sale_price"])
-        if buy_price > 0 and sell_price > 0:
-            rates.append(
-                ExchangeRate(
-                    name="cambioseguro",
-                    buy_price=buy_price,
-                    sell_price=sell_price,
-                    timestamp=timestamp,
-                )
-            )
-    except (KeyError, ValueError, TypeError):
-        pass
+    rate_configs = [
+        ("cambioseguro", "purchase_price", "sale_price"),
+        (
+            "cambioseguro_comparative",
+            "purchase_price_comparative",
+            "sale_price_comparative",
+        ),
+        ("cambioseguro_paralelo", "purchase_price_paralelo", "sale_price_paralelo"),
+    ]
 
-    # Comparative rate
-    try:
-        buy_price = float(data["purchase_price_comparative"])
-        sell_price = float(data["sale_price_comparative"])
-        if buy_price > 0 and sell_price > 0:
-            rates.append(
-                ExchangeRate(
-                    name="cambioseguro_comparative",
-                    buy_price=buy_price,
-                    sell_price=sell_price,
-                    timestamp=timestamp,
-                )
-            )
-    except (KeyError, ValueError, TypeError):
-        pass
-
-    # Paralelo rate
-    try:
-        buy_price = float(data["purchase_price_paralelo"])
-        sell_price = float(data["sale_price_paralelo"])
-        if buy_price > 0 and sell_price > 0:
-            rates.append(
-                ExchangeRate(
-                    name="cambioseguro_paralelo",
-                    buy_price=buy_price,
-                    sell_price=sell_price,
-                    timestamp=timestamp,
-                )
-            )
-    except (KeyError, ValueError, TypeError):
-        pass
+    for name, buy_key, sell_key in rate_configs:
+        rate = _try_create_rate(data, name, buy_key, sell_key, timestamp)
+        if rate:
+            rates.append(rate)
 
     if not rates:
         msg = "No valid exchange rates parsed"
         raise ValueError(msg)
 
     return rates
+
+
+def _try_create_rate(
+    data: dict[str, Any],
+    name: str,
+    buy_key: str,
+    sell_key: str,
+    timestamp: datetime,
+) -> ExchangeRate | None:
+    """Try to create a rate from data, return None if invalid."""
+    try:
+        buy_price = float(data[buy_key])
+        sell_price = float(data[sell_key])
+        if buy_price > 0 and sell_price > 0:
+            return ExchangeRate(
+                name=name,
+                buy_price=buy_price,
+                sell_price=sell_price,
+                timestamp=timestamp,
+            )
+    except (KeyError, ValueError, TypeError):
+        pass
+    return None
