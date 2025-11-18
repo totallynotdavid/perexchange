@@ -1,58 +1,22 @@
-name: tests
+name: test
 
 on:
   push:
-    branches: [main]
+    branches: ["main"]
     paths: ["**/*.py"]
   pull_request:
-    branches: [main]
     paths: ["**/*.py"]
   schedule:
-    - cron: "0 3 * * 1"
+    - cron: "0 3 * * 1" # Every Monday at 03:00 UTC
   workflow_dispatch:
 
 jobs:
-  test:
+  unit:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.14"
-
-      - name: Install dependencies
-        run: |
-          pip install -r pkg/core/requirements.txt
-          pip install -e .[dev]
-
-      - name: Run unit tests
-        run: |
-          pytest -v -m "not integration" \
-            --cov=perexchange --cov-report=xml \
-            --junitxml=junit.xml
-
-      - uses: codecov/codecov-action@v5
-        with:
-          files: ./coverage.xml
-          report_type: coverage
-
-      - uses: codecov/codecov-action@v5
-        with:
-          files: ./junit.xml
-          report_type: test_results
-
-  test-integration:
-    name: integration tests
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write
-    if:
-      github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
-      github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v5
 
@@ -64,24 +28,50 @@ jobs:
           pip install -r pkg/core/requirements.txt
           pip install -e .[dev]
 
-      - id: integration_tests
+      - run:
+          pytest -v -m "not integration" --cov=perexchange --cov-report=xml
+          --junitxml=junit.xml
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          report_type: coverage
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: ./junit.xml
+          report_type: test_results
+
+  integration:
+    runs-on: ubuntu-latest
+    if:
+      github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main'
+
+    permissions:
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14.0"
+
+      - run: |
+          pip install -r pkg/core/requirements.txt
+          pip install -e .[dev]
+
+      - id: test
         run: pytest -v -m integration --tb=short
         continue-on-error: true
 
-      - name: Create issue if integration tests fail
-        if:
-          failure() && steps.integration_tests.outcome == 'failure' && (github.event_name
-          == 'schedule' || github.event_name == 'workflow_dispatch')
+      - if:
+          failure() && steps.test.outcome == 'failure' && (github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch')
         uses: actions/github-script@v8
         with:
           script: |
-            const title = 'fix: integration tests failing';
-            const body = `Website structure may have changed. Check: https://cuantoestaeldolar.pe/cambio-de-dolar-online
-
-            Run: \`pytest -m integration\`
-
-            Workflow logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -89,11 +79,13 @@ jobs:
               labels: 'integration-test-failure'
             });
 
+            const body = `Run: \`pytest -m integration\`\n\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+
             if (issues.data.length === 0) {
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: title,
+                title: 'fix: integration tests failing',
                 body: body,
                 labels: ['integration-test-failure', 'bug']
               });
@@ -102,15 +94,6 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issues.data[0].number,
-                body: `Failed again: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+                body: body
               });
             }
-
-      - name: Report
-        if: always()
-        run: |
-          if [ "${{ steps.integration_tests.outcome }}" == "success" ]; then
-            echo "Integration tests passed"
-          else
-            echo "Integration tests failed"
-          fi
