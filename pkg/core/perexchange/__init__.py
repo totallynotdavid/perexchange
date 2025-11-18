@@ -1,3 +1,6 @@
+from collections.abc import Sequence
+from typing import Any
+
 import httpx
 
 from perexchange.analysis import find_best_buy, find_best_sell
@@ -5,7 +8,9 @@ from perexchange.models import ExchangeRate
 from perexchange.scrapers import ALL_SCRAPERS
 
 
-async def fetch_rates(scrapers=None):
+async def fetch_rates(
+    scrapers: Sequence[Any] | None = None,
+) -> list[ExchangeRate]:
     """
     Fetch exchange rates from all or specified scrapers.
 
@@ -15,7 +20,7 @@ async def fetch_rates(scrapers=None):
     if scrapers is None:
         scrapers = ALL_SCRAPERS
 
-    all_rates = []
+    all_rates: list[ExchangeRate] = []
     for scraper_fn in scrapers:
         try:
             rates = await scraper_fn()
