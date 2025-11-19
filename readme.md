@@ -4,40 +4,60 @@
 [![tests](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/totallynotdavid/perexchange/graph/badge.svg?token=KYQVD9QU30)](https://codecov.io/gh/totallynotdavid/perexchange)
 
-A minimal library for retrieving PEN–USD exchange rates from multiple Peruvian exchange
-houses.
-
-This repository is a monorepo containing two packages:
-
-1. Core library (published to PyPI)
-2. Optional CLI tool (development only)
+A minimal library for fetching PEN-USD exchange rates from Peruvian exchange houses.
 
 To install the library, run:
 
-```
+```bash
 pip install perexchange
 ```
 
-Quick usage example:
+## Quick start
+
+The library fetches rates from multiple sources concurrently and returns them as a list.
+
+Find the best rate by sorting:
 
 ```python
-import asyncio, perexchange as px
+import asyncio
+import perexchange as px
 
-rates = await px.fetch_rates()
-px.find_best_buy(rates)
+async def main():
+    rates = await px.fetch_rates()
+    best = min(rates, key=lambda r: r.buy_price)
+    print(f"{best.name}: S/{best.buy_price}")
+
+asyncio.run(main())
 ```
 
-<!-- prettier-ignore -->
-> [!TIP]
-> See more complex examples on [examples.py](examples.py).
+See [examples.py](examples.py) for more usage patterns.
 
-The core API includes functions for fetching rates, selecting the best buy and sell
-prices, and working with the ExchangeRate data model.
+## Documentation
 
-For detailed API documentation, see [pkg/core/readme.md](pkg/core/readme.md).
+The core API consists of one function and one data model. Call `fetch_rates()` to retrieve
+current rates from all available sources, or pass a list of specific house names. The
+function returns `ExchangeRate` objects containing prices, timestamps, and metadata.
 
-The CLI tool exists for development and inspection only. For CLI details, see
-[pkg/cli/readme.md](pkg/cli/readme.md).
+Read the full API documentation in [pkg/core/readme.md](pkg/core/readme.md).
 
-For development workflow, testing instructions, adding scrapers, and repository structure,
-refer to [CONTRIBUTING](.github/CONTRIBUTING.md).
+## Development
+
+This is a monorepo containing the core library under `pkg/core/`. The project uses mise
+for task management and uv for dependency management. Common tasks:
+
+```bash
+mise run sync        # install dependencies
+mise run test        # run unit tests
+mise run format      # format and lint
+mise run pre-push    # quick checks before pushing
+```
+
+The test suite includes unit tests with fixtures and integration tests that hit live APIs.
+Integration tests are slower and can be flaky. Run them separately:
+
+```bash
+mise run test-integration
+```
+
+Contributing guidelines and repository structure details are in
+[CONTRIBUTING](.github/CONTRIBUTING.md).
