@@ -43,7 +43,19 @@ async def fetch_rates(
     tasks = [_safe_fetch(scraper, timeout, max_retries) for scraper in scrapers]
     results = await asyncio.gather(*tasks)
 
-    return [rate for result in results for rate in result]
+    all_rates = [rate for result in results for rate in result]
+
+    # Deduplicate by name, keeping the most recent rate for each house.
+    # This handles cases where cuantoestaeldolar (an aggregator) returns rates for houses
+    # we also scrape directly (e.g., chapacambio). We prioritize the most recent timestamp,
+    # which is typically from direct scrapers since they have fresher data.
+    # This is a temporary measure until cuantoestaeldolar is replaced with individual scrapers.
+    seen: dict[str, ExchangeRate] = {}
+    for rate in all_rates:
+        if rate.name not in seen or rate.timestamp > seen[rate.name].timestamp:
+            seen[rate.name] = rate
+
+    return list(seen.values())
 
 
 async def _safe_fetch(
