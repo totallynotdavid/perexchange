@@ -31,6 +31,11 @@ def main() -> int:
     if count == 0:
         print("No version line updated", file=sys.stderr)
         return 2
+
+    if text == new_text:
+        print(f"Version is already {version}, nothing to update", file=sys.stderr)
+        return 4
+
     pyproject.write_text(new_text, encoding="utf8")
     print(f"Updated version to {version}")
 
@@ -44,9 +49,16 @@ def main() -> int:
         return 3
     print("Build successful")
 
-    # Commit
+    # Commit (only if there are changes)
     print("Committing changes...")
     subprocess.run(["git", "add", str(pyproject)], check=True)
+
+    # Check if there are changes to commit
+    result = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
+    if result.returncode == 0:
+        print("No changes to commit (version may already be set)", file=sys.stderr)
+        return 5
+
     subprocess.run(
         ["git", "commit", "-m", f"chore: bump version to {version}"], check=True
     )
