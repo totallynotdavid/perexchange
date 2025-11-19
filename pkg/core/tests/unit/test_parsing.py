@@ -6,6 +6,7 @@ import pytest
 
 from perexchange.scrapers.cambiafx import _parse_json as parse_cambiafx
 from perexchange.scrapers.cambioseguro import _parse_json as parse_cambioseguro
+from perexchange.scrapers.chapacambio import _parse_json as parse_chapacambio
 from perexchange.scrapers.cuantoestaeldolar import (
     _parse_html as parse_cuantoestaeldolar,
 )
@@ -49,6 +50,30 @@ def test_cambioseguro_parsing(fixture, expected_count, should_fail):
             parse_cambioseguro(data)
     else:
         rates = parse_cambioseguro(data)
+        assert len(rates) == expected_count
+        for rate in rates:
+            assert 2.0 <= rate.buy_price <= 5.0
+            assert 2.0 <= rate.sell_price <= 5.0
+            assert rate.spread > 0
+
+
+@pytest.mark.parametrize(
+    "fixture,expected_count,should_fail",
+    [
+        ("happy_path.json", 1, False),
+        ("malformed_data.json", 0, True),
+        ("missing_data.json", 0, True),
+        ("empty.json", 0, True),
+    ],
+)
+def test_chapacambio_parsing(fixture, expected_count, should_fail):
+    data = load_json("chapacambio", fixture)
+
+    if should_fail:
+        with pytest.raises(ValueError, match="No valid exchange rates"):
+            parse_chapacambio(data)
+    else:
+        rates = parse_chapacambio(data)
         assert len(rates) == expected_count
         for rate in rates:
             assert 2.0 <= rate.buy_price <= 5.0
