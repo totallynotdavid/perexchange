@@ -16,6 +16,7 @@ from perexchange.scrapers.srcambio import _parse_json as parse_srcambio
 from perexchange.scrapers.tkambio import _parse_json as parse_tkambio
 from perexchange.scrapers.tucambista import _parse_json as parse_tucambista
 from perexchange.scrapers.westernunion import _parse_json as parse_westernunion
+from perexchange.scrapers.yanki import _parse_json as parse_yanki
 
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
@@ -271,6 +272,30 @@ def test_dollarhouse_parsing(fixture, expected_count, should_fail):
             parse_dollarhouse(html)
     else:
         rates = parse_dollarhouse(html)
+        assert len(rates) == expected_count
+        for rate in rates:
+            assert 2.0 <= rate.buy_price <= 5.0
+            assert 2.0 <= rate.sell_price <= 5.0
+            assert rate.spread > 0
+
+
+@pytest.mark.parametrize(
+    "fixture,expected_count,should_fail",
+    [
+        ("happy_path.json", 1, False),
+        ("malformed_data.json", 0, True),
+        ("missing_data.json", 0, True),
+        ("empty.json", 0, True),
+    ],
+)
+def test_yanki_parsing(fixture, expected_count, should_fail):
+    data = load_json("yanki", fixture)
+
+    if should_fail:
+        with pytest.raises(ValueError, match="No valid exchange rates"):
+            parse_yanki(data)
+    else:
+        rates = parse_yanki(data)
         assert len(rates) == expected_count
         for rate in rates:
             assert 2.0 <= rate.buy_price <= 5.0
