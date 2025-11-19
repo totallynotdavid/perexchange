@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 from perexchange.scrapers.base import ExchangeRateScraper
+from perexchange.scrapers.cambiafx import fetch_cambiafx
 from perexchange.scrapers.cambioseguro import fetch_cambioseguro
 from perexchange.scrapers.cuantoestaeldolar import fetch_cuantoestaeldolar
 from perexchange.scrapers.tkambio import fetch_tkambio
@@ -10,6 +11,7 @@ from perexchange.scrapers.westernunion import fetch_westernunion
 
 _SCRAPERS: dict[str, ExchangeRateScraper] = {
     "cambioseguro": fetch_cambioseguro,
+    "cambiafx": fetch_cambiafx,
     "cuantoestaeldolar": fetch_cuantoestaeldolar,
     "tkambio": fetch_tkambio,
     "tucambista": fetch_tucambista,
@@ -41,6 +43,7 @@ def get_scrapers(houses: Sequence[str] | None = None) -> list[ExchangeRateScrape
 
 __all__ = [
     "ExchangeRateScraper",
+    "fetch_cambiafx",
     "fetch_cambioseguro",
     "fetch_cuantoestaeldolar",
     "fetch_tkambio",
