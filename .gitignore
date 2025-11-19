@@ -3,7 +3,7 @@
 *.egg-info/
 
 # Generated files by scripts
-exchange_rates.json
+rates.json
 
 # Coverage artifacts
 .coverage

@@ -1,125 +1,177 @@
 """
 Quick-start examples. Run: python examples.py (or uv run python examples.py)
-
 """
 
 import asyncio
 import json
 import pathlib
 
-from datetime import datetime, timezone
-from statistics import mean
+from datetime import datetime, timedelta, timezone
 
-from perexchange import (
-    fetch_rates,
-    find_best_buy,
-    find_best_sell,
-)
+import perexchange as px
 
 
-def get_top_n(rates, n=3, operation="buy"):
-    """Get top N rates by buy or sell price."""
-    if operation == "buy":
-        return sorted(rates, key=lambda r: r.buy_price)[:n]
-    return sorted(rates, key=lambda r: r.sell_price, reverse=True)[:n]
+async def basic_usage():
+    """Fetch rates from all available sources."""
+    rates = await px.fetch_rates()
 
+    print(f"Fetched {len(rates)} rates")
+    for rate in rates[:5]:
+        print(f"{rate.name}: buy S/{rate.buy_price:.4f}, sell S/{rate.sell_price:.4f}")
 
-def calculate_average(rates, operation="buy"):
-    """Calculate average buy or sell price."""
-    if operation == "buy":
-        prices = [r.buy_price for r in rates]
-    else:
-        prices = [r.sell_price for r in rates]
-    return mean(prices) if prices else None
-
-
-def calculate_spread(rates):
-    """Calculate average spread."""
-    spreads = [r.spread for r in rates]
-    return mean(spreads) if spreads else None
-
-
-async def best_prices():
-    """Show the best buy and sell prices right now."""
-    rates = await fetch_rates()
-
-    buy = find_best_buy(rates)
-    sell = find_best_sell(rates)
-
-    print("Best buy :", f"{buy.name:<20} S/ {buy.buy_price:.4f}")
-    print("Best sell:", f"{sell.name:<20} S/ {sell.sell_price:.4f}")
-    print()
-
-
-async def top_five():
-    """Rank the five cheapest places to buy and the five best places to sell."""
-    rates = await fetch_rates()
-
-    print("Top 5 BUY")
-    for i, r in enumerate(get_top_n(rates, 5, "buy"), 1):
-        print(f"  {i}. {r.name:<20} S/ {r.buy_price:.4f}")
-
-    print("\nTop 5 SELL")
-    for i, r in enumerate(get_top_n(rates, 5, "sell"), 1):
-        print(f"  {i}. {r.name:<20} S/ {r.sell_price:.4f}")
-
-    print()
-
-
-async def market_stats():
-    """Print simple market statistics."""
-    rates = await fetch_rates()
-
-    print("Market snapshot")
-    print(f"  Exchange houses: {len(rates)}")
-    print(f"  Avg buy : S/ {calculate_average(rates, 'buy'):.4f}")
-    print(f"  Avg sell: S/ {calculate_average(rates, 'sell'):.4f}")
-    print(f"  Avg spread: S/ {calculate_spread(rates):.4f}")
-    print()
-
-
-async def low_spread():
-    """List the five exchanges with the tightest spreads."""
-    rates = await fetch_rates()
-
-    print("Lowest spreads")
-    for r in sorted(rates, key=lambda x: x.spread)[:5]:
-        print(f"  {r.name:<20} spread S/ {r.spread:.4f}")
-    print()
-
-
-async def export_json():
-    """Save current rates to exchange_rates.json."""
-    rates = await fetch_rates()
-
-    payload = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "rates": [
-            {
-                "name": r.name,
-                "buy": r.buy_price,
-                "sell": r.sell_price,
-                "spread": r.spread,
+    if rates:
+        data = []
+        for rate in rates:
+            rate_dict = {
+                "name": rate.name,
+                "buy_price": rate.buy_price,
+                "sell_price": rate.sell_price,
+                "timestamp": rate.timestamp.isoformat(),
             }
-            for r in rates
-        ],
-    }
+            data.append(rate_dict)
+        with pathlib.Path("rates.json").open("w") as f:
+            json.dump(data, f, indent=2)
+        print("Saved rates to rates.json")
 
-    with pathlib.Path("exchange_rates.json").open("w") as f:
-        json.dump(payload, f, indent=2)
 
-    print(f"Saved {len(rates)} records to exchange_rates.json")
-    print()
+async def targeted_fetching():
+    """Fetch from specific houses."""
+    fast_houses = ["tkambio", "tucambista"]
+    rates = await px.fetch_rates(houses=fast_houses, timeout=5.0)
+
+    for rate in rates:
+        print(f"{rate.name}: S/{rate.buy_price:.4f}")
+
+
+async def find_best_rates():
+    """Find the best buy and sell rates across all sources."""
+    rates = await px.fetch_rates()
+
+    if not rates:
+        print("No rates available")
+        return
+
+    best_buy = min(rates, key=lambda r: r.buy_price)
+    best_sell = max(rates, key=lambda r: r.sell_price)
+
+    print(f"Best buy: {best_buy.name} at S/{best_buy.buy_price:.4f}")
+    print(f"Best sell: {best_sell.name} at S/{best_sell.sell_price:.4f}")
+
+    arbitrage = best_sell.sell_price - best_buy.buy_price
+    if arbitrage > 0:
+        print(f"Arbitrage opportunity: S/{arbitrage:.4f} per dollar")
+
+
+async def analyze_spreads():
+    """Find houses with the tightest bid-ask spreads."""
+    rates = await px.fetch_rates()
+
+    if not rates:
+        print("No rates available")
+        return
+
+    sorted_by_spread = sorted(rates, key=lambda r: r.spread)
+
+    print("Tightest spreads:")
+    for rate in sorted_by_spread[:5]:
+        percentage = (rate.spread / rate.buy_price) * 100
+        print(f"{rate.name}: S/{rate.spread:.4f} ({percentage:.2f}%)")
+
+
+async def working_with_tiers():
+    """Filter and compare tiered rates for bulk transactions."""
+    rates = await px.fetch_rates()
+
+    base_rates = [r for r in rates if "_" not in r.name]
+    tiered_rates = [r for r in rates if "_" in r.name]
+
+    print(f"Base rates: {len(base_rates)}")
+    print(f"Tiered rates: {len(tiered_rates)}")
+
+    if tiered_rates:
+        print("\nBest rates by tier:")
+        tiers = {}
+        for rate in tiered_rates:
+            _house, tier = rate.name.split("_", 1)
+            if tier not in tiers:
+                tiers[tier] = []
+            tiers[tier].append(rate)
+
+        for tier, tier_rates in sorted(tiers.items()):
+            best = min(tier_rates, key=lambda r: r.buy_price)
+            print(f"${tier}+: {best.name} at S/{best.buy_price:.4f}")
+
+
+async def simple_caching():
+    """Cache results to avoid redundant API calls. Users must implement their own caching logic."""
+    cache = {"rates": None, "timestamp": None}
+    cache_duration = timedelta(minutes=5)
+
+    async def get_rates_cached():
+        now = datetime.now(timezone.utc)
+
+        if cache["rates"] and cache["timestamp"]:
+            age = now - cache["timestamp"]
+            if age < cache_duration:
+                print(f"Cache hit (age: {age.seconds}s)")
+                return cache["rates"]
+
+        print("Cache miss, fetching")
+        rates = await px.fetch_rates()
+        cache["rates"] = rates
+        cache["timestamp"] = now
+        return rates
+
+    rates1 = await get_rates_cached()
+    print(f"First call: {len(rates1)} rates")
+
+    await asyncio.sleep(2)
+
+    rates2 = await get_rates_cached()
+    print(f"Second call: {len(rates2)} rates")
+
+
+async def market_overview():
+    """Calculate market statistics across all sources."""
+    rates = await px.fetch_rates()
+
+    if not rates:
+        print("No rates available")
+        return
+
+    buy_prices = [r.buy_price for r in rates]
+    sell_prices = [r.sell_price for r in rates]
+    spreads = [r.spread for r in rates]
+
+    sources = len({r.name.split("_")[0] for r in rates})
+
+    print(f"Market snapshot from {sources} sources:")
+    print(f"Buy range: S/{min(buy_prices):.4f} - S/{max(buy_prices):.4f}")
+    print(f"Sell range: S/{min(sell_prices):.4f} - S/{max(sell_prices):.4f}")
+    print(f"Average buy: S/{sum(buy_prices) / len(buy_prices):.4f}")
+    print(f"Average sell: S/{sum(sell_prices) / len(sell_prices):.4f}")
+    print(f"Average spread: S/{sum(spreads) / len(spreads):.4f}")
 
 
 async def main():
-    print("perexchange quick-start examples\n")
+    examples = [
+        ("Basic usage", basic_usage),
+        ("Find best rates", find_best_rates),
+        ("Analyze spreads", analyze_spreads),
+        ("Working with tiers", working_with_tiers),
+        ("Simple caching", simple_caching),
+        ("Market overview", market_overview),
+    ]
 
-    await best_prices()
-    await top_five()
-    await market_stats()
-    await low_spread()
-    await export_json()
+    for name, func in examples:
+        print(f"\n{'=' * 60}")
+        print(f"{name}")
+        print("=" * 60)
+        try:
+            await func()
+        except Exception as e:  # noqa: BLE001 (broad Exception to handle any errors in examples without crashing)
+            print(f"Error: {e}")
+        await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
