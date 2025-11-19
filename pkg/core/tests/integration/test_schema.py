@@ -171,3 +171,30 @@ async def test_westernunion_api_schema():
     assert "DT_Venta" in data, "Missing 'DT_Venta' key"
     assert isinstance(data["DT_Compra"], (int, float))
     assert isinstance(data["DT_Venta"], (int, float))
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_instakash_html_schema():
+    url = "https://instakash.net/"
+    response = await retry_request("GET", url)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    rates_container = soup.find(
+        "div", class_="flex items-center justify-center text-primary gap-10 py-1"
+    )
+    assert rates_container, "Missing rates container"
+
+    rate_items = rates_container.find_all("div", recursive=False)
+    assert len(rate_items) >= 3, "Expected at least 3 rate items"
+
+    compra_div = rate_items[0]
+    venta_div = rate_items[2]
+
+    compra_p = compra_div.find("p", class_="font-semibold")
+    venta_p = venta_div.find("p", class_="font-semibold")
+
+    assert compra_p, "Missing compra rate element"
+    assert venta_p, "Missing venta rate element"
+    assert compra_p.get_text(strip=True), "Compra rate is empty"
+    assert venta_p.get_text(strip=True), "Venta rate is empty"

@@ -5,6 +5,7 @@ import pytest
 from perexchange.scrapers.cambiafx import fetch_cambiafx
 from perexchange.scrapers.cambioseguro import fetch_cambioseguro
 from perexchange.scrapers.cuantoestaeldolar import fetch_cuantoestaeldolar
+from perexchange.scrapers.instakash import fetch_instakash
 from perexchange.scrapers.tkambio import fetch_tkambio
 from perexchange.scrapers.tucambista import fetch_tucambista
 from perexchange.scrapers.westernunion import fetch_westernunion
@@ -28,6 +29,7 @@ async def run_with_retry(scraper, house_name, max_attempts=3):
     [
         (fetch_cambioseguro, "cambioseguro"),
         (fetch_cambiafx, "cambiafx"),
+        (fetch_instakash, "instakash"),
         (fetch_tkambio, "tkambio"),
         (fetch_tucambista, "tucambista"),
         (fetch_westernunion, "westernunion"),

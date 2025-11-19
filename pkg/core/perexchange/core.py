@@ -20,8 +20,8 @@ async def fetch_rates(
 
     Args:
         houses: Specific house names to fetch. If None, fetches all.
-                Available: cambioseguro, cambiafx, cuantoestaeldolar, tkambio,
-                           tucambista, westernunion
+                Available: cambioseguro, cambiafx, cuantoestaeldolar, instakash,
+                           tkambio, tucambista, westernunion
         timeout: Request timeout per house (seconds)
         max_retries: Retry attempts for failed requests
 
