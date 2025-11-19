@@ -9,6 +9,7 @@ from perexchange.scrapers.cambioseguro import _parse_json as parse_cambioseguro
 from perexchange.scrapers.cuantoestaeldolar import (
     _parse_html as parse_cuantoestaeldolar,
 )
+from perexchange.scrapers.dollarhouse import _parse_html as parse_dollarhouse
 from perexchange.scrapers.instakash import _parse_html as parse_instakash
 from perexchange.scrapers.srcambio import _parse_json as parse_srcambio
 from perexchange.scrapers.tkambio import _parse_json as parse_tkambio
@@ -221,6 +222,30 @@ def test_srcambio_parsing(fixture, expected_count, should_fail):
             parse_srcambio(data)
     else:
         rates = parse_srcambio(data)
+        assert len(rates) == expected_count
+        for rate in rates:
+            assert 2.0 <= rate.buy_price <= 5.0
+            assert 2.0 <= rate.sell_price <= 5.0
+            assert rate.spread > 0
+
+
+@pytest.mark.parametrize(
+    "fixture,expected_count,should_fail",
+    [
+        ("happy_path.html", 1, False),
+        ("malformed_data.html", 1, False),
+        ("missing_data.html", 1, False),
+        ("mismatched_data.html", 1, False),
+    ],
+)
+def test_dollarhouse_parsing(fixture, expected_count, should_fail):
+    html = load_html("dollarhouse", fixture)
+
+    if should_fail:
+        with pytest.raises(ValueError, match="No valid exchange rates"):
+            parse_dollarhouse(html)
+    else:
+        rates = parse_dollarhouse(html)
         assert len(rates) == expected_count
         for rate in rates:
             assert 2.0 <= rate.buy_price <= 5.0
