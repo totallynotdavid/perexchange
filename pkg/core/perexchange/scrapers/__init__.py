@@ -11,6 +11,7 @@ from perexchange.scrapers.srcambio import fetch_srcambio
 from perexchange.scrapers.tkambio import fetch_tkambio
 from perexchange.scrapers.tucambista import fetch_tucambista
 from perexchange.scrapers.westernunion import fetch_westernunion
+from perexchange.scrapers.yanki import fetch_yanki
 
 
 _SCRAPERS: dict[str, ExchangeRateScraper] = {
@@ -24,6 +25,7 @@ _SCRAPERS: dict[str, ExchangeRateScraper] = {
     "tkambio": fetch_tkambio,
     "tucambista": fetch_tucambista,
     "westernunion": fetch_westernunion,
+    "yanki": fetch_yanki,
 }
 
 
@@ -61,5 +63,6 @@ __all__ = [
     "fetch_tkambio",
     "fetch_tucambista",
     "fetch_westernunion",
+    "fetch_yanki",
     "get_scrapers",
 ]

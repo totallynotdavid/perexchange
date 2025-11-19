@@ -12,6 +12,7 @@ from perexchange.scrapers.srcambio import fetch_srcambio
 from perexchange.scrapers.tkambio import fetch_tkambio
 from perexchange.scrapers.tucambista import fetch_tucambista
 from perexchange.scrapers.westernunion import fetch_westernunion
+from perexchange.scrapers.yanki import fetch_yanki
 
 
 async def run_with_retry(scraper, house_name, max_attempts=3):
@@ -39,6 +40,7 @@ async def run_with_retry(scraper, house_name, max_attempts=3):
         (fetch_tkambio, "tkambio"),
         (fetch_tucambista, "tucambista"),
         (fetch_westernunion, "westernunion"),
+        (fetch_yanki, "yanki"),
     ],
 )
 async def test_scraper_returns_valid_data(scraper, house_name):
