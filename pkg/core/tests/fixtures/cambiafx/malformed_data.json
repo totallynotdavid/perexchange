@@ -1,0 +1,12 @@
+[
+  {
+    "idRange": 3671,
+    "tcFrom": 500.0,
+    "tcTo": 50000.0,
+    "tcBuy": "invalid",
+    "tcSale": 3.379,
+    "coupon": null,
+    "amountMinOperation": 0,
+    "amountMaxOperation": 0
+  }
+]
