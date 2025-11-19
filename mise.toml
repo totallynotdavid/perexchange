@@ -51,9 +51,9 @@ depends = ["format", "lint", "test"]
 [tasks.release]
 description = "Full release process: update version, build, commit, tag, push"
 usage = 'arg "<version>" help="Version to release (e.g., 1.2.3)"'
-run = "uv run python tools/release.py --version \"${usage_version}\""
+run = 'uv run python tools/release.py --version {{arg(name="version")}}'
 
 [tasks.update-version]
 description = "Update version in pyproject.toml"
 usage = 'arg "<version>" help="Version to set (e.g., 1.2.3)"'
-run = "uv run python tools/update_version.py --version \"${usage_version}\""
+run = 'uv run python tools/update_version.py --version {{arg(name="version")}}'
