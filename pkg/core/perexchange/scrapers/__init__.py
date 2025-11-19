@@ -5,6 +5,7 @@ from perexchange.scrapers.cambiafx import fetch_cambiafx
 from perexchange.scrapers.cambioseguro import fetch_cambioseguro
 from perexchange.scrapers.cuantoestaeldolar import fetch_cuantoestaeldolar
 from perexchange.scrapers.instakash import fetch_instakash
+from perexchange.scrapers.srcambio import fetch_srcambio
 from perexchange.scrapers.tkambio import fetch_tkambio
 from perexchange.scrapers.tucambista import fetch_tucambista
 from perexchange.scrapers.westernunion import fetch_westernunion
@@ -15,6 +16,7 @@ _SCRAPERS: dict[str, ExchangeRateScraper] = {
     "cambiafx": fetch_cambiafx,
     "cuantoestaeldolar": fetch_cuantoestaeldolar,
     "instakash": fetch_instakash,
+    "srcambio": fetch_srcambio,
     "tkambio": fetch_tkambio,
     "tucambista": fetch_tucambista,
     "westernunion": fetch_westernunion,
@@ -49,6 +51,7 @@ __all__ = [
     "fetch_cambioseguro",
     "fetch_cuantoestaeldolar",
     "fetch_instakash",
+    "fetch_srcambio",
     "fetch_tkambio",
     "fetch_tucambista",
     "fetch_westernunion",
