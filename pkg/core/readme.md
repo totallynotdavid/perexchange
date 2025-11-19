@@ -1,4 +1,4 @@
-# perexchange
+# [pkg]: perexchange
 
 Core library for fetching PEN-USD exchange rates from Peruvian exchange houses. To install
 it, run:
