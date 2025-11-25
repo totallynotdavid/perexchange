@@ -44,7 +44,7 @@ dir = "pkg/core"
 description = "Build and verify package contents"
 run = "uv run python tools/build_check.py"
 
-[tasks.pre-push]
+[tasks.check]
 description = "Run before pushing: being quick: format, lint, test"
 depends = ["format", "lint", "test"]
 
