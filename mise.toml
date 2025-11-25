@@ -21,6 +21,10 @@ run = "uv run pytest pkg/core -m integration"
 description = "Format all packages"
 run = "ruff format . && ruff check --fix ."
 
+[tasks.format-docs]
+description = "Format all *.md and *.yml files"
+run = "bun x prettier \"**/*.{md,yml}\" --write --print-width=90 --prose-wrap=always"
+
 [tasks.lint]
 description = "Run type checking"
 run = "uv run mypy"
@@ -46,7 +50,7 @@ run = "uv run python tools/build_check.py"
 
 [tasks.check]
 description = "Run before pushing: being quick: format, lint, test"
-depends = ["format", "lint", "test"]
+depends = ["format", "format-docs", "lint", "test"]
 
 [tasks.release]
 description = "Full release process: update version, build, commit, tag, push"
