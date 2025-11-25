@@ -18,7 +18,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
@@ -45,14 +45,14 @@ jobs:
   integration:
     runs-on: ubuntu-latest
     if:
-      github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
-      github.ref == 'refs/heads/main'
+      github.event_name == 'schedule' || github.event_name ==
+      'workflow_dispatch' || github.ref == 'refs/heads/main'
 
     permissions:
       issues: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
@@ -67,8 +67,8 @@ jobs:
         continue-on-error: true
 
       - if:
-          failure() && steps.test.outcome == 'failure' && (github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch')
+          failure() && steps.test.outcome == 'failure' && (github.event_name ==
+          'schedule' || github.event_name == 'workflow_dispatch')
         uses: actions/github-script@v8
         with:
           script: |
