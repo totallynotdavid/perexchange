@@ -25,7 +25,7 @@ jobs:
           python-version: "3.14.0"
 
       - run: |
-          pip install -r pkg/core/requirements.txt
+          pip install -r packages/core/requirements.txt
           pip install -e .[dev]
 
       - run:
@@ -59,7 +59,7 @@ jobs:
           python-version: "3.14.0"
 
       - run: |
-          pip install -r pkg/core/requirements.txt
+          pip install -r packages/core/requirements.txt
           pip install -e .[dev]
 
       - id: test

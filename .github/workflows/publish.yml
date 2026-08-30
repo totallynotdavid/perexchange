@@ -20,7 +20,7 @@ jobs:
 
       - run: |
           TAG_VERSION="${GITHUB_REF#refs/tags/v}"
-          PKG_VERSION=$(grep '^version = ' pkg/core/pyproject.toml | cut -d'"' -f2)
+          PKG_VERSION=$(grep '^version = ' packages/core/pyproject.toml | cut -d'"' -f2)
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
             echo "Tag $TAG_VERSION != package $PKG_VERSION"
             exit 1
@@ -29,12 +29,12 @@ jobs:
       - run: pip install build
 
       - run: python -m build
-        working-directory: pkg/core
+        working-directory: packages/core
 
       - uses: actions/upload-artifact@v5
         with:
           name: dist
-          path: pkg/core/dist/*
+          path: packages/core/dist/*
 
   pypi:
     needs: build
