@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from collections.abc import Sequence
 
@@ -6,7 +7,10 @@ import httpx
 
 from perexchange.models import ExchangeRate
 from perexchange.scrapers import get_scrapers
-from perexchange.scrapers.base import ExchangeRateScraper
+from perexchange.scrapers.base import ExchangeRateScraper, get_http_client
+
+
+logger = logging.getLogger("perexchange")
 
 
 async def fetch_rates(
@@ -14,57 +18,52 @@ async def fetch_rates(
     *,
     timeout: float = 10.0,
     max_retries: int = 3,
+    client: httpx.AsyncClient | None = None,
 ) -> list[ExchangeRate]:
-    """
-    Fetch current exchange rates from Peruvian exchange houses.
+    """Fetch current PEN/USD rates from the selected registered houses.
 
-    Args:
-        houses: Specific house names to fetch. If None, fetches all.
-                Available: cambiafx, cambioseguro, chapacambio, cuantoestaeldolar, dollarhouse,
-                           instakash, srcambio, tkambio, tucambista, westernunion, yanki
-        timeout: Request timeout per house (seconds)
-        max_retries: Retry attempts for failed requests
-
-    Returns:
-        List of ExchangeRate objects. Empty list if all houses fail.
-
-    Example:
-        >>> rates = await fetch_rates()
-        >>> rates = await fetch_rates(houses=["tkambio", "cambioseguro"])
-        >>> best = min(rates, key=lambda r: r.buy_price)
-        >>> print(f"Best: {best.name} at S/{best.buy_price}")
-
-    Note:
-        Failed houses are silently skipped. Network errors are retried,
-        parsing errors fail immediately.
+    A client passed by the caller stays open. Without one, this function creates a shared
+    client for the call and closes it before returning.
     """
     scrapers = get_scrapers(houses)
 
-    tasks = [_safe_fetch(scraper, timeout, max_retries) for scraper in scrapers]
-    results = await asyncio.gather(*tasks)
+    if client is not None:
+        all_rates = await _fetch_all(scrapers, client, timeout, max_retries)
+    else:
+        async with get_http_client() as owned_client:
+            all_rates = await _fetch_all(scrapers, owned_client, timeout, max_retries)
 
-    all_rates = [rate for result in results for rate in result]
-
-    # Deduplicate by name, keeping the most recent rate for each house.
-    # This handles cases where cuantoestaeldolar (an aggregator) returns rates for houses
-    # we also scrape directly (e.g., chapacambio). We prioritize the most recent timestamp,
-    # which is typically from direct scrapers since they have fresher data.
-    # This is a temporary measure until cuantoestaeldolar is replaced with individual scrapers.
     seen: dict[str, ExchangeRate] = {}
     for rate in all_rates:
-        if rate.name not in seen or rate.timestamp > seen[rate.name].timestamp:
-            seen[rate.name] = rate
+        seen.setdefault(rate.name, rate)
 
     return list(seen.values())
 
 
-async def _safe_fetch(
-    scraper: ExchangeRateScraper,
+async def _fetch_all(
+    scrapers: list[tuple[str, ExchangeRateScraper]],
+    client: httpx.AsyncClient,
     timeout: float,
     max_retries: int,
 ) -> list[ExchangeRate]:
-    """Fetch from one scraper, return empty list on failure."""
+    tasks = [
+        _safe_fetch(house, scraper, client, timeout, max_retries)
+        for house, scraper in scrapers
+    ]
+    results = await asyncio.gather(*tasks)
+    return [rate for result in results for rate in result]
+
+
+async def _safe_fetch(
+    house: str,
+    scraper: ExchangeRateScraper,
+    client: httpx.AsyncClient,
+    timeout: float,
+    max_retries: int,
+) -> list[ExchangeRate]:
+    """Keep an expected failure in one source from cancelling the other fetches."""
     try:
-        return await scraper(timeout=timeout, max_retries=max_retries)
-    except (httpx.HTTPError, ValueError):
+        return await scraper(client, timeout=timeout, max_retries=max_retries)
+    except (httpx.HTTPError, ValueError) as e:
+        logger.warning("house %s failed: %s", house, e)
         return []

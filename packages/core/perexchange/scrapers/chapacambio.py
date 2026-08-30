@@ -1,26 +1,11 @@
 from datetime import datetime, timezone
 from typing import Any
 
-import httpx
-
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import fetch_with_retry
+from perexchange.scrapers.base import json_scraper
 
 
 URL = "https://chapacambio.com/wp-json/chapacambio/tasas"
-
-
-async def fetch_chapacambio(
-    timeout: float = 10.0,
-    max_retries: int = 3,
-    retry_delay: float = 0.5,
-) -> list[ExchangeRate]:
-    async def _fetch(client: httpx.AsyncClient) -> list[ExchangeRate]:
-        response = await client.get(URL)
-        response.raise_for_status()
-        return _parse_json(response.json())
-
-    return await fetch_with_retry(_fetch, timeout, max_retries, retry_delay, URL)
 
 
 def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
@@ -38,7 +23,7 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
 
 
 def _try_create_rate(data: dict[str, Any]) -> ExchangeRate | None:
-    """Try to create a rate from data, return None if invalid."""
+    """Return no rate when this entry lacks two positive numeric prices."""
     try:
         buy_price = float(data["MontoCompra"])
         sell_price = float(data["MontoVenta"])
@@ -59,3 +44,6 @@ def _try_create_rate(data: dict[str, Any]) -> ExchangeRate | None:
     except (KeyError, ValueError, TypeError):
         pass
     return None
+
+
+fetch_chapacambio = json_scraper(URL, _parse_json)
