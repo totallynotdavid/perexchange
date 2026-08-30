@@ -25,10 +25,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - run: git fetch origin main --no-tags
+      - run: git fetch origin master --no-tags
 
-      - name: Require a main branch commit
-        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Require a master branch commit
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/master
 
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:

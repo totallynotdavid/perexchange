@@ -28,17 +28,17 @@ locally so the version change and release commit can be reviewed.
    VERSION=2.0.0
    git add packages/core/pyproject.toml uv.lock
    git commit -m "build: prepare perexchange ${VERSION}"
-   git push origin main
+   git push origin master
    ```
 
-5. Create and push an annotated tag after the commit is on `main`:
+5. Create and push an annotated tag after the commit is on `master`:
 
    ```bash
    git tag -a "v${VERSION}" -m "Release perexchange ${VERSION}"
    git push origin "v${VERSION}"
    ```
 
-The tag must point to a commit reachable from `main`. The workflow rejects tags that do
+The tag must point to a commit reachable from `master`. The workflow rejects tags that do
 not meet that rule or whose version does not match the package metadata.
 
 ## PyPI publishing
