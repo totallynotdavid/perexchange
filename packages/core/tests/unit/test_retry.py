@@ -1,10 +1,12 @@
+from unittest.mock import AsyncMock
+
 import httpx
 import pytest
 
-from perexchange.scrapers.base import _backoff, fetch_with_retry
+from perexchange.errors import SourceParseError
+from perexchange.retry import _backoff, fetch_with_retry
 
 
-@pytest.mark.asyncio
 async def test_retries_on_network_errors():
     call_count = 0
 
@@ -19,7 +21,7 @@ async def test_retries_on_network_errors():
             await fetch_with_retry(
                 client,
                 failing_fetch,
-                max_retries=3,
+                max_attempts=3,
                 retry_delay=0.01,
                 error_context="test-url",
             )
@@ -27,32 +29,24 @@ async def test_retries_on_network_errors():
     assert call_count == 3
 
 
-@pytest.mark.asyncio
 async def test_succeeds_after_transient_failure():
-    call_count = 0
-
-    async def sometimes_failing_fetch(client):  # ruff: ignore[unused-async] (matches scraper protocol)
-        nonlocal call_count
-        call_count += 1
-        if call_count < 2:
-            msg = "Temporary failure"
-            raise httpx.HTTPError(msg)
-        return "success"
+    sometimes_failing_fetch = AsyncMock(
+        side_effect=[httpx.HTTPError("Temporary failure"), "success"]
+    )
 
     async with httpx.AsyncClient() as client:
         result = await fetch_with_retry(
             client,
             sometimes_failing_fetch,
-            max_retries=3,
+            max_attempts=3,
             retry_delay=0.01,
             error_context="test-url",
         )
 
     assert result == "success"
-    assert call_count == 2
+    assert sometimes_failing_fetch.call_count == 2
 
 
-@pytest.mark.asyncio
 async def test_fails_immediately_on_parsing_errors():
     call_count = 0
 
@@ -63,11 +57,11 @@ async def test_fails_immediately_on_parsing_errors():
         raise ValueError(msg)
 
     async with httpx.AsyncClient() as client:
-        with pytest.raises(ValueError, match="Failed to parse exchange rates"):
+        with pytest.raises(SourceParseError, match="Failed to parse exchange rates"):
             await fetch_with_retry(
                 client,
                 parsing_error_fetch,
-                max_retries=3,
+                max_attempts=3,
                 retry_delay=0.01,
                 error_context="test-url",
             )
@@ -81,7 +75,7 @@ def status_error(status_code, headers=None):
     return httpx.HTTPStatusError("boom", request=request, response=response)
 
 
-async def count_attempts(error, max_retries=3, retry_delay=0.01):
+async def count_attempts(error, max_attempts=3, retry_delay=0.01):
     attempts = 0
 
     def always_failing(client):
@@ -94,7 +88,7 @@ async def count_attempts(error, max_retries=3, retry_delay=0.01):
             await fetch_with_retry(
                 client,
                 always_failing,
-                max_retries=max_retries,
+                max_attempts=max_attempts,
                 retry_delay=retry_delay,
                 error_context="test-url",
             )

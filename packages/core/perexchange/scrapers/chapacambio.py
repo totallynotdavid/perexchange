@@ -2,9 +2,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import json_scraper
+from perexchange.scrapers.factories import json_scraper
+from perexchange.time import parse_source_timestamp
 
 
+SOURCE = "chapacambio"
 URL = "https://chapacambio.com/wp-json/chapacambio/tasas"
 
 
@@ -30,13 +32,14 @@ def _try_create_rate(data: dict[str, Any]) -> ExchangeRate | None:
         if buy_price > 0 and sell_price > 0:
             timestamp_str = data.get("updateAt")
             if timestamp_str:
-                timestamp = datetime.fromisoformat(timestamp_str).replace(
-                    tzinfo=timezone.utc
+                timestamp = parse_source_timestamp(
+                    timestamp_str, datetime.now(timezone.utc)
                 )
             else:
                 timestamp = datetime.now(timezone.utc)
             return ExchangeRate(
-                name="chapacambio",
+                source=SOURCE,
+                name=SOURCE,
                 buy_price=buy_price,
                 sell_price=sell_price,
                 timestamp=timestamp,
@@ -46,4 +49,4 @@ def _try_create_rate(data: dict[str, Any]) -> ExchangeRate | None:
     return None
 
 
-fetch_chapacambio = json_scraper(URL, _parse_json)
+fetch_chapacambio = json_scraper(SOURCE, URL, _parse_json)

@@ -6,9 +6,11 @@ import httpx
 from bs4 import BeautifulSoup
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import fetch_with_retry, rate_from_fields
+from perexchange.retry import fetch_with_retry
+from perexchange.scrapers.factories import rate_from_fields
 
 
+SOURCE = "westernunion"
 PAGE_URL = "https://www.westernunionperu.pe/cambiodemoneda"
 API_URL = "https://www.westernunionperu.pe/cambiodemoneda/Operation/PostTipoCambio"
 
@@ -16,19 +18,13 @@ API_URL = "https://www.westernunionperu.pe/cambiodemoneda/Operation/PostTipoCamb
 async def fetch_westernunion(
     client: httpx.AsyncClient,
     timeout: float = 10.0,
-    max_retries: int = 3,
+    max_attempts: int = 3,
     retry_delay: float = 0.5,
 ) -> list[ExchangeRate]:
-    async def _fetch_token(c: httpx.AsyncClient) -> str:
+    async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
         page_response = await c.get(PAGE_URL, timeout=timeout)
         page_response.raise_for_status()
-        return _extract_verification_token(page_response.text)
-
-    token = await fetch_with_retry(
-        client, _fetch_token, max_retries, retry_delay, PAGE_URL
-    )
-
-    async def _fetch_rate(c: httpx.AsyncClient) -> list[ExchangeRate]:
+        token = _extract_verification_token(page_response.text)
         api_response = await c.post(
             API_URL,
             headers={
@@ -48,9 +44,7 @@ async def fetch_westernunion(
         api_response.raise_for_status()
         return _parse_json(api_response.json())
 
-    return await fetch_with_retry(
-        client, _fetch_rate, max_retries, retry_delay, API_URL
-    )
+    return await fetch_with_retry(client, _fetch, max_attempts, retry_delay, PAGE_URL)
 
 
 def _extract_verification_token(html_content: str) -> str:
@@ -73,7 +67,7 @@ def _extract_verification_token(html_content: str) -> str:
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
     timestamp = datetime.now(timezone.utc)
 
-    rate = rate_from_fields(data, "westernunion", "DT_Compra", "DT_Venta", timestamp)
+    rate = rate_from_fields(data, SOURCE, SOURCE, "DT_Compra", "DT_Venta", timestamp)
     if rate is None:
         msg = "No valid exchange rates parsed"
         raise ValueError(msg)

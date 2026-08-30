@@ -5,9 +5,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import html_scraper
+from perexchange.scrapers.factories import html_scraper
 
 
+SOURCE = "cuantoestaeldolar"
 URL = "https://cuantoestaeldolar.pe/cambio-de-dolar-online"
 
 # A plain GET returns exchange-house data in a Next.js flight payload, not in rendered
@@ -116,6 +117,7 @@ def _house_to_rate(house: dict[str, Any]) -> ExchangeRate | None:
         return None
 
     return ExchangeRate(
+        source=SOURCE,
         name=name.strip(),
         buy_price=buy_price,
         sell_price=sell_price,
@@ -135,10 +137,7 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
         msg = "No valid exchange rates parsed"
         raise ValueError(msg)
 
-    # The aggregator must not return a quote covered by a dedicated adapter.
-    from perexchange.scrapers.registry import is_registered_house
-
-    return [rate for rate in rates if not is_registered_house(rate.name)]
+    return rates
 
 
-fetch_cuantoestaeldolar = html_scraper(URL, _parse_html)
+fetch_cuantoestaeldolar = html_scraper(SOURCE, URL, _parse_html)

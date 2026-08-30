@@ -6,9 +6,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import html_scraper, rate_from_fields
+from perexchange.scrapers.factories import html_scraper, rate_from_fields
 
 
+SOURCE = "inticambio"
 URL = "https://inticambio.pe/"
 
 # The page embeds its initial Inertia.js props, including the current rate, as an
@@ -23,7 +24,7 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
         raise ValueError(msg)
 
     timestamp = datetime.now(timezone.utc)
-    rate = rate_from_fields(latest, "inticambio", "tc_Compra", "tc_Venta", timestamp)
+    rate = rate_from_fields(latest, SOURCE, SOURCE, "tc_Compra", "tc_Venta", timestamp)
     if rate is None:
         msg = "No valid exchange rates parsed"
         raise ValueError(msg)
@@ -42,4 +43,4 @@ def _latest_rate(html_content: str) -> Any:
         return None
 
 
-fetch_inticambio = html_scraper(URL, _parse_html)
+fetch_inticambio = html_scraper(SOURCE, URL, _parse_html)

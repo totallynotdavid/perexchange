@@ -2,9 +2,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import json_scraper
+from perexchange.scrapers.factories import json_scraper
+from perexchange.time import parse_source_timestamp
 
 
+SOURCE = "srcambio"
 URL = "https://srcambio.pseperu.pro/api/exchange-rates/last-exchange-rate"
 
 
@@ -20,20 +22,14 @@ def _parse_json(response_data: dict[str, Any]) -> list[ExchangeRate]:
         msg = "No valid exchange rates parsed"
         raise ValueError(msg)
 
-    timestamp_str = response_data.get("dateRegister")
-    if timestamp_str:
-        try:
-            timestamp = datetime.fromisoformat(timestamp_str).replace(
-                tzinfo=timezone.utc
-            )
-        except ValueError:
-            timestamp = datetime.now(timezone.utc)
-    else:
-        timestamp = datetime.now(timezone.utc)
+    timestamp = parse_source_timestamp(
+        response_data.get("dateRegister"), datetime.now(timezone.utc)
+    )
 
     return [
         ExchangeRate(
-            name="srcambio",
+            source=SOURCE,
+            name=SOURCE,
             buy_price=buy_price,
             sell_price=sell_price,
             timestamp=timestamp,
@@ -41,4 +37,4 @@ def _parse_json(response_data: dict[str, Any]) -> list[ExchangeRate]:
     ]
 
 
-fetch_srcambio = json_scraper(URL, _parse_json)
+fetch_srcambio = json_scraper(SOURCE, URL, _parse_json)

@@ -1,6 +1,6 @@
-"""Parser contract tests for captured exchange-house responses.
+"""Parser contract tests for captured source responses.
 
-Each registered house has one fixture and one `EXPECTED_RATES` row. The table
+Each registered source has one fixture and one `EXPECTED_RATES` row. The table
 pins exact output, while shared cases reject malformed payloads and enforce the
 registry-to-fixture mapping.
 """
@@ -14,14 +14,13 @@ from typing import Any
 import pytest
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers import get_scrapers
-from perexchange.scrapers.base import PARSE_ERRORS
-from perexchange.scrapers.registry import is_registered_house
+from perexchange.retry import PARSE_ERRORS
+from perexchange.scrapers.registry import get_sources, source_for_name
 
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
-# Keep each house's expected rates in parser output order. A row can contain multiple
+# Keep each source's expected rates in parser output order. A row can contain multiple
 # quotes when the source publishes tiers or comparisons.
 EXPECTED_RATES: dict[str, list[tuple[str, float, float]]] = {
     "cambiafx": [("cambiafx", 3.365, 3.379)],
@@ -35,8 +34,10 @@ EXPECTED_RATES: dict[str, list[tuple[str, float, float]]] = {
     "cambiosol": [("cambiosol", 3.2, 3.6)],
     "chapacambio": [("chapacambio", 3.353, 3.388)],
     "chaskidolar": [("chaskidolar", 3.339, 3.367)],
-    # This display name has no dedicated adapter, so the aggregator must keep it.
-    "cuantoestaeldolar": [("Test Uncovered House A", 3.31, 3.38)],
+    "cuantoestaeldolar": [
+        ("CambiaFX", 3.35, 3.36),
+        ("Test Uncovered House A", 3.31, 3.38),
+    ],
     "defiperu": [("defiperu", 3.348, 3.367)],
     "dichikash": [("dichikash", 3.347, 3.357)],
     "dinekash": [("dinekash", 3.34, 3.37)],
@@ -95,8 +96,8 @@ def load_fixture(stem: str) -> Any:
     return json.loads(text) if path.suffix == ".json" else text
 
 
-def parser_for(house: str) -> Any:
-    module = import_module(f"perexchange.scrapers.{house}")
+def parser_for(source_name: str) -> Any:
+    module = import_module(f"perexchange.scrapers.{source_name}")
     parsers = [
         parse
         for parse in (
@@ -106,7 +107,7 @@ def parser_for(house: str) -> Any:
         if parse is not None
     ]
     if len(parsers) != 1:
-        msg = f"{house} must expose exactly one parser, found {len(parsers)}"
+        msg = f"{source_name} must expose exactly one parser, found {len(parsers)}"
         raise AssertionError(msg)
     return parsers[0]
 
@@ -118,33 +119,34 @@ def as_triples(rates: list[ExchangeRate]) -> list[tuple[str, float, float]]:
 def junk_cases() -> list[tuple[str, Any]]:
     junk_by_suffix = {".json": JSON_JUNK, ".html": HTML_JUNK}
     return [
-        (house, junk)
-        for house in sorted(EXPECTED_RATES)
-        for junk in junk_by_suffix[fixture_path(house).suffix]
+        (source_name, junk)
+        for source_name in sorted(EXPECTED_RATES)
+        for junk in junk_by_suffix[fixture_path(source_name).suffix]
     ]
 
 
-@pytest.mark.parametrize("house", sorted(EXPECTED_RATES))
-def test_parses_captured_response(house):
-    rates = parser_for(house)(load_fixture(house))
+@pytest.mark.parametrize("source_name", sorted(EXPECTED_RATES))
+def test_parses_captured_response(source_name):
+    rates = parser_for(source_name)(load_fixture(source_name))
 
-    assert as_triples(rates) == EXPECTED_RATES[house]
+    assert as_triples(rates) == EXPECTED_RATES[source_name]
     for rate in rates:
+        assert rate.source == source_name
         assert rate.buy_price < rate.sell_price, "buy and sell look swapped"
         assert rate.timestamp.tzinfo is not None, "timestamp must be aware"
 
 
-@pytest.mark.parametrize(("house", "junk"), junk_cases())
-def test_junk_payload_raises_instead_of_inventing_rates(house, junk):
+@pytest.mark.parametrize(("source_name", "junk"), junk_cases())
+def test_junk_payload_raises_instead_of_inventing_rates(source_name, junk):
     with pytest.raises(PARSE_ERRORS):
-        parser_for(house)(junk)
+        parser_for(source_name)(junk)
 
 
-def test_every_registered_house_has_a_case():
-    registered = {name for name, _ in get_scrapers()}
+def test_every_registered_source_has_a_case():
+    registered = {source.id for source in get_sources()}
 
     assert registered == set(EXPECTED_RATES), (
-        "every registered scraper needs a fixture and an EXPECTED_RATES row"
+        "every registered source needs a fixture and an EXPECTED_RATES row"
     )
 
 
@@ -154,14 +156,15 @@ def test_no_orphan_fixtures():
     assert on_disk == set(EXPECTED_RATES) | BRANCH_FIXTURES
 
 
-def test_cuantoestaeldolar_drops_houses_that_have_a_dedicated_scraper():
+def test_cuantoestaeldolar_parser_keeps_all_valid_houses():
     rates = parser_for("cuantoestaeldolar")(
         load_fixture("cuantoestaeldolar-all-covered")
     )
 
-    assert rates == [], (
-        "houses we scrape directly must not come back via the aggregator"
-    )
+    assert as_triples(rates) == [
+        ("CambiaFX", 3.35, 3.36),
+        ("Tu Cambista", 3.34, 3.36),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -169,7 +172,7 @@ def test_cuantoestaeldolar_drops_houses_that_have_a_dedicated_scraper():
     [("CambiaFX", True), ("kambio online 2", True), ("Uncovered House", False)],
 )
 def test_aggregator_name_matching_uses_registry_aliases(display_name, expected):
-    assert is_registered_house(display_name) is expected
+    assert (source_for_name(display_name) is not None) is expected
 
 
 def test_dollarhouse_prefers_displayed_rates_over_stale_hidden_inputs():

@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import json_scraper
+from perexchange.scrapers.factories import json_scraper
 
 
+SOURCE = "defiperu"
 URL = "https://api.defiperu.com/api/ExchangeRates/currencyType?currencyType=FIAT"
 
 
@@ -34,7 +35,8 @@ def _parse_json(data: list[dict[str, Any]]) -> list[ExchangeRate]:
 
     return [
         ExchangeRate(
-            name="defiperu",
+            source=SOURCE,
+            name=SOURCE,
             buy_price=buy_price,
             sell_price=sell_price,
             timestamp=datetime.now(timezone.utc),
@@ -42,4 +44,4 @@ def _parse_json(data: list[dict[str, Any]]) -> list[ExchangeRate]:
     ]
 
 
-fetch_defiperu = json_scraper(URL, _parse_json)
+fetch_defiperu = json_scraper(SOURCE, URL, _parse_json)

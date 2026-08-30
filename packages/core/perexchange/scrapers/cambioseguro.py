@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import json_scraper, rate_from_fields
+from perexchange.scrapers.factories import json_scraper, rate_from_fields
 
 
+SOURCE = "cambioseguro"
 URL = "https://api.cambioseguro.com/api/v1.1/config/rates"
 
 _RATE_CONFIGS = [
@@ -25,7 +26,7 @@ def _parse_json(response_data: dict[str, Any]) -> list[ExchangeRate]:
     rates = [
         rate
         for name, buy_key, sell_key in _RATE_CONFIGS
-        if (rate := rate_from_fields(data, name, buy_key, sell_key, timestamp))
+        if (rate := rate_from_fields(data, SOURCE, name, buy_key, sell_key, timestamp))
     ]
 
     if not rates:
@@ -35,4 +36,4 @@ def _parse_json(response_data: dict[str, Any]) -> list[ExchangeRate]:
     return rates
 
 
-fetch_cambioseguro = json_scraper(URL, _parse_json)
+fetch_cambioseguro = json_scraper(SOURCE, URL, _parse_json)

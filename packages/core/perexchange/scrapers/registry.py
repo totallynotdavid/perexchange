@@ -2,7 +2,9 @@ import re
 import unicodedata
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 
+from perexchange.errors import ConfigurationError
 from perexchange.scrapers.base import ExchangeRateScraper
 from perexchange.scrapers.cambiafx import fetch_cambiafx
 from perexchange.scrapers.cambiodigital import fetch_cambiodigital
@@ -33,69 +35,90 @@ from perexchange.scrapers.tucambista import fetch_tucambista
 from perexchange.scrapers.westernunion import fetch_westernunion
 
 
-_SCRAPERS: dict[str, ExchangeRateScraper] = {
-    "cambioseguro": fetch_cambioseguro,
-    "cambiafx": fetch_cambiafx,
-    "cambiodigital": fetch_cambiodigital,
-    "cambiomundial": fetch_cambiomundial,
-    "cambiosol": fetch_cambiosol,
-    "chapacambio": fetch_chapacambio,
-    "chaskidolar": fetch_chaskidolar,
-    "cuantoestaeldolar": fetch_cuantoestaeldolar,
-    "defiperu": fetch_defiperu,
-    "dichikash": fetch_dichikash,
-    "dinekash": fetch_dinekash,
-    "dolarex": fetch_dolarex,
-    "dollarhouse": fetch_dollarhouse,
-    "inkamoney": fetch_inkamoney,
-    "inticambio": fetch_inticambio,
-    "kambioonline": fetch_kambioonline,
-    "marketdollar": fetch_marketdollar,
-    "masscambio": fetch_masscambio,
-    "mercadocambiario": fetch_mercadocambiario,
-    "metafx": fetch_metafx,
-    "moneyhouse": fetch_moneyhouse,
-    "moneyplus": fetch_moneyplus,
-    "okane": fetch_okane,
-    "srcambio": fetch_srcambio,
-    "tkambio": fetch_tkambio,
-    "tucambista": fetch_tucambista,
-    "westernunion": fetch_westernunion,
-}
-
-_HOUSE_ALIASES = {"kambioonline2": "kambioonline"}
+__all__ = ["Source", "get_sources", "source_for_name"]
 
 
-def _normalize_house_name(name: str) -> str:
+@dataclass(frozen=True, slots=True)
+class Source:
+    """The stable identity and fetcher for one exchange-house source."""
+
+    id: str
+    fetcher: ExchangeRateScraper
+    aliases: tuple[str, ...] = ()
+    is_aggregator: bool = False
+
+
+_SOURCES = (
+    Source("cambioseguro", fetch_cambioseguro),
+    Source("cambiafx", fetch_cambiafx),
+    Source("cambiodigital", fetch_cambiodigital),
+    Source("cambiomundial", fetch_cambiomundial),
+    Source("cambiosol", fetch_cambiosol),
+    Source("chapacambio", fetch_chapacambio),
+    Source("chaskidolar", fetch_chaskidolar),
+    Source("cuantoestaeldolar", fetch_cuantoestaeldolar, is_aggregator=True),
+    Source("defiperu", fetch_defiperu),
+    Source("dichikash", fetch_dichikash),
+    Source("dinekash", fetch_dinekash),
+    Source("dolarex", fetch_dolarex),
+    Source("dollarhouse", fetch_dollarhouse),
+    Source("inkamoney", fetch_inkamoney),
+    Source("inticambio", fetch_inticambio),
+    Source("kambioonline", fetch_kambioonline, ("kambioonline2",)),
+    Source("marketdollar", fetch_marketdollar),
+    Source("masscambio", fetch_masscambio),
+    Source("mercadocambiario", fetch_mercadocambiario),
+    Source("metafx", fetch_metafx),
+    Source("moneyhouse", fetch_moneyhouse),
+    Source("moneyplus", fetch_moneyplus),
+    Source("okane", fetch_okane),
+    Source("srcambio", fetch_srcambio),
+    Source("tkambio", fetch_tkambio),
+    Source("tucambista", fetch_tucambista),
+    Source("westernunion", fetch_westernunion),
+)
+
+_SOURCES_BY_ID = {source.id: source for source in _SOURCES}
+
+
+def _normalize_name(name: str) -> str:
     ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
     return re.sub(r"[^a-z0-9]", "", ascii_name.lower())
 
 
-def is_registered_house(name: str) -> bool:
-    """Return whether a display name matches a registered house or alias."""
-    normalized = _normalize_house_name(name)
-    return _HOUSE_ALIASES.get(normalized, normalized) in _SCRAPERS
+_NAMES_TO_IDS = {
+    _normalize_name(name): source.id
+    for source in _SOURCES
+    for name in (source.id, *source.aliases)
+}
 
 
-def get_scrapers(
-    houses: Sequence[str] | None = None,
-) -> list[tuple[str, ExchangeRateScraper]]:
-    """Resolve requested house names to scrapers, preserving their order.
+def source_for_name(name: str) -> str | None:
+    """Return the source ID matching a source ID, alias, or display name."""
+    if not isinstance(name, str):
+        return None
+    return _NAMES_TO_IDS.get(_normalize_name(name))
 
-    With no names, return every registered scraper. Matching is case-insensitive.
 
-    Raise `ValueError` when a requested name is not registered.
-    """
-    if houses is None:
-        return list(_SCRAPERS.items())
+def get_sources(source_names: Sequence[str] | None = None) -> list[Source]:
+    """Resolve selected source names while preserving their order."""
+    if source_names is None:
+        return list(_SOURCES)
+    if isinstance(source_names, str):
+        msg = "sources must be a sequence of source names, not a string"
+        raise ConfigurationError(msg)
 
-    scrapers = []
-    for house in houses:
-        house_lower = house.lower()
-        if house_lower not in _SCRAPERS:
-            available = ", ".join(sorted(_SCRAPERS.keys()))
-            msg = f"Unknown house: {house!r}. Available: {available}"
-            raise ValueError(msg)
-        scrapers.append((house_lower, _SCRAPERS[house_lower]))
-
-    return scrapers
+    sources: list[Source] = []
+    seen: set[str] = set()
+    for source_name in source_names:
+        source_id = source_for_name(source_name)
+        if source_id is None:
+            available = ", ".join(source.id for source in _SOURCES)
+            msg = f"Unknown source: {source_name!r}. Available: {available}"
+            raise ConfigurationError(msg)
+        if source_id in seen:
+            msg = f"Source selected more than once: {source_name!r}"
+            raise ConfigurationError(msg)
+        seen.add(source_id)
+        sources.append(_SOURCES_BY_ID[source_id])
+    return sources

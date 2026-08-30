@@ -17,12 +17,16 @@ async def basic_usage():
 
     print(f"Fetched {len(rates)} rates")
     for rate in rates[:5]:
-        print(f"{rate.name}: buy S/{rate.buy_price:.4f}, sell S/{rate.sell_price:.4f}")
+        print(
+            f"{rate.source}/{rate.name}: "
+            f"buy S/{rate.buy_price:.4f}, sell S/{rate.sell_price:.4f}"
+        )
 
     if rates:
         data = []
         for rate in rates:
             rate_dict = {
+                "source": rate.source,
                 "name": rate.name,
                 "buy_price": rate.buy_price,
                 "sell_price": rate.sell_price,
@@ -39,11 +43,11 @@ def _write_rates_json(data: list[dict]) -> None:
 
 
 async def targeted_fetching():
-    fast_houses = ["tkambio", "tucambista"]
-    rates = await px.fetch_rates(houses=fast_houses, timeout=5.0)
+    fast_sources = ["tkambio", "tucambista"]
+    rates = await px.fetch_rates(sources=fast_sources, timeout=5.0)
 
     for rate in rates:
-        print(f"{rate.name}: S/{rate.buy_price:.4f}")
+        print(f"{rate.source}/{rate.name}: S/{rate.buy_price:.4f}")
 
 
 async def find_best_rates():
@@ -56,8 +60,10 @@ async def find_best_rates():
     best_buy = min(rates, key=lambda r: r.buy_price)
     best_sell = max(rates, key=lambda r: r.sell_price)
 
-    print(f"Best buy: {best_buy.name} at S/{best_buy.buy_price:.4f}")
-    print(f"Best sell: {best_sell.name} at S/{best_sell.sell_price:.4f}")
+    print(f"Best buy: {best_buy.source}/{best_buy.name} at S/{best_buy.buy_price:.4f}")
+    print(
+        f"Best sell: {best_sell.source}/{best_sell.name} at S/{best_sell.sell_price:.4f}"
+    )
 
     arbitrage = best_sell.sell_price - best_buy.buy_price
     if arbitrage > 0:
@@ -76,7 +82,7 @@ async def analyze_spreads():
     print("Tightest spreads:")
     for rate in sorted_by_spread[:5]:
         percentage = (rate.spread / rate.buy_price) * 100
-        print(f"{rate.name}: S/{rate.spread:.4f} ({percentage:.2f}%)")
+        print(f"{rate.source}/{rate.name}: S/{rate.spread:.4f} ({percentage:.2f}%)")
 
 
 async def working_with_tiers():
@@ -99,7 +105,7 @@ async def working_with_tiers():
 
         for tier, tier_rates in sorted(tiers.items()):
             best = min(tier_rates, key=lambda r: r.buy_price)
-            print(f"${tier}+: {best.name} at S/{best.buy_price:.4f}")
+            print(f"${tier}+: {best.source}/{best.name} at S/{best.buy_price:.4f}")
 
 
 async def simple_caching():
@@ -141,7 +147,7 @@ async def market_overview():
     sell_prices = [r.sell_price for r in rates]
     spreads = [r.spread for r in rates]
 
-    sources = len({r.name.split("_")[0] for r in rates})
+    sources = len({r.source for r in rates})
 
     print(f"Market snapshot from {sources} sources:")
     print(f"Buy range: S/{min(buy_prices):.4f} - S/{max(buy_prices):.4f}")
@@ -154,6 +160,7 @@ async def market_overview():
 async def main():
     examples = [
         ("Basic usage", basic_usage),
+        ("Targeted fetching", targeted_fetching),
         ("Find best rates", find_best_rates),
         ("Analyze spreads", analyze_spreads),
         ("Working with tiers", working_with_tiers),

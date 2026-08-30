@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import json_scraper
+from perexchange.scrapers.factories import json_scraper
 
 
+SOURCE = "metafx"
 URL = "https://metafxperu.com/obtener_tasas.php"
 
 
@@ -19,7 +20,8 @@ def _parse_json(response_data: dict[str, Any]) -> list[ExchangeRate]:
 
     return [
         ExchangeRate(
-            name="metafx",
+            source=SOURCE,
+            name=SOURCE,
             buy_price=buy_price,
             sell_price=sell_price,
             timestamp=datetime.now(timezone.utc),
@@ -38,4 +40,4 @@ def _rate_for(entries: list[dict[str, Any]], tipo: str) -> float | None:
     return None
 
 
-fetch_metafx = json_scraper(URL, _parse_json)
+fetch_metafx = json_scraper(SOURCE, URL, _parse_json)

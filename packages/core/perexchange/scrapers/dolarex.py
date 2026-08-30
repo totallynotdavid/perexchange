@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import dual_endpoint_json_scraper
+from perexchange.scrapers.factories import dual_endpoint_json_scraper
 
 
+SOURCE = "dolarex"
 BUY_URL = "https://api.dolarex.pe/cotizacion/buscar/USDPEN"
 SELL_URL = "https://api.dolarex.pe/cotizacion/buscar/PENUSD"
 
@@ -26,7 +27,8 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
 
     return [
         ExchangeRate(
-            name="dolarex",
+            source=SOURCE,
+            name=SOURCE,
             buy_price=buy_price,
             sell_price=sell_price,
             timestamp=datetime.now(timezone.utc),
@@ -34,4 +36,4 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
     ]
 
 
-fetch_dolarex = dual_endpoint_json_scraper(BUY_URL, SELL_URL, _parse_json)
+fetch_dolarex = dual_endpoint_json_scraper(SOURCE, BUY_URL, SELL_URL, _parse_json)

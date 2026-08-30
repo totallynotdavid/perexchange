@@ -5,9 +5,10 @@ from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import html_scraper
+from perexchange.scrapers.factories import html_scraper
 
 
+SOURCE = "cambiosol"
 URL = "https://cambiosol.pe/"
 
 _RATE = re.compile(r"S/\s*([\d.]+)")
@@ -38,6 +39,7 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
 
     return [
         ExchangeRate(
+            source=SOURCE,
             name="cambiosol",
             buy_price=buy_price,
             sell_price=sell_price,
@@ -46,4 +48,4 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
     ]
 
 
-fetch_cambiosol = html_scraper(URL, _parse_html)
+fetch_cambiosol = html_scraper(SOURCE, URL, _parse_html)

@@ -4,9 +4,10 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import html_scraper
+from perexchange.scrapers.factories import html_scraper
 
 
+SOURCE = "dollarhouse"
 URL = "https://app.dollarhouse.pe/calculadorav2"
 
 
@@ -41,7 +42,8 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
     timestamp = datetime.now(timezone.utc)
     return [
         ExchangeRate(
-            name="dollarhouse",
+            source=SOURCE,
+            name=SOURCE,
             buy_price=buy_price,
             sell_price=sell_price,
             timestamp=timestamp,
@@ -67,4 +69,4 @@ def _parse_float(value: str | None) -> float | None:
         return None
 
 
-fetch_dollarhouse = html_scraper(URL, _parse_html)
+fetch_dollarhouse = html_scraper(SOURCE, URL, _parse_html)

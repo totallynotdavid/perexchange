@@ -4,9 +4,10 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import html_scraper
+from perexchange.scrapers.factories import html_scraper
 
 
+SOURCE = "moneyhouse"
 URL = "https://moneyhouse.pe/"
 
 
@@ -23,7 +24,8 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
     timestamp = datetime.now(timezone.utc)
     return [
         ExchangeRate(
-            name="moneyhouse",
+            source=SOURCE,
+            name=SOURCE,
             buy_price=buy_price,
             sell_price=sell_price,
             timestamp=timestamp,
@@ -44,4 +46,4 @@ def _extract_rate(soup: BeautifulSoup, field_class: str) -> float | None:
         return None
 
 
-fetch_moneyhouse = html_scraper(URL, _parse_html)
+fetch_moneyhouse = html_scraper(SOURCE, URL, _parse_html)

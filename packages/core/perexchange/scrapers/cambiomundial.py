@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import json_scraper, rate_from_fields
+from perexchange.scrapers.factories import json_scraper, rate_from_fields
 
 
+SOURCE = "cambiomundial"
 URL = "https://www.cambiomundial.com/backend/tasaCambio/daily"
 
 
@@ -17,7 +18,7 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
         (item for item in response_data if item.get("tipoTasa") == "REGULAR"), None
     )
     rate = (
-        rate_from_fields(entry, "cambiomundial", "buy", "sell", timestamp)
+        rate_from_fields(entry, SOURCE, SOURCE, "buy", "sell", timestamp)
         if entry
         else None
     )
@@ -28,4 +29,4 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
     return [rate]
 
 
-fetch_cambiomundial = json_scraper(URL, _parse_json)
+fetch_cambiomundial = json_scraper(SOURCE, URL, _parse_json)

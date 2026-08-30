@@ -4,9 +4,10 @@ from typing import Any
 import httpx
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import fetch_with_retry
+from perexchange.retry import fetch_with_retry
 
 
+SOURCE = "okane"
 BASE_URL = "https://okanecambiodigital.com/backend_apigateway/v1/tipoDeCambio"
 
 # The API expects the current date in Peru. At UTC midnight, it may still have no data
@@ -27,7 +28,8 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
             continue
         return [
             ExchangeRate(
-                name="okane",
+                source=SOURCE,
+                name=SOURCE,
                 buy_price=buy_price,
                 sell_price=sell_price,
                 timestamp=datetime.now(timezone.utc),
@@ -41,7 +43,7 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
 async def fetch_okane(
     client: httpx.AsyncClient,
     timeout: float = 10.0,
-    max_retries: int = 3,
+    max_attempts: int = 3,
     retry_delay: float = 0.5,
 ) -> list[ExchangeRate]:
     async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
@@ -52,4 +54,4 @@ async def fetch_okane(
         response.raise_for_status()
         return _parse_json(response.json())
 
-    return await fetch_with_retry(client, _fetch, max_retries, retry_delay, BASE_URL)
+    return await fetch_with_retry(client, _fetch, max_attempts, retry_delay, BASE_URL)

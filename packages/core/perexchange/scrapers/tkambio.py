@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.base import json_scraper, rate_from_fields
+from perexchange.scrapers.factories import json_scraper, rate_from_fields
 
 
+SOURCE = "tkambio"
 URL = "https://tkambio.com/wp-admin/admin-ajax.php"
 
 
@@ -13,7 +14,7 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
     rates = []
 
     base_rate = rate_from_fields(
-        data, "tkambio", "buying_rate", "selling_rate", timestamp
+        data, SOURCE, SOURCE, "buying_rate", "selling_rate", timestamp
     )
     if base_rate:
         rates.append(base_rate)
@@ -23,7 +24,12 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
         if min_amount is None:
             continue
         rate = rate_from_fields(
-            discount, f"tkambio_{min_amount}", "buying_rate", "selling_rate", timestamp
+            discount,
+            SOURCE,
+            f"tkambio_{min_amount}",
+            "buying_rate",
+            "selling_rate",
+            timestamp,
         )
         if rate:
             rates.append(rate)
@@ -36,6 +42,7 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
 
 
 fetch_tkambio = json_scraper(
+    SOURCE,
     URL,
     _parse_json,
     method="POST",
