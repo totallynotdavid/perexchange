@@ -5,13 +5,13 @@ from perexchange.models import ExchangeRate
 from perexchange.scrapers.base import json_scraper, rate_from_fields
 
 
-URL = "https://apim.tucambista.pe/api/rates"
+URL = "https://kambio.com.pe/api/rates/current"
 
 
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
     timestamp = datetime.now(timezone.utc)
 
-    rate = rate_from_fields(data, "tucambista", "bidRate", "offerRate", timestamp)
+    rate = rate_from_fields(data, "kambioonline", "buy", "sell", timestamp)
     if rate is None:
         msg = "No valid exchange rates parsed"
         raise ValueError(msg)
@@ -19,10 +19,4 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
     return [rate]
 
 
-fetch_tucambista = json_scraper(
-    URL,
-    _parse_json,
-    headers={
-        "ocp-apim-subscription-key": "e4b6947d96a940e7bb8b39f462bcc56d;product=tucambista-production",
-    },
-)
+fetch_kambioonline = json_scraper(URL, _parse_json)
