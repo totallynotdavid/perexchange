@@ -28,11 +28,11 @@ run = "ruff format --check . && ruff check --no-fix ."
 
 [tasks.format-docs]
 description = "Format all *.md and *.yml files"
-run = "bun x prettier \"**/*.{md,yml}\" --write --print-width=90 --prose-wrap=always"
+run = "bun x oxfmt@0.65.0 \"**/*.{md,yml}\" --write"
 
 [tasks.format-docs-check]
 description = "Check Markdown and YAML formatting"
-run = "bun x prettier \"**/*.{md,yml}\" --check --print-width=90 --prose-wrap=always"
+run = "bun x oxfmt@0.65.0 \"**/*.{md,yml}\" --check"
 
 [tasks.lint]
 description = "Run type checking"
@@ -50,18 +50,8 @@ dir = "packages/core"
 
 [tasks.build-check]
 description = "Build and verify package contents"
-run = "uv run python tools/build_check.py"
+run = "uv run --extra dev python tools/build_check.py"
 
 [tasks.check]
-description = "Run formatting, lint, and test checks"
-depends = ["format-check", "format-docs-check", "lint", "test"]
-
-[tasks.release]
-description = "Full release process: update version, build, commit, tag, push"
-usage = 'arg "<version>" help="Version to release (e.g., 1.2.3)"'
-run = 'uv run python tools/release.py --version {{arg(name="version")}}'
-
-[tasks.update-version]
-description = "Update version in pyproject.toml"
-usage = 'arg "<version>" help="Version to set (e.g., 1.2.3)"'
-run = 'uv run python tools/update_version.py --version {{arg(name="version")}}'
+description = "Run formatting, lint, tests, and package checks"
+depends = ["format-check", "format-docs-check", "lint", "test", "build-check"]

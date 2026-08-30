@@ -3,55 +3,58 @@ name: test
 on:
   push:
     branches: ["main"]
-    paths:
-      - "**/*.py"
-      - "**/pyproject.toml"
-      - "uv.lock"
-      - ".github/workflows/**"
   pull_request:
-    paths:
-      - "**/*.py"
-      - "**/pyproject.toml"
-      - "uv.lock"
-      - ".github/workflows/**"
   schedule:
-    - cron: "0 3 * * 1" # Every Monday at 03:00 UTC
+    - cron: "0 3 * * 1"
   workflow_dispatch:
 
 jobs:
   unit:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10.0", "3.14.0"]
 
     permissions:
       contents: read
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
-      - run: uv python install 3.14.0
+      - run: uv python install ${{ matrix.python }}
 
       - run: |
           uv lock --check
           uv sync --locked --all-packages --extra dev
 
-      - run:
+      - run: >-
           uv run pytest -v -m "not integration" --cov=perexchange --cov-report=xml
           --junitxml=junit.xml
 
-      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      - run: uv run ruff format --check .
+      - run: uv run ruff check --no-fix .
+      - run: uv run mypy
+
+      - if: matrix.python == '3.14.0'
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           files: ./coverage.xml
           report_type: coverage
 
-      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      - if: matrix.python == '3.14.0'
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           files: ./junit.xml
           report_type: test_results
+
+      - if: matrix.python == '3.14.0'
+        run: uv run --extra dev python tools/build_check.py
 
   integration:
     runs-on: ubuntu-latest
@@ -60,10 +63,11 @@ jobs:
       github.ref == 'refs/heads/main'
 
     permissions:
+      contents: read
       issues: write
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
@@ -83,7 +87,7 @@ jobs:
       - if:
           failure() && steps.test.outcome == 'failure' && (github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch')
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b # v9
         with:
           script: |
             const issues = await github.rest.issues.listForRepo({
@@ -111,3 +115,16 @@ jobs:
                 body: body
               });
             }
+
+  docs:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - run: bun x oxfmt@0.65.0 "**/*.{md,yml}" --check

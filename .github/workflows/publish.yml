@@ -4,39 +4,98 @@ on:
   push:
     tags: ["v*.*.*"]
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  verify:
+    name: Verify release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10.0", "3.14.0"]
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - run: git fetch origin main --no-tags
+
+      - name: Require a main branch commit
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - run: uv python install ${{ matrix.python }}
+
+      - run: |
+          uv lock --check
+          uv sync --locked --all-packages --extra dev
+
+      - run: uv run pytest -m "not integration"
+      - run: uv run ruff format --check .
+      - run: uv run ruff check --no-fix .
+      - run: uv run mypy
+
   build:
+    name: Build release artifacts
+    needs: verify
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.14.0"
 
-      - run: |
-          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
-          PKG_VERSION=$(grep '^version = ' packages/core/pyproject.toml | cut -d'"' -f2)
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "Tag $TAG_VERSION != package $PKG_VERSION"
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Check tag and package versions
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          TAG_VERSION="${TAG_NAME#v}"
+          PACKAGE_VERSION=$(python -c 'import tomllib; print(tomllib.load(open("packages/core/pyproject.toml", "rb"))["project"]["version"])')
+          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "Tag $TAG_VERSION does not match package $PACKAGE_VERSION"
             exit 1
           fi
 
-      - run: pip install build
+      - run: uv run --project . --extra dev python tools/build_check.py
 
-      - run: python -m build
+      - run: uv build --sdist --wheel --out-dir dist
         working-directory: packages/core
 
-      - uses: actions/upload-artifact@v7
+      - run: uv run --project . --extra dev python -m twine check packages/core/dist/*
+
+      - name: Install the wheel
+        run: |
+          python -m venv /tmp/perexchange-release
+          /tmp/perexchange-release/bin/pip install packages/core/dist/*.whl
+          /tmp/perexchange-release/bin/python -c 'import perexchange; assert perexchange.__version__ == "${{ github.ref_name }}"[1:]'
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dist
-          path: packages/core/dist/*
+          path: |
+            packages/core/dist/*.whl
+            packages/core/dist/*.tar.gz
 
   pypi:
+    name: Publish to PyPI
     needs: build
     runs-on: ubuntu-latest
 
@@ -48,7 +107,7 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
           path: dist
@@ -59,18 +118,19 @@ jobs:
           print-hash: true
 
   github:
-    needs: build
+    name: Create GitHub release
+    needs: pypi
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
           path: dist
+
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: dist/*
