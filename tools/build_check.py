@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PKG_DIR = ROOT / "pkg" / "core"
+PKG_DIR = ROOT / "packages" / "core"
 
 
 def rmtree_if_exists(path: Path) -> None:

@@ -2,7 +2,7 @@
 name = "perexchange-cli"
 version = "1.0.0"
 description = "CLI tool for perexchange (dev/local use only)"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 authors = [
     { name = "David Duran", email = "dadch1404@gmail.com" }

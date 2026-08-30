@@ -2,8 +2,9 @@
 python.uv_venv_auto = true
 
 [tools]
-uv = "0.9.10"
-ruff = "0.14.5"
+uv = "0.12.7"
+ruff = "0.16.5"
+bun = "1.4.0"
 
 [tasks.sync]
 description = "Sync dependencies for all packages and dev"
@@ -11,19 +12,27 @@ run = "uv sync --all-packages --extra dev"
 
 [tasks.test]
 description = "Run tests for core package"
-run = "uv run pytest pkg/core"
+run = "uv run pytest packages/core"
 
 [tasks.test-integration]
 description = "Run integration tests for core package"
-run = "uv run pytest pkg/core -m integration"
+run = "uv run pytest packages/core -m integration"
 
 [tasks.format]
 description = "Format all packages"
 run = "ruff format . && ruff check --fix ."
 
+[tasks.format-check]
+description = "Check Python formatting and lint"
+run = "ruff format --check . && ruff check --no-fix ."
+
 [tasks.format-docs]
 description = "Format all *.md and *.yml files"
 run = "bun x prettier \"**/*.{md,yml}\" --write --print-width=90 --prose-wrap=always"
+
+[tasks.format-docs-check]
+description = "Check Markdown and YAML formatting"
+run = "bun x prettier \"**/*.{md,yml}\" --check --print-width=90 --prose-wrap=always"
 
 [tasks.lint]
 description = "Run type checking"
@@ -37,20 +46,20 @@ run = ["uv sync --all-packages --extra dev -U"]
 [tasks.export-deps]
 description = "Export production dependencies for core"
 run = "uv export --format requirements-txt --no-hashes --no-header --no-dev --no-annotate --output-file requirements.txt"
-dir = "pkg/core"
+dir = "packages/core"
 
 [tasks.build]
 description = "Build core package"
 run = "uv build"
-dir = "pkg/core"
+dir = "packages/core"
 
 [tasks.build-check]
 description = "Build and verify package contents"
 run = "uv run python tools/build_check.py"
 
 [tasks.check]
-description = "Run before pushing: being quick: format, lint, test"
-depends = ["format", "format-docs", "lint", "test"]
+description = "Run formatting, lint, and test checks"
+depends = ["format-check", "format-docs-check", "lint", "test"]
 
 [tasks.release]
 description = "Full release process: update version, build, commit, tag, push"
