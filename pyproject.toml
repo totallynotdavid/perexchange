@@ -1,11 +1,11 @@
 [tool.uv.workspace]
-members = ["pkg/*"]
+members = ["packages/*"]
 
 [project]
 name = "perexchange-monorepo"
 version = "1.0.0"
 description = "Monorepo for perexchange project"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 maintainers = [
     { name = "David Duran", email = "dadch1404@gmail.com" },
@@ -85,7 +85,7 @@ extra-standard-library = ["typing"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.pytest.ini_options]
-testpaths = ["pkg/core/tests"]
+testpaths = ["packages/core/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -100,8 +100,8 @@ addopts = [
 ]
 
 [tool.coverage.run]
-source = ["pkg/core/perexchange"]
-omit = ["pkg/core/tests/*", "**/__pycache__/*"]
+source = ["packages/core/perexchange"]
+omit = ["packages/core/tests/*", "**/__pycache__/*"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -113,7 +113,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-files = ["pkg/core/perexchange"]
+files = ["packages/core/perexchange", "packages/cli/perexchange_cli"]
 strict = true
 enable_error_code = [
     "ignore-without-code",
