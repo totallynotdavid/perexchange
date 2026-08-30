@@ -8,14 +8,14 @@ on:
       - "**/pyproject.toml"
       - "**/requirements.txt"
       - "uv.lock"
-      - ".github/workflows/test.yml"
+      - ".github/workflows/**"
   pull_request:
     paths:
       - "**/*.py"
       - "**/pyproject.toml"
       - "**/requirements.txt"
       - "uv.lock"
-      - ".github/workflows/test.yml"
+      - ".github/workflows/**"
   schedule:
     - cron: "0 3 * * 1" # Every Monday at 03:00 UTC
   workflow_dispatch:
@@ -28,9 +28,9 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
@@ -43,12 +43,12 @@ jobs:
 
       - run: uv run pytest -v -m "not integration" --cov=perexchange --cov-report=xml --junitxml=junit.xml
 
-      - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 #v5.5.1
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           files: ./coverage.xml
           report_type: coverage
 
-      - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 #v5.5.1
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           files: ./junit.xml
           report_type: test_results
@@ -63,9 +63,9 @@ jobs:
       issues: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
@@ -83,7 +83,7 @@ jobs:
       - if:
           failure() && steps.test.outcome == 'failure' && (github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch')
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const issues = await github.rest.issues.listForRepo({
