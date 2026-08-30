@@ -1,0 +1,10 @@
+{
+  "buy": {
+    "ok": true,
+    "cotizacion": [{"_id": "1", "codigo": "USDPEN", "cotizacion": "3.30", "__v": 0}]
+  },
+  "sell": {
+    "ok": true,
+    "cotizacion": [{"_id": "2", "codigo": "PENUSD", "cotizacion": "3.50", "__v": 0}]
+  }
+}

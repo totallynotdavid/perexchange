@@ -1,0 +1,10 @@
+{
+  "adminOpenData": {
+    "status": 1,
+    "state": "closed",
+    "openAtDate": "2026-08-29T00:00:00.000Z",
+    "dayHourStart": "2026-08-29T09:00:00.949Z",
+    "typeExchangeStart": 3.362,
+    "typeExchangeDetraction": 3.348
+  }
+}

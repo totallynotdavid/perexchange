@@ -1,50 +1,39 @@
-import asyncio
+"""Live checks for the registered scrapers."""
 
+import httpx
 import pytest
 
-from perexchange.scrapers.cambiafx import fetch_cambiafx
-from perexchange.scrapers.cambioseguro import fetch_cambioseguro
-from perexchange.scrapers.chapacambio import fetch_chapacambio
-from perexchange.scrapers.cuantoestaeldolar import fetch_cuantoestaeldolar
-from perexchange.scrapers.dollarhouse import fetch_dollarhouse
-from perexchange.scrapers.instakash import fetch_instakash
-from perexchange.scrapers.srcambio import fetch_srcambio
-from perexchange.scrapers.tkambio import fetch_tkambio
-from perexchange.scrapers.tucambista import fetch_tucambista
-from perexchange.scrapers.westernunion import fetch_westernunion
-from perexchange.scrapers.yanki import fetch_yanki
+from perexchange.scrapers import get_scrapers
 
 
-async def run_with_retry(scraper, house_name, max_attempts=3):
-    for attempt in range(max_attempts):
+# The aggregator may be empty after it removes houses with dedicated scrapers, so it has
+# a separate assertion.
+AGGREGATOR = "cuantoestaeldolar"
+
+DIRECT_HOUSES = [
+    pytest.param(name, scraper, id=name)
+    for name, scraper in get_scrapers()
+    if name != AGGREGATOR
+]
+
+
+async def fetch_live(scraper, house_name):
+    """Fetch one house using the scraper's retry policy.
+
+    A second retry loop would multiply requests and could make a house block the test run.
+    """
+    async with httpx.AsyncClient() as client:
         try:
-            return await scraper(timeout=10.0, max_retries=2)
-        except Exception as e:  # noqa: BLE001 (intentional for retry on any error from flaky APIs)
-            if attempt == max_attempts - 1:
-                pytest.fail(f"{house_name} failed after {max_attempts} attempts: {e}")
-            await asyncio.sleep(1)
-    return None
+            return await scraper(client, timeout=10.0, max_retries=3, retry_delay=1.0)
+        except Exception as e:  # ruff: ignore[blind-except]
+            # Include the house name because parametrized test output otherwise hides it.
+            pytest.fail(f"{house_name} failed: {e}")
 
 
 @pytest.mark.integration
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "scraper,house_name",
-    [
-        (fetch_cambioseguro, "cambioseguro"),
-        (fetch_cambiafx, "cambiafx"),
-        (fetch_chapacambio, "chapacambio"),
-        (fetch_dollarhouse, "dollarhouse"),
-        (fetch_instakash, "instakash"),
-        (fetch_srcambio, "srcambio"),
-        (fetch_tkambio, "tkambio"),
-        (fetch_tucambista, "tucambista"),
-        (fetch_westernunion, "westernunion"),
-        (fetch_yanki, "yanki"),
-    ],
-)
-async def test_scraper_returns_valid_data(scraper, house_name):
-    rates = await run_with_retry(scraper, house_name)
+@pytest.mark.parametrize(("house_name", "scraper"), DIRECT_HOUSES)
+async def test_scraper_returns_valid_data(house_name, scraper):
+    rates = await fetch_live(scraper, house_name)
 
     assert len(rates) > 0, f"{house_name} returned no rates"
     assert any(house_name in r.name for r in rates)
@@ -57,11 +46,8 @@ async def test_scraper_returns_valid_data(scraper, house_name):
 
 
 @pytest.mark.integration
-@pytest.mark.asyncio
-async def test_cuantoestaeldolar_returns_multiple_houses():
-    rates = await run_with_retry(fetch_cuantoestaeldolar, "cuantoestaeldolar")
-
-    assert len(rates) >= 5, "cuantoestaeldolar should return multiple houses"
+async def test_aggregator_excludes_houses_with_dedicated_scrapers():
+    rates = await fetch_live(dict(get_scrapers())[AGGREGATOR], AGGREGATOR)
 
     for rate in rates:
         assert rate.name
