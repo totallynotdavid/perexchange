@@ -6,33 +6,31 @@
 
 Fetch live PEN/USD exchange rates from Peruvian exchange houses.
 
+Requires Python 3.10 or later.
+
 ## Get started
 
-You need Python 3.10 or later.
-
-Install the library:
-
 ```bash
-pip install perexchange
+python -m pip install perexchange
 ```
 
-`fetch_rates()` is asynchronous. It queries the registered houses at the same time and
-returns the rates that succeeded.
+`fetch_rates()` is asynchronous. It queries the registered sources at the same time and
+returns the rates that succeeded. Each rate has a stable `source` ID and a display `name`.
 
 ```python
 import asyncio
 
-import perexchange as px
+import perexchange
 
 
 async def main() -> None:
-    rates = await px.fetch_rates()
+    rates = await perexchange.fetch_rates()
     if not rates:
         print("No rates available")
         return
 
     best = min(rates, key=lambda rate: rate.buy_price)
-    print(f"{best.name}: S/{best.buy_price:.4f}")
+    print(f"{best.source}: S/{best.buy_price:.4f}")
 
 
 asyncio.run(main())
@@ -40,12 +38,13 @@ asyncio.run(main())
 
 ## Read more
 
-- [API reference](packages/core/readme.md) for request options, retries, ordering, and
+- [API reference](packages/core/README.md) for request options, retries, ordering, and
   errors.
-- [Examples](examples.py) for selecting houses, comparing tiers, measuring spreads,
+- [Examples](examples.py) for selecting sources, comparing tiers, measuring spreads,
   caching, and summarizing the market. Run them with `uv run python examples.py`.
-- [Architecture notes](docs/architecture.md) for the fetch path and scraper boundary.
+- [Architecture notes](docs/architecture.md) for the fetch path and adapter boundary.
 - [CLI](packages/cli/readme.md) for the local development command.
+- [Release process](docs/releasing.md) for publishing the core package to PyPI.
 
 ## Develop
 
@@ -62,11 +61,12 @@ mise run check
 ```
 
 The check task runs Python formatting and linting, Markdown and YAML formatting, type
-checking, and unit tests. Live integration tests call exchange-house endpoints and are
-separate because they can be slow or fail when a site rate-limits the requests:
+checking, unit tests, and package artifact checks. Live integration tests call
+exchange-house endpoints and are separate because they can be slow or fail when a site
+rate-limits the requests:
 
 ```bash
 mise run test-integration
 ```
 
-See [contributing](.github/CONTRIBUTING.md) before changing a scraper.
+See [contributing](.github/CONTRIBUTING.md) before changing an adapter.

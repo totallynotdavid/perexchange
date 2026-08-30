@@ -1,45 +1,66 @@
-# How perexchange works
+# Architecture
 
-`perexchange` is a set of adapters with one public fetch function. Each adapter turns one
-exchange-house response into zero or more `ExchangeRate` objects.
+`perexchange` has one public fetch layer and one adapter per external source.
 
-## Fetch path
+## Fetch flow
 
-`fetch_rates()` follows this path:
+`fetch_rates_report()` does the following:
 
-1. The [registry](../packages/core/perexchange/scrapers/registry.py) resolves the
-   requested house names to scrapers.
-2. One `httpx.AsyncClient` is shared by the selected scrapers.
-3. The scrapers run concurrently and parse their own response formats.
-4. Expected transport and parsing failures are isolated to the scraper that raised them.
-5. Results are flattened in selected-house order. Duplicate rate names keep the first
-   result.
+1. Resolve the requested source names through the registry.
+2. Create one `httpx.AsyncClient`, unless the caller supplies one.
+3. Run the selected source adapters concurrently.
+4. Apply the request timeout, retry policy, and per-source total timeout.
+5. Keep expected failures in the report and let programming errors propagate.
+6. Remove duplicate `(source, name)` pairs and aggregator rows covered by a dedicated
+   adapter.
 
-The public behavior of `fetch_rates()` is documented in the
-[API reference](../packages/core/readme.md).
+`fetch_rates()` is the convenience form. It returns only `report.rates`. Callers that need
+to explain missing data should use `fetch_rates_report()`.
 
-## Scraper boundary
+## Source registry
 
-A scraper accepts the shared client and the fetch settings, then returns a list of
-`ExchangeRate` objects. Most scrapers use a factory from
-[`scrapers/base.py`](../packages/core/perexchange/scrapers/base.py):
+[`scrapers/registry.py`](../packages/core/perexchange/scrapers/registry.py) is the source
+of truth for built-in adapters. A `Source` contains its stable ID, fetcher, aliases, and
+whether it is an aggregator.
+
+The registry resolves IDs and aliases before any network request. It preserves the order
+of the caller's selection and rejects unknown or repeated sources.
+
+The registry is deliberately a fixed catalog. Adding a source means adding code and tests;
+there is no plugin discovery step to hide import errors or make release behavior depend on
+the environment.
+
+## Adapter boundary
+
+An adapter accepts a shared client and fetch settings and returns a list of `ExchangeRate`
+objects. Every returned object carries the adapter's stable source ID. The factory and
+public fetch layer both enforce that invariant.
+
+Most adapters use a factory from
+[`scrapers/factories.py`](../packages/core/perexchange/scrapers/factories.py):
 
 - `json_scraper()` for one JSON request;
 - `html_scraper()` for one HTML request;
-- `dual_endpoint_json_scraper()` when buy and sell values come from separate endpoints;
-- `csrf_convert_scraper()` for the shared page-token-and-quote flow.
+- `dual_endpoint_json_scraper()` when buy and sell values use separate endpoints;
+- `csrf_convert_scraper()` for a page-token and quote request.
 
-The factory owns request execution, response decoding, and retries. The adapter owns the
-source-specific field mapping and validation. Keep external response quirks beside the
-parser that handles them.
+The factory owns request execution, response decoding, and retries. The adapter owns field
+mapping and source-specific parsing. Custom adapters use the same retry helper directly
+when their request flow cannot use a factory.
 
-The aggregator adapter calls the registry's name matcher when filtering display names. It
-does not keep a second house list, so a quote covered by a dedicated adapter is not
-returned again.
+Parser functions return every valid row in the source response. The core layer owns
+cross-source rules such as aggregator filtering and duplicate handling, so those rules do
+not drift between adapters.
 
 ## Failure boundary
 
-[`fetch_with_retry()`](../packages/core/perexchange/scrapers/base.py) retries transport
-errors and temporary HTTP responses. Parser errors stop that scraper immediately. The
-outer fetch path logs expected failures and keeps successful results from other scrapers.
-The registry rejects unknown house names before any request starts.
+The retry helper retries transport errors and temporary HTTP responses. Parse errors stop
+the current source immediately because repeating the same response will not repair its
+shape.
+
+The fetch layer catches expected HTTP, timeout, and source errors for each source. It
+records them as `SourceFailure` values and continues with the other sources. It does not
+catch arbitrary exceptions: a programming error should fail loudly and be fixed.
+
+The default transport client is owned by one fetch call and closed when that call returns.
+A caller-owned client stays open so polling applications can reuse its connections.
