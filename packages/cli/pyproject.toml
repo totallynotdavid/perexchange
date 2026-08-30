@@ -8,10 +8,10 @@ authors = [
     { name = "David Duran", email = "dadch1404@gmail.com" }
 ]
 
-license = { text = "MIT" }
+license = "Apache-2.0"
 
 dependencies = [
-    "perexchange>=1.0.0",
+    "perexchange>=2.0.0",
 ]
 
 [project.scripts]

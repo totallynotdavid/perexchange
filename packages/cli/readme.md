@@ -29,10 +29,11 @@ Fetching current exchange rates...
 ============================================================
 CURRENT EXCHANGE RATES (N rates)
 ============================================================
-cambiafx:
+cambiafx (cambiafx):
   Buy:  S/ 3.3650
   Sell: S/ 3.3790
   Spread: S/ 0.0140
 ```
 
-The library leaves failed sources out of the output and logs a warning for each one.
+The command leaves failed sources out of the rate list and prints one diagnostic for each
+source that failed.

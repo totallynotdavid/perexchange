@@ -3,7 +3,7 @@ import sys
 
 import httpx
 
-from perexchange import fetch_rates
+from perexchange import fetch_rates_report
 
 
 def print_separator() -> None:
@@ -12,14 +12,18 @@ def print_separator() -> None:
 
 async def cmd_fetch() -> None:
     print("Fetching current exchange rates...")
-    rates = await fetch_rates()
+    report = await fetch_rates_report()
+    rates = report.rates
+
+    for failure in report.failures:
+        print(f"Skipped {failure.source}: {failure.message}", file=sys.stderr)
 
     print_separator()
     print(f"CURRENT EXCHANGE RATES ({len(rates)} rates)")
     print_separator()
 
     for rate in sorted(rates, key=lambda r: r.buy_price):
-        print(f"{rate.name}:")
+        print(f"{rate.name} ({rate.source}):")
         print(f"  Buy:  S/ {rate.buy_price:.4f}")
         print(f"  Sell: S/ {rate.sell_price:.4f}")
         print(f"  Spread: S/ {rate.spread:.4f}")
