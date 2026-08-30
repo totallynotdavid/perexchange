@@ -87,7 +87,7 @@ jobs:
       - if:
           failure() && steps.test.outcome == 'failure' && (github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch')
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b # v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const issues = await github.rest.issues.listForRepo({
