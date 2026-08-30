@@ -1,98 +1,116 @@
-# [pkg]: perexchange
+# perexchange
 
-Core library for fetching PEN-USD exchange rates from Peruvian exchange houses. To install
-it, run:
+The core package fetches live PEN/USD exchange rates from registered Peruvian exchange
+houses.
+
+## Install
+
+You need Python 3.10 or later. Install the published package with:
 
 ```bash
 pip install perexchange
 ```
 
-The library provides a single async function that fetches rates from multiple sources
-concurrently:
+## First call
+
+`fetch_rates()` is asynchronous and returns a list of `ExchangeRate` objects.
 
 ```python
 import asyncio
+
 import perexchange as px
 
-async def main():
+
+async def main() -> None:
     rates = await px.fetch_rates()
-    best = min(rates, key=lambda r: r.buy_price)
-    print(f"{best.name}: S/{best.buy_price}")
+    if not rates:
+        print("No rates available")
+        return
+
+    best = min(rates, key=lambda rate: rate.buy_price)
+    print(f"{best.name}: S/{best.buy_price:.4f}")
+
 
 asyncio.run(main())
 ```
 
-## Fetching rates
-
-Call `fetch_rates()` to retrieve current rates. By default it queries all available
-sources: cambioseguro, cuantoestaeldolar, tkambio, tucambista, and westernunion. The
-function returns a list of `ExchangeRate` objects.
+## `fetch_rates`
 
 ```python
-rates = await px.fetch_rates()
+async def fetch_rates(
+    houses: Sequence[str] | None = None,
+    *,
+    timeout: float = 10.0,
+    max_retries: int = 3,
+    client: httpx.AsyncClient | None = None,
+) -> list[ExchangeRate]:
 ```
 
-You can fetch from specific sources by passing a list of house names. This is useful when
-you only need rates from certain providers or want to reduce latency:
+### Choose houses
+
+With no `houses` argument, the function queries every house in the registry. Pass names to
+query only a subset:
 
 ```python
 rates = await px.fetch_rates(houses=["tkambio", "tucambista"])
 ```
 
-The function accepts timeout and retry parameters. Timeout applies per house, not to the
-entire operation. Retries only trigger on network errors, not parsing failures:
+House names are matched without regard to case. An unknown name raises `ValueError` before
+the first request and includes the accepted names in the error message.
 
-```python
-rates = await px.fetch_rates(timeout=15.0, max_retries=5)
-```
+### Timeouts and retries
 
-Failed sources are silently skipped. The function returns whatever rates it successfully
-fetched, or an empty list if everything fails. Network errors trigger automatic retries
-with exponential backoff. Parsing errors fail immediately.
+- `timeout` applies to each HTTP request.
+- `max_retries` is the total number of calls to each scraper, including the first call.
+- Transport errors and `408`, `429`, and `5xx` responses may be retried.
+- Other `4xx` responses and parsing errors are not retried.
+- Retry delays use exponential backoff. A numeric `Retry-After` value for `429` wins and
+  is capped at 30 seconds.
 
-## Working with rates
+Some scrapers make more than one request. A retry repeats that scraper's whole operation,
+including requests that already succeeded.
 
-Each `ExchangeRate` contains the house name, buy and sell prices, and a UTC timestamp. Buy
-price is what you pay in soles to buy dollars. Sell price is what you receive in soles
-when selling dollars. The object is a frozen dataclass:
+Pass an existing `httpx.AsyncClient` when polling repeatedly so it can reuse connections.
+`fetch_rates()` leaves a passed client open. If you omit `client`, the function creates a
+client for the call and closes it before returning.
+
+### Failures and ordering
+
+An expected transport or parsing failure affects only that house. The failed rate is left
+out and a warning is written to the `perexchange` logger. Inspect that logger when you
+need to know why a source was left out. If no selected house returns a rate, the function
+returns an empty list. Other exceptions are allowed to propagate.
+
+Results preserve the selected-house order. When `houses` is omitted, that is registry
+order. If multiple scrapers return the same rate name, the first result wins.
+
+## `ExchangeRate`
+
+Each result is a frozen dataclass with these fields:
+
+- `name`: the house or quote name. A name can include a transaction tier, such as
+  `tkambio_5000`.
+- `buy_price`: PEN needed to buy one USD.
+- `sell_price`: PEN received for selling one USD.
+- `timestamp`: a timezone-aware `datetime` supplied by the scraper. It may be the source's
+  update time or the time the response was fetched.
+
+The `spread` property is `sell_price - buy_price`, in PEN per USD:
 
 ```python
 rate = rates[0]
-name = rate.name
-buy = rate.buy_price
-sell = rate.sell_price
-when = rate.timestamp
-spread = rate.spread
+print(rate.name, rate.buy_price, rate.sell_price, rate.spread)
 ```
 
-The spread property returns the difference between sell and buy prices. Some sources
-return multiple tiers with different rates based on transaction amount, like
-`tkambio_5000` and `tkambio_10000`.
+Some houses return several quotes. Tier suffixes are part of the returned rate name; they
+are not names that can be passed to `fetch_rates()`.
 
-Find the best rates by sorting or filtering the list:
+Find the lowest price for buying USD or the highest price for selling it with:
 
 ```python
-best_buy = min(rates, key=lambda r: r.buy_price)
-best_sell = max(rates, key=lambda r: r.sell_price)
-recent = [r for r in rates if (datetime.now(timezone.utc) - r.timestamp).seconds < 300]
+best_buy = min(rates, key=lambda rate: rate.buy_price)
+best_sell = max(rates, key=lambda rate: rate.sell_price)
 ```
 
-## Error handling
-
-Invalid house names raise `ValueError` immediately. All other failures are silent. Check
-the returned list to see what succeeded:
-
-```python
-try:
-    rates = await px.fetch_rates(houses=["nonexistent"])
-except ValueError as e:
-    print(f"Unknown house: {e}")
-
-rates = await px.fetch_rates()
-if not rates:
-    print("All sources failed")
-```
-
-The library doesn't distinguish between different failure types. A house might fail due to
-network issues, API changes, or parsing errors. Failed requests don't pollute your results
-or logs.
+The result list does not carry the failure reason. A source can be unavailable, return a
+response the parser does not recognize, or change its API.

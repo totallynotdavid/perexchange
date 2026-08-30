@@ -1,88 +1,81 @@
-# For devs
+# Contributing
 
-Install core package in editable mode:
+Run the commands below from the repository root.
 
-```bash
-cd pkg/core
-pip install -e ".[dev]"
-```
+## Set up
 
-Install CLI (optional):
+Install the workspace and development dependencies:
 
 ```bash
-cd pkg/cli
-pip install -e .
+mise run sync
 ```
 
-Run unit tests:
+The CLI is optional. Run it from the workspace with:
 
 ```bash
-pytest
+uv run --package perexchange-cli perexchange help
 ```
 
-Run integration tests (hits real websites).
+## Checks and tests
+
+Run the default checks with:
 
 ```bash
-pytest -m integration
+mise run check
 ```
 
-Run specific test files:
+This checks Python and documentation formatting, lint, types, and unit tests. The
+formatting tasks rewrite files; the check tasks do not.
 
-```bash
-pytest tests/scrapers/test_somescraper.py
-```
-
-Run with coverage:
-
-```bash
-pytest --cov=perexchange --cov-report=html
-```
-
-The project uses ruff and mypy for linting, formatting and type checking. You can test
-things with:
-
-```bash
-ruff check .
-ruff format .
-mypy perexchange tests
-```
-
-## Adding new scrapers
-
-1. Create the scraper file in: `perexchange/scrapers/yoursite.py`
-2. Implement an async function returning a list of ExchangeRate objects.
-3. Register it in: `perexchange/scrapers/__init__.py`
-4. Add tests in: `tests/scrapers/test_yoursite.py`
-5. Add fixtures in: `tests/scrapers/fixtures/yoursite/`
-
-Example scraper outline:
-
-```python
-async def fetch_yoursite(url: str, timeout: float, max_retries: int):
-    return rates
-```
-
-## Integration tests
-
-Integration tests fetch real websites and exist to detect layout or data changes. They run
-periodically on CI.
-
-Example:
-
-```python
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_fetch_real_website():
-    rates = await fetch_rates()
-    assert len(rates) > 0
-```
-
----
-
-The project has mise set up, you can simplify the commands using:
+Run one part of the check when needed:
 
 ```bash
 mise run test
 mise run lint
-mise run build
+mise run format
+mise run format-docs
+```
+
+Run one test file with:
+
+```bash
+uv run pytest packages/core/tests/unit/test_parsers.py
+```
+
+Run coverage with:
+
+```bash
+uv run pytest --cov=perexchange --cov-report=html
+```
+
+## Add a scraper
+
+The registry is the source of truth for accepted house names. Do not copy its list into
+another module or document.
+
+1. Add `packages/core/perexchange/scrapers/yoursite.py`. Parse the source response into
+   `ExchangeRate` objects. Use a factory from
+   [`scrapers/base.py`](../packages/core/perexchange/scrapers/base.py) when the source
+   matches one of its request patterns.
+2. Register the fetcher in `packages/core/perexchange/scrapers/registry.py`.
+3. Save one representative response in `packages/core/tests/fixtures/yoursite.json` or
+   `.html`.
+4. Add the exact output to `EXPECTED_RATES` in `packages/core/tests/unit/test_parsers.py`.
+5. Add a second fixture only for a parser branch that the representative response does not
+   cover.
+
+The parser suite requires one fixture and one expected-output row for every registered
+house. It also rejects orphan fixtures. Keep source-specific validation in the parser; the
+shared factory owns request, retry, and response-decoding behavior.
+
+## Live integration tests
+
+Integration tests call real exchange-house endpoints. They are separate from the default
+test task because endpoints can be slow, rate-limit requests, or change outside this
+repository.
+
+Run them with:
+
+```bash
+mise run test-integration
 ```

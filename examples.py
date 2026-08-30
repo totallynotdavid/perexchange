@@ -1,5 +1,6 @@
-"""
-Quick-start examples. Run: python examples.py (or uv run python examples.py)
+"""Live usage examples.
+
+Running this file makes network requests and may write `rates.json`.
 """
 
 import asyncio
@@ -12,7 +13,6 @@ import perexchange as px
 
 
 async def basic_usage():
-    """Fetch rates from all available sources."""
     rates = await px.fetch_rates()
 
     print(f"Fetched {len(rates)} rates")
@@ -29,13 +29,16 @@ async def basic_usage():
                 "timestamp": rate.timestamp.isoformat(),
             }
             data.append(rate_dict)
-        with pathlib.Path("rates.json").open("w") as f:
-            json.dump(data, f, indent=2)
+        await asyncio.to_thread(_write_rates_json, data)
         print("Saved rates to rates.json")
 
 
+def _write_rates_json(data: list[dict]) -> None:
+    with pathlib.Path("rates.json").open("w") as f:
+        json.dump(data, f, indent=2)
+
+
 async def targeted_fetching():
-    """Fetch from specific houses."""
     fast_houses = ["tkambio", "tucambista"]
     rates = await px.fetch_rates(houses=fast_houses, timeout=5.0)
 
@@ -44,7 +47,6 @@ async def targeted_fetching():
 
 
 async def find_best_rates():
-    """Find the best buy and sell rates across all sources."""
     rates = await px.fetch_rates()
 
     if not rates:
@@ -63,7 +65,6 @@ async def find_best_rates():
 
 
 async def analyze_spreads():
-    """Find houses with the tightest bid-ask spreads."""
     rates = await px.fetch_rates()
 
     if not rates:
@@ -79,7 +80,6 @@ async def analyze_spreads():
 
 
 async def working_with_tiers():
-    """Filter and compare tiered rates for bulk transactions."""
     rates = await px.fetch_rates()
 
     base_rates = [r for r in rates if "_" not in r.name]
@@ -103,7 +103,6 @@ async def working_with_tiers():
 
 
 async def simple_caching():
-    """Cache results to avoid redundant API calls. Users must implement their own caching logic."""
     cache = {"rates": None, "timestamp": None}
     cache_duration = timedelta(minutes=5)
 
@@ -132,7 +131,6 @@ async def simple_caching():
 
 
 async def market_overview():
-    """Calculate market statistics across all sources."""
     rates = await px.fetch_rates()
 
     if not rates:
@@ -169,7 +167,8 @@ async def main():
         print("=" * 60)
         try:
             await func()
-        except Exception as e:  # noqa: BLE001 (broad Exception to handle any errors in examples without crashing)
+        except Exception as e:  # ruff: ignore[blind-except]
+            # Each example makes independent live requests, so keep running after one fails.
             print(f"Error: {e}")
         await asyncio.sleep(1)
 
