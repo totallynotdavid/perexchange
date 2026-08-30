@@ -31,7 +31,7 @@ jobs:
       - run: python -m build
         working-directory: packages/core
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: packages/core/dist/*
