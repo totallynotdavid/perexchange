@@ -3,9 +3,19 @@ name: test
 on:
   push:
     branches: ["main"]
-    paths: ["**/*.py"]
+    paths:
+      - "**/*.py"
+      - "**/pyproject.toml"
+      - "**/requirements.txt"
+      - "uv.lock"
+      - ".github/workflows/test.yml"
   pull_request:
-    paths: ["**/*.py"]
+    paths:
+      - "**/*.py"
+      - "**/pyproject.toml"
+      - "**/requirements.txt"
+      - "uv.lock"
+      - ".github/workflows/test.yml"
   schedule:
     - cron: "0 3 * * 1" # Every Monday at 03:00 UTC
   workflow_dispatch:
@@ -20,17 +30,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.14.0"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - run: uv python install 3.14.0
 
       - run: |
-          pip install -r packages/core/requirements.txt
-          pip install -e .[dev]
+          uv lock --check
+          uv sync --locked --all-packages --extra dev
 
-      - run:
-          pytest -v -m "not integration" --cov=perexchange --cov-report=xml
-          --junitxml=junit.xml
+      - run: uv run pytest -v -m "not integration" --cov=perexchange --cov-report=xml --junitxml=junit.xml
 
       - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 #v5.5.1
         with:
@@ -54,16 +65,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.14.0"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - run: uv python install 3.14.0
 
       - run: |
-          pip install -r packages/core/requirements.txt
-          pip install -e .[dev]
+          uv lock --check
+          uv sync --locked --all-packages --extra dev
 
       - id: test
-        run: pytest -v -m integration --tb=short
+        run: uv run pytest -v -m integration --tb=short
         continue-on-error: true
 
       - if:
