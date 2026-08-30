@@ -17,7 +17,7 @@ def main() -> int:
     args = parser.parse_args()
 
     version = args.version.strip()
-    pyproject = Path("pkg/core/pyproject.toml")
+    pyproject = Path("packages/core/pyproject.toml")
     if not pyproject.exists():
         print(f"Missing {pyproject}", file=sys.stderr)
         return 1

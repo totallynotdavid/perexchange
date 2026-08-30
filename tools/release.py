@@ -18,12 +18,11 @@ def main() -> int:
     args = parser.parse_args()
 
     version = args.version.strip()
-    pyproject = Path("pkg/core/pyproject.toml")
+    pyproject = Path("packages/core/pyproject.toml")
     if not pyproject.exists():
         print(f"Missing {pyproject}", file=sys.stderr)
         return 1
 
-    # Update version
     text = pyproject.read_text(encoding="utf8")
     new_text, count = re.subn(
         r'(?m)^version\s*=\s*"[^"]+"', f'version = "{version}"', text
@@ -39,22 +38,25 @@ def main() -> int:
     pyproject.write_text(new_text, encoding="utf8")
     print(f"Updated version to {version}")
 
-    # Build
     print("Building package...")
     result = subprocess.run(
-        [sys.executable, "-m", "build"], cwd="pkg/core", capture_output=True, text=True
+        [sys.executable, "-m", "build"],
+        cwd="packages/core",
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if result.returncode != 0:
         print("Build failed:", result.stderr, file=sys.stderr)
         return 3
     print("Build successful")
 
-    # Commit (only if there are changes)
     print("Committing changes...")
     subprocess.run(["git", "add", str(pyproject)], check=True)
 
-    # Check if there are changes to commit
-    result = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--quiet"], capture_output=True, check=False
+    )
     if result.returncode == 0:
         print("No changes to commit (version may already be set)", file=sys.stderr)
         return 5
@@ -63,11 +65,9 @@ def main() -> int:
         ["git", "commit", "-m", f"chore: bump version to {version}"], check=True
     )
 
-    # Tag
     print("Tagging...")
     subprocess.run(["git", "tag", f"v{version}"], check=True)
 
-    # Push
     print("Pushing...")
     subprocess.run(["git", "push", "origin", "main"], check=True)
     subprocess.run(["git", "push", "origin", f"v{version}"], check=True)
