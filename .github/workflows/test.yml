@@ -6,14 +6,12 @@ on:
     paths:
       - "**/*.py"
       - "**/pyproject.toml"
-      - "**/requirements.txt"
       - "uv.lock"
       - ".github/workflows/**"
   pull_request:
     paths:
       - "**/*.py"
       - "**/pyproject.toml"
-      - "**/requirements.txt"
       - "uv.lock"
       - ".github/workflows/**"
   schedule:
@@ -41,7 +39,9 @@ jobs:
           uv lock --check
           uv sync --locked --all-packages --extra dev
 
-      - run: uv run pytest -v -m "not integration" --cov=perexchange --cov-report=xml --junitxml=junit.xml
+      - run:
+          uv run pytest -v -m "not integration" --cov=perexchange --cov-report=xml
+          --junitxml=junit.xml
 
       - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:

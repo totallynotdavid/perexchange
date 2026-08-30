@@ -43,11 +43,6 @@ description = "Update dependencies for all packages"
 alias = "u"
 run = ["uv sync --all-packages --extra dev -U"]
 
-[tasks.export-deps]
-description = "Export production dependencies for core"
-run = "uv export --format requirements-txt --no-hashes --no-header --no-dev --no-annotate --output-file requirements.txt"
-dir = "packages/core"
-
 [tasks.build]
 description = "Build core package"
 run = "uv build"

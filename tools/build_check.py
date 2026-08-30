@@ -24,7 +24,7 @@ def main() -> int:
 
     print("Building package")
     try:
-        subprocess.check_call([sys.executable, "-m", "build"], cwd=str(PKG_DIR))
+        subprocess.check_call(["uv", "build"], cwd=str(PKG_DIR))
         print("Build successful")
         return 0
     except subprocess.CalledProcessError as e:
