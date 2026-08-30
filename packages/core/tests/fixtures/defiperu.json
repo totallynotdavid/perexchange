@@ -1,0 +1,20 @@
+[
+  {
+    "idExchangeRates": "08defed5-dd0f-49cf-89cf-60e11fe27450",
+    "currencyType": "FIAT",
+    "fromCurrency": "PEN",
+    "toCurrency": "USD",
+    "purchase": 3.348,
+    "sale": 3.367,
+    "isActive": true
+  },
+  {
+    "idExchangeRates": "aaaaaaaa-dd0f-49cf-89cf-60e11fe27450",
+    "currencyType": "CRYPTO",
+    "fromCurrency": "PEN",
+    "toCurrency": "USDT",
+    "purchase": 3.35,
+    "sale": 3.37,
+    "isActive": true
+  }
+]

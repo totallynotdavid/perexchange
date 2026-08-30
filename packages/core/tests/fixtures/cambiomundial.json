@@ -1,0 +1,20 @@
+[
+  {
+    "idTasaCambio": 20444,
+    "buy": 3.351,
+    "sell": 3.357,
+    "tipoTasa": "REGULAR",
+    "fecha": "2026-08-29T13:16:42",
+    "createdAt": "2026-08-29T13:16:42",
+    "updatedAt": "2026-08-29T13:16:42"
+  },
+  {
+    "idTasaCambio": 20445,
+    "buy": 3.351,
+    "sell": 3.357,
+    "tipoTasa": "DIFERENCIADA",
+    "fecha": "2026-08-29T13:16:42",
+    "createdAt": "2026-08-29T13:16:42",
+    "updatedAt": "2026-08-29T13:16:42"
+  }
+]

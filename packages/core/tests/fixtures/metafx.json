@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "data": [
+    {"id": 3, "tipo": "bid", "valor_fijo": "3.3440"},
+    {"id": 4, "tipo": "ask", "valor_fijo": "3.3620"}
+  ]
+}
