@@ -1,42 +1,43 @@
-# [pkg]: perexchange-cli
+# perexchange-cli
 
-Command-line interface for perexchange. This tool is intended for local development and
-diagnostics. It is not published to PyPI.
+Local diagnostic CLI for `perexchange`. It is not published to PyPI.
 
-To install the library, run:
+## Install
+
+From the repository root, install the workspace and run the CLI with:
 
 ```bash
-cd pkg/cli
+uv sync --all-packages
+uv run --package perexchange-cli perexchange fetch
+```
+
+To install the CLI directly in editable mode:
+
+```bash
+cd packages/cli
 pip install -e .
 ```
 
-The CLI accepts these arguments:
+## Commands
+
+The CLI currently supports two commands:
 
 ```bash
-perexchange best-buy       Show best place to buy USD
-perexchange best-sell      Show best place to sell USD
-perexchange top-buy        Show top N buy rates
-perexchange top-sell       Show top N sell rates
-perexchange stats          Show market statistics
-perexchange fetch          Show all current rates
-perexchange help           Show help
+perexchange fetch          Fetch and display current rates
+perexchange help           Show usage information
 ```
 
-The results will look like this:
+`fetch` prints one block for each returned rate. Expected source failures are omitted by
+the library and logged through the `perexchange` logger.
 
 ```bash
-$ perexchange best-buy
-Best Place To Buy
-Exchange House: CambiaFX
-Buy Price: S/ 3.3520
-Timestamp: 2025-01-15 14:30:00+00:00
-```
-
-```bash
-$ perexchange stats
-Exchange Houses: 15
-Average Buy Price: S/ 3.3650
-Average Sell Price: S/ 3.3920
-Best Buy: CambiaFX
-Best Sell: Rextie
+$ perexchange fetch
+Fetching current exchange rates...
+============================================================
+CURRENT EXCHANGE RATES (N rates)
+============================================================
+cambiafx:
+  Buy:  S/ 3.3650
+  Sell: S/ 3.3790
+  Spread: S/ 0.0140
 ```
