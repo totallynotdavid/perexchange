@@ -1,5 +1,5 @@
 [settings]
-python.uv_venv_auto = true
+python.uv_venv_auto = "source"
 
 [tools]
 uv = "0.12.7"
