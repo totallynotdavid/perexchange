@@ -1,18 +1,16 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 
 from perexchange.models import ExchangeRate
 from perexchange.retry import fetch_with_retry
+from perexchange.time import PERU_TZ
+from perexchange.transport import send
 
 
 SOURCE = "okane"
 BASE_URL = "https://okanecambiodigital.com/backend_apigateway/v1/tipoDeCambio"
-
-# The API expects the current date in Peru. At UTC midnight, it may still have no data
-# for the new date, so use the source's timezone when building the request.
-_PERU_TZ = timezone(timedelta(hours=-5))
 
 
 def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
@@ -47,9 +45,11 @@ async def fetch_okane(
     retry_delay: float = 0.5,
 ) -> list[ExchangeRate]:
     async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
-        today = datetime.now(_PERU_TZ).date()
-        response = await c.get(
-            BASE_URL, params={"fecha": today.isoformat()}, timeout=timeout
+        # The API expects the current date in Peru. At UTC midnight, it may still have
+        # no data for the new date.
+        today = datetime.now(PERU_TZ).date()
+        response = await send(
+            c, "GET", BASE_URL, params={"fecha": today.isoformat()}, timeout=timeout
         )
         response.raise_for_status()
         return _parse_json(response.json())

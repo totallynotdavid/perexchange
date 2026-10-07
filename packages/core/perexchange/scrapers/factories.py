@@ -1,7 +1,7 @@
 import re
 
 from collections.abc import Callable, Mapping
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -9,6 +9,8 @@ import httpx
 from perexchange.models import ExchangeRate
 from perexchange.retry import fetch_with_retry
 from perexchange.scrapers.base import ExchangeRateScraper
+from perexchange.time import PERU_TZ, parse_source_timestamp
+from perexchange.transport import send
 
 
 def _validate_rates(source: str, rates: list[ExchangeRate]) -> list[ExchangeRate]:
@@ -59,8 +61,8 @@ def json_scraper(
         retry_delay: float = 0.5,
     ) -> list[ExchangeRate]:
         async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
-            response = await c.request(
-                method, url, headers=headers, data=data, timeout=timeout
+            response = await send(
+                c, method, url, headers=headers, data=data, timeout=timeout
             )
             response.raise_for_status()
             return _validate_rates(source, parse(response.json()))
@@ -86,8 +88,8 @@ def html_scraper(
         retry_delay: float = 0.5,
     ) -> list[ExchangeRate]:
         async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
-            response = await c.request(
-                method, url, headers=headers, data=data, timeout=timeout
+            response = await send(
+                c, method, url, headers=headers, data=data, timeout=timeout
             )
             response.raise_for_status()
             return _validate_rates(source, parse(response.text))
@@ -110,9 +112,9 @@ def dual_endpoint_json_scraper(
         retry_delay: float = 0.5,
     ) -> list[ExchangeRate]:
         async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
-            buy_response = await c.get(buy_url, timeout=timeout)
+            buy_response = await send(c, "GET", buy_url, timeout=timeout)
             buy_response.raise_for_status()
-            sell_response = await c.get(sell_url, timeout=timeout)
+            sell_response = await send(c, "GET", sell_url, timeout=timeout)
             sell_response.raise_for_status()
             rates = parse({"buy": buy_response.json(), "sell": sell_response.json()})
             return _validate_rates(source, rates)
@@ -150,10 +152,12 @@ def csrf_convert_scraper(
         retry_delay: float = 0.5,
     ) -> list[ExchangeRate]:
         async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
-            page_response = await c.get(page_url, timeout=timeout)
+            page_response = await send(c, "GET", page_url, timeout=timeout)
             page_response.raise_for_status()
             token = _extract_csrf_token(page_response.text)
-            api_response = await c.post(
+            api_response = await send(
+                c,
+                "POST",
                 api_url,
                 headers={
                     "Content-Type": "application/json",
@@ -177,6 +181,38 @@ def csrf_convert_scraper(
         )
 
     return fetch
+
+
+DIGITAL_TC_URL = "https://novodivisaspro.pseperu.pro/api/digital/public/tc"
+
+
+def digital_tc_parser(source: str) -> Callable[[Any], list[ExchangeRate]]:
+    """Parse the response of the shared exchange-rate API behind `DIGITAL_TC_URL`."""
+
+    def parse(data: Mapping[str, Any]) -> list[ExchangeRate]:
+        if not data["disponible"]:
+            msg = "The source reports no exchange rate available"
+            raise ValueError(msg)
+        # The server time has no offset and is local time in Peru.
+        timestamp = parse_source_timestamp(
+            data.get("serverTime"), datetime.now(timezone.utc), PERU_TZ
+        )
+        rate = rate_from_fields(data, source, source, "compra", "venta", timestamp)
+        if rate is None:
+            msg = "No valid exchange rates parsed"
+            raise ValueError(msg)
+        return [rate]
+
+    return parse
+
+
+def digital_tc_scraper(
+    source: str, tenant: str, parse: Callable[[Any], list[ExchangeRate]]
+) -> ExchangeRateScraper:
+    """Fetch one house from the shared API. The tenant header selects the house."""
+    return json_scraper(
+        source, DIGITAL_TC_URL, parse, headers={"X-Digital-Tenant": tenant}
+    )
 
 
 def rate_from_convert_fields(

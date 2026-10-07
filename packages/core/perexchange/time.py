@@ -1,13 +1,20 @@
 import re
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 
+
+PERU_TZ = timezone(timedelta(hours=-5))
 
 _TIMESTAMP = re.compile(r"^(.*?)(\.\d+)?(Z|[+-]\d\d:\d\d)?$")
 
 
-def parse_source_timestamp(value: object, fallback: datetime) -> datetime:
-    """Parse source timestamps across Python versions and use `fallback` on bad data."""
+def parse_source_timestamp(
+    value: object, fallback: datetime, naive_tz: tzinfo = timezone.utc
+) -> datetime:
+    """Parse source timestamps across Python versions and use `fallback` on bad data.
+
+    A timestamp without an offset is read in `naive_tz`.
+    """
     if not isinstance(value, str) or not value:
         return fallback
 
@@ -28,5 +35,5 @@ def parse_source_timestamp(value: object, fallback: datetime) -> datetime:
     except ValueError:
         return fallback
     if parsed.tzinfo is None or parsed.utcoffset() is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.replace(tzinfo=naive_tz)
     return parsed.astimezone(timezone.utc)

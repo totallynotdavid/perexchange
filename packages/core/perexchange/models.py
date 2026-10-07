@@ -8,7 +8,12 @@ __all__ = ["ExchangeRate", "FetchReport", "SourceFailure"]
 
 @dataclass(frozen=True, slots=True)
 class ExchangeRate:
-    """A quoted exchange rate in PEN per USD."""
+    """A quoted exchange rate in PEN per USD.
+
+    The prices are from the house's side. `buy_price` is what the house pays for a
+    dollar, so it is what you receive when you sell one. `sell_price` is what the
+    house charges for a dollar.
+    """
 
     source: str
     name: str
@@ -32,7 +37,7 @@ class ExchangeRate:
 
     @property
     def spread(self) -> float:
-        """Difference between `sell_price` and `buy_price`, in PEN per USD."""
+        """What the house keeps on a round trip: `sell_price - buy_price`, in PEN."""
         return self.sell_price - self.buy_price
 
     def __str__(self) -> str:

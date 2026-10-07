@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from perexchange.errors import ConfigurationError
 from perexchange.scrapers.base import ExchangeRateScraper
 from perexchange.scrapers.cambiafx import fetch_cambiafx
-from perexchange.scrapers.cambiodigital import fetch_cambiodigital
 from perexchange.scrapers.cambiomundial import fetch_cambiomundial
 from perexchange.scrapers.cambioseguro import fetch_cambioseguro
 from perexchange.scrapers.cambiosol import fetch_cambiosol
@@ -51,7 +50,6 @@ class Source:
 _SOURCES = (
     Source("cambioseguro", fetch_cambioseguro),
     Source("cambiafx", fetch_cambiafx),
-    Source("cambiodigital", fetch_cambiodigital),
     Source("cambiomundial", fetch_cambiomundial),
     Source("cambiosol", fetch_cambiosol),
     Source("chapacambio", fetch_chapacambio),

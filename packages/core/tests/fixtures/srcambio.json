@@ -1,6 +1,7 @@
 {
-  "id": 19609,
-  "priceCompra": 3.347,
-  "priceVenta": 3.36,
-  "dateRegister": "2026-08-29T10:44:16.5575821"
+  "disponible": true,
+  "compra": 3.43,
+  "venta": 3.452,
+  "moneda": "USD",
+  "serverTime": "2026-10-07T14:30:56.3008284"
 }
