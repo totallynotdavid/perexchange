@@ -7,6 +7,7 @@ registry-to-fixture mapping.
 
 import json
 
+from datetime import timedelta
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -24,7 +25,6 @@ FIXTURES = Path(__file__).parent.parent / "fixtures"
 # quotes when the source publishes tiers or comparisons.
 EXPECTED_RATES: dict[str, list[tuple[str, float, float]]] = {
     "cambiafx": [("cambiafx", 3.365, 3.379)],
-    "cambiodigital": [("cambiodigital", 3.34, 3.36)],
     "cambiomundial": [("cambiomundial", 3.351, 3.357)],
     "cambioseguro": [
         ("cambioseguro", 3.353, 3.373),
@@ -51,9 +51,9 @@ EXPECTED_RATES: dict[str, list[tuple[str, float, float]]] = {
     "mercadocambiario": [("mercadocambiario", 3.348, 3.362)],
     "metafx": [("metafx", 3.344, 3.362)],
     "moneyhouse": [("moneyhouse", 3.347, 3.354)],
-    "moneyplus": [("moneyplus", 3.349, 3.357)],
+    "moneyplus": [("moneyplus", 3.42, 3.445)],
     "okane": [("okane", 3.31, 3.38)],
-    "srcambio": [("srcambio", 3.347, 3.36)],
+    "srcambio": [("srcambio", 3.43, 3.452)],
     "tkambio": [
         ("tkambio", 3.348, 3.378),
         ("tkambio_5000", 3.351, 3.375),
@@ -181,3 +181,24 @@ def test_dollarhouse_prefers_displayed_rates_over_stale_hidden_inputs():
     rates = parser_for("dollarhouse")(load_fixture("dollarhouse-stale-hidden-inputs"))
 
     assert as_triples(rates) == [("dollarhouse", 3.365, 3.372)]
+
+
+@pytest.mark.parametrize("source_name", ["moneyplus", "srcambio"])
+def test_digital_platform_server_time_is_peru_time(source_name):
+    # The fixture's `serverTime` has no offset and represents local Peru time.
+    [rate] = parser_for(source_name)(load_fixture(source_name))
+
+    assert rate.timestamp.utcoffset() == timedelta(0)
+    assert (rate.timestamp.year, rate.timestamp.day, rate.timestamp.hour) == (
+        2026,
+        7,
+        19,
+    )
+
+
+@pytest.mark.parametrize("source_name", ["moneyplus", "srcambio"])
+def test_digital_platform_without_a_rate_raises(source_name):
+    payload = {**load_fixture(source_name), "disponible": False}
+
+    with pytest.raises(ValueError, match="no exchange rate"):
+        parser_for(source_name)(payload)

@@ -42,12 +42,12 @@ async def test_scraper_returns_valid_data(source_name, source):
 
 
 @pytest.mark.integration
-async def test_aggregator_excludes_sources_with_dedicated_scrapers():
+async def test_aggregator_alone_lists_houses_that_have_dedicated_scrapers():
     rates = await fetch_rates(sources=[AGGREGATOR])
 
+    assert any(source_for_name(rate.name) is not None for rate in rates)
     for rate in rates:
         assert rate.name
-        assert source_for_name(rate.name) is None
         assert 2.5 <= rate.buy_price <= 5.0
         assert 2.5 <= rate.sell_price <= 5.0
         assert 0 < rate.spread < 0.5

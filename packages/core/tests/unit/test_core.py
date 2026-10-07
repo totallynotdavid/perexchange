@@ -9,6 +9,7 @@ import pytest
 from perexchange import core
 from perexchange.errors import ConfigurationError, SourceError
 from perexchange.models import ExchangeRate
+from perexchange.scrapers.factories import json_scraper
 from perexchange.scrapers.registry import Source
 
 
@@ -40,21 +41,106 @@ async def test_report_keeps_successes_and_describes_source_failures(monkeypatch)
     assert report.failures[0].message == "the source is unavailable"
 
 
-async def test_aggregator_rates_are_filtered_at_the_core_boundary(monkeypatch):
-    fetch_aggregator = AsyncMock(
-        return_value=[
-            rate("aggregator", "CambiaFX"),
-            rate("aggregator", "Uncovered House"),
-        ]
+def aggregator_sources(direct):
+    """Use an aggregator row that resolves to the selected `cambiafx` source."""
+    aggregator = Source(
+        "aggregator",
+        AsyncMock(
+            return_value=[
+                rate("aggregator", "CambiaFX"),
+                rate("aggregator", "Uncovered House"),
+            ]
+        ),
+        is_aggregator=True,
     )
+    return [aggregator, Source("cambiafx", direct)]
 
-    source = Source("aggregator", fetch_aggregator, is_aggregator=True)
-    monkeypatch.setattr(core, "get_sources", lambda source_names: [source])
 
+async def fetch_with_sources(monkeypatch, sources):
+    monkeypatch.setattr(core, "get_sources", lambda source_names: sources)
     async with httpx.AsyncClient() as client:
-        report = await core.fetch_rates_report(client=client, total_timeout=None)
+        return await core.fetch_rates_report(client=client, total_timeout=None)
 
-    assert [item.name for item in report.rates] == ["Uncovered House"]
+
+async def test_aggregator_alone_returns_the_rows_of_every_house(monkeypatch):
+    aggregator = aggregator_sources(AsyncMock())[0]
+
+    report = await fetch_with_sources(monkeypatch, [aggregator])
+
+    assert [item.name for item in report.rates] == ["CambiaFX", "Uncovered House"]
+
+
+async def test_aggregator_row_yields_to_the_selected_source_that_fetched(monkeypatch):
+    direct = AsyncMock(return_value=[rate("cambiafx", "cambiafx")])
+
+    report = await fetch_with_sources(monkeypatch, aggregator_sources(direct))
+
+    assert [(item.source, item.name) for item in report.rates] == [
+        ("aggregator", "Uncovered House"),
+        ("cambiafx", "cambiafx"),
+    ]
+
+
+async def test_aggregator_row_stands_in_for_a_selected_source_that_failed(monkeypatch):
+    direct = AsyncMock(side_effect=SourceError("down"))
+
+    report = await fetch_with_sources(monkeypatch, aggregator_sources(direct))
+
+    assert [item.name for item in report.rates] == ["CambiaFX", "Uncovered House"]
+    assert [failure.source for failure in report.failures] == ["cambiafx"]
+
+
+class ProtocolError(Exception):
+    """Stands in for `h2.exceptions.ProtocolError`, which is not an `httpx.HTTPError`."""
+
+
+def break_connection(attempts):
+    def handler(request):
+        attempts.append(request.url)
+        msg = "connection terminated"
+        raise ProtocolError(msg)
+
+    return handler
+
+
+async def test_transport_error_outside_httpx_is_recorded_as_a_source_failure(
+    monkeypatch,
+):
+    attempts = []
+    flaky = Source(
+        "flaky", json_scraper("flaky", "https://flaky.test/rates", lambda data: [])
+    )
+    healthy = Source("healthy", AsyncMock(return_value=[rate("healthy")]))
+    monkeypatch.setattr(core, "get_sources", lambda source_names: [flaky, healthy])
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(break_connection(attempts))
+    ) as client:
+        report = await core.fetch_rates_report(
+            client=client, max_attempts=2, total_timeout=None
+        )
+
+    assert [item.source for item in report.rates] == ["healthy"]
+    assert [(f.source, f.error_type) for f in report.failures] == [
+        ("flaky", "TransportError")
+    ]
+    assert "ProtocolError: connection terminated" in report.failures[0].message
+    assert len(attempts) == 2
+
+
+async def test_every_source_records_a_transport_error_outside_httpx():
+    attempts = []
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(break_connection(attempts))
+    ) as client:
+        report = await core.fetch_rates_report(
+            client=client, max_attempts=1, total_timeout=None
+        )
+
+    assert report.rates == ()
+    assert {f.error_type for f in report.failures} == {"TransportError"}
+    assert len(report.failures) == len(core.get_sources(None))
 
 
 async def test_rates_are_unique_by_source_and_name(monkeypatch):

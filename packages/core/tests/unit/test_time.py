@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from perexchange.time import parse_source_timestamp
+from perexchange.time import PERU_TZ, parse_source_timestamp
 
 
 def test_parse_source_timestamp_truncates_excess_fractional_digits():
@@ -14,6 +14,14 @@ def test_parse_source_timestamp_truncates_excess_fractional_digits():
 def test_parse_source_timestamp_normalizes_offsets_to_utc():
     parsed = parse_source_timestamp(
         "2026-01-01T03:00:00-05:00", datetime.now(timezone.utc)
+    )
+
+    assert parsed == datetime(2026, 1, 1, 8, tzinfo=timezone.utc)
+
+
+def test_parse_source_timestamp_reads_naive_values_in_the_given_zone():
+    parsed = parse_source_timestamp(
+        "2026-01-01T03:00:00", datetime.now(timezone.utc), PERU_TZ
     )
 
     assert parsed == datetime(2026, 1, 1, 8, tzinfo=timezone.utc)
