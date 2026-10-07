@@ -1,50 +1,55 @@
 # Releasing
 
-The core package is published from a version tag. The workflow runs the checks for that
-tag, builds one wheel and one source distribution, checks both artifacts, publishes them
-to PyPI, and then creates the GitHub release.
+The `perexchange` package is published to PyPI from a version tag. The release command
+prepares the release and pushes the tag. The tag starts the release workflow.
 
-The release workflow does not change files, create commits, or push tags. Do those steps
-locally so the version change and release commit can be reviewed.
+## Release a version
 
-## Prepare a release
+Run the command from a clean `master` that equals `origin/master`:
 
-1. Update `version` in [`packages/core/pyproject.toml`](../packages/core/pyproject.toml).
-2. Regenerate and check the lock file:
+```bash
+mise run release 2.1.0
+```
 
-   ```bash
-   uv lock
-   ```
+The version must be greater than the current one. The tag `v2.1.0` must not exist locally
+or on `origin`. The command:
 
-3. Run the full local checks:
+1. Sets `version` in `packages/core/pyproject.toml`.
+2. Runs `uv lock` and checks that both files hold the new version.
+3. Runs `mise run check`.
+4. Commits both files as `build: release perexchange 2.1.0`.
+5. Creates the annotated tag `v2.1.0`.
+6. Pushes the commit and the tag together with `git push --atomic`.
 
-   ```bash
-   mise run check
-   ```
+If a step fails, the command restores the version, lock file, commit, and tag, and pushes
+nothing. Fix the cause and run it again.
 
-4. Commit the version and lock-file changes. Set `VERSION` to the version you prepared:
+To check the preconditions without changing anything, add `--dry-run`:
 
-   ```bash
-   VERSION=2.0.0
-   git add packages/core/pyproject.toml uv.lock
-   git commit -m "build: prepare perexchange ${VERSION}"
-   git push origin master
-   ```
+```bash
+mise run release 2.1.0 --dry-run
+```
 
-5. Create and push an annotated tag after the commit is on `master`:
+## What the workflow does
 
-   ```bash
-   git tag -a "v${VERSION}" -m "Release perexchange ${VERSION}"
-   git push origin "v${VERSION}"
-   ```
+Pushing a tag that matches `v*.*.*` starts
+[`.github/workflows/publish.yml`](../.github/workflows/publish.yml), which:
 
-The tag must point to a commit reachable from `master`. The workflow rejects tags that do
-not meet that rule or whose version does not match the package metadata.
+1. Runs the tests, formatting check, lint and type check on Python 3.10 and 3.14.
+2. Builds one wheel and one source distribution, and checks both.
+3. Installs the wheel and checks that its version matches the tag.
+4. Publishes both to PyPI.
+5. Creates the GitHub release with both files attached.
+
+If a step fails, later steps do not run. GitHub creates the release only after PyPI
+accepts the files.
+
+The workflow rejects a tag that does not point to a commit reachable from `master`, or
+whose version differs from `version` in
+[`packages/core/pyproject.toml`](../packages/core/pyproject.toml).
 
 ## PyPI publishing
 
-PyPI publishing uses the repository's trusted publisher and the `pypy` GitHub environment.
-The workflow receives a short-lived OIDC token; no PyPI token is stored in the repository.
-
-If a build or check fails, PyPI is not contacted. The GitHub release is created only after
-PyPI accepts the artifacts.
+The publish job uses the repository's PyPI trusted publisher and the `pypi` GitHub
+environment. It authenticates with a short-lived OIDC token, so no PyPI token is stored in
+the repository.
