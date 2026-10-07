@@ -5,6 +5,7 @@ import httpx
 
 from perexchange.models import ExchangeRate
 from perexchange.retry import fetch_with_retry
+from perexchange.transport import send
 
 
 SOURCE = "dichikash"
@@ -45,9 +46,9 @@ async def fetch_dichikash(
     retry_delay: float = 0.5,
 ) -> list[ExchangeRate]:
     async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
-        buy_response = await c.get(BUY_URL, timeout=timeout)
+        buy_response = await send(c, "GET", BUY_URL, timeout=timeout)
         buy_response.raise_for_status()
-        sell_response = await c.get(SELL_URL, timeout=timeout)
+        sell_response = await send(c, "GET", SELL_URL, timeout=timeout)
         sell_response.raise_for_status()
         return _parse_json({"buy": buy_response.text, "sell": sell_response.text})
 

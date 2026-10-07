@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from perexchange.models import ExchangeRate
 from perexchange.retry import fetch_with_retry
 from perexchange.scrapers.factories import rate_from_fields
+from perexchange.transport import send
 
 
 SOURCE = "westernunion"
@@ -22,10 +23,12 @@ async def fetch_westernunion(
     retry_delay: float = 0.5,
 ) -> list[ExchangeRate]:
     async def _fetch(c: httpx.AsyncClient) -> list[ExchangeRate]:
-        page_response = await c.get(PAGE_URL, timeout=timeout)
+        page_response = await send(c, "GET", PAGE_URL, timeout=timeout)
         page_response.raise_for_status()
         token = _extract_verification_token(page_response.text)
-        api_response = await c.post(
+        api_response = await send(
+            c,
+            "POST",
             API_URL,
             headers={
                 "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
