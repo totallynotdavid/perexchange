@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
 
     environment:
-      name: pypy
+      name: pypi
       url: https://pypi.org/p/perexchange
 
     permissions:
