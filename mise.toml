@@ -52,6 +52,22 @@ dir = "packages/core"
 description = "Build and verify package contents"
 run = "uv run --extra dev python tools/build_check.py"
 
+[tasks.release]
+description = "Bump the version, lock, check, commit, tag and push a release"
+usage = '''
+arg "<version>" help="The new version, for example 2.1.0"
+flag "--dry-run" help="Check the preconditions and stop"
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+args=("${usage_version?}")
+if [ "${usage_dry_run:-false}" = "true" ]; then
+  args+=(--dry-run)
+fi
+exec uv run --extra dev python tools/release.py "${args[@]}"
+'''
+
 [tasks.check]
 description = "Run formatting, lint, tests, and package checks"
 depends = ["format-check", "format-docs-check", "lint", "test", "build-check"]
