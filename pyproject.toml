@@ -116,7 +116,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-files = ["packages/core/perexchange", "packages/cli/perexchange_cli"]
+files = ["packages/core/perexchange", "packages/cli/perexchange_cli", "examples"]
 strict = true
 enable_error_code = [
     "ignore-without-code",

@@ -3,9 +3,6 @@
 **/__pycache__/**
 *.egg-info/
 
-# Generated files by scripts
-rates.json
-
 # Coverage artifacts
 .coverage
 *.xml
