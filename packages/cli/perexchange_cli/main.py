@@ -22,10 +22,10 @@ async def cmd_fetch() -> None:
     print(f"CURRENT EXCHANGE RATES ({len(rates)} rates)")
     print_separator()
 
-    for rate in sorted(rates, key=lambda r: r.buy_price):
+    for rate in sorted(rates, key=lambda r: r.sell_price):
         print(f"{rate.name} ({rate.source}):")
-        print(f"  Buy:  S/ {rate.buy_price:.4f}")
-        print(f"  Sell: S/ {rate.sell_price:.4f}")
+        print(f"  Pays you:     S/ {rate.buy_price:.4f}")
+        print(f"  Charges you:  S/ {rate.sell_price:.4f}")
         print(f"  Spread: S/ {rate.spread:.4f}")
         print()
 
