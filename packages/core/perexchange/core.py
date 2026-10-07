@@ -69,11 +69,7 @@ async def fetch_rates_report(
                 selected_sources, owned_client, timeout, max_attempts, total_timeout
             )
 
-    all_rates = [rate for result in results for rate in result.rates]
-    aggregator_sources = {
-        source.id for source in selected_sources if source.is_aggregator
-    }
-    rates = _deduplicate_rates(all_rates, aggregator_sources)
+    rates = _merge_rates(results)
     failures = tuple(result.failure for result in results if result.failure is not None)
     return FetchReport(rates=tuple(rates), failures=failures)
 
@@ -110,6 +106,7 @@ def _validate_settings(
 
 @dataclass(frozen=True, slots=True)
 class _SourceResult:
+    source: Source
     rates: list[ExchangeRate]
     failure: SourceFailure | None
 
@@ -142,7 +139,7 @@ async def _safe_fetch(
         else:
             rates = await operation
         _validate_source_rates(source, rates)
-        return _SourceResult(rates=rates, failure=None)
+        return _SourceResult(source=source, rates=rates, failure=None)
     except (
         httpx.HTTPError,
         SourceError,
@@ -151,6 +148,7 @@ async def _safe_fetch(
     ) as error:
         logger.warning("source %s failed: %s", source.id, error)
         return _SourceResult(
+            source=source,
             rates=[],
             failure=SourceFailure(
                 source=source.id,
@@ -175,20 +173,22 @@ def _failure_message(error: Exception, total_timeout: float | None) -> str:
     return type(error).__name__
 
 
-def _deduplicate_rates(
-    rates: list[ExchangeRate], aggregator_sources: set[str]
-) -> list[ExchangeRate]:
+def _merge_rates(results: list[_SourceResult]) -> list[ExchangeRate]:
+    """Drop an aggregator row when its selected direct source returned rates."""
+    fetched_directly = {
+        result.source.id
+        for result in results
+        if result.rates and not result.source.is_aggregator
+    }
     seen: set[tuple[str, str]] = set()
-    unique: list[ExchangeRate] = []
-    for rate in rates:
-        if rate.source in aggregator_sources and _is_covered_source(rate.name):
-            continue
-        key = (rate.source, rate.name)
-        if key not in seen:
-            seen.add(key)
-            unique.append(rate)
-    return unique
-
-
-def _is_covered_source(name: str) -> bool:
-    return source_for_name(name) is not None
+    merged: list[ExchangeRate] = []
+    for result in results:
+        for rate in result.rates:
+            house = source_for_name(rate.name)
+            if result.source.is_aggregator and house in fetched_directly:
+                continue
+            key = (rate.source, rate.name)
+            if key not in seen:
+                seen.add(key)
+                merged.append(rate)
+    return merged
