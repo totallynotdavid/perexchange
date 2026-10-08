@@ -8,7 +8,6 @@ import asyncio
 import importlib.util
 
 from datetime import datetime, timezone
-from importlib import import_module
 from pathlib import Path
 from types import ModuleType
 
@@ -17,13 +16,11 @@ import perexchange
 import pytest
 
 from perexchange import ExchangeRate
-from perexchange.scrapers.factories import DIGITAL_TC_URL
-from perexchange.scrapers.registry import get_sources
+
+from tests.captured import fixture_client
 
 
 ROOT = Path(__file__).parents[4]
-FIXTURES = Path(__file__).parent.parent / "fixtures"
-DIGITAL_TENANTS = {"sr-cambio": "srcambio", "money-plus": "moneyplus"}
 
 
 def load_example(name: str) -> ModuleType:
@@ -34,30 +31,6 @@ def load_example(name: str) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
-
-def fixture_bytes(stem: str) -> bytes:
-    [path] = FIXTURES.glob(f"{stem}.*")
-    return path.read_bytes()
-
-
-def fixture_client() -> httpx.AsyncClient:
-    bodies: dict[str, bytes] = {}
-    for source in get_sources():
-        url = getattr(import_module(f"perexchange.scrapers.{source.id}"), "URL", None)
-        if url is not None:
-            bodies[str(httpx.URL(url))] = fixture_bytes(source.id)
-
-    def answer(request: httpx.Request) -> httpx.Response:
-        url = str(request.url)
-        if url == DIGITAL_TC_URL:
-            tenant = DIGITAL_TENANTS[request.headers["X-Digital-Tenant"]]
-            return httpx.Response(200, content=fixture_bytes(tenant))
-        if url in bodies:
-            return httpx.Response(200, content=bodies[url])
-        return httpx.Response(404)
-
-    return httpx.AsyncClient(transport=httpx.MockTransport(answer))
 
 
 def quote(name: str, buy: float, sell: float) -> ExchangeRate:
