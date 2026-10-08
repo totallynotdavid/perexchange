@@ -1,0 +1,42 @@
+---
+import { formatLimaTime } from "../lib/format.ts";
+
+interface Props {
+  generatedAt: string;
+}
+
+const { generatedAt } = Astro.props;
+const absolute = `${formatLimaTime(generatedAt)} Lima time`;
+---
+
+<p class="updated">
+  <span>
+    Updated{" "}
+    <time id="updated" datetime={generatedAt}>
+      {absolute}
+    </time>
+  </span>
+</p>
+<p class="notice" id="stale-notice" role="status" hidden>
+  This snapshot is more than an hour old. The scheduled refresh may be delayed, so check the sources before you rely on
+  these prices.
+</p>
+
+<script>
+  import { formatAge } from "../lib/format.ts";
+
+  const STALE_AFTER_MINUTES = 60;
+  const time = document.querySelector<HTMLTimeElement>("#updated");
+  const notice = document.querySelector<HTMLElement>("#stale-notice");
+
+  if (time && notice) {
+    const absolute = (time.textContent ?? "").trim();
+    const show = () => {
+      const minutes = Math.max(0, Math.floor((Date.now() - Date.parse(time.dateTime)) / 60_000));
+      time.textContent = `${minutes < 1 ? "just now" : `${formatAge(minutes)} ago`} (${absolute})`;
+      notice.hidden = minutes < STALE_AFTER_MINUTES;
+    };
+    show();
+    setInterval(show, 30_000);
+  }
+</script>

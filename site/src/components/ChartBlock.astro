@@ -1,0 +1,85 @@
+---
+import ChartSvg from "./ChartSvg.astro";
+import { rangeCharts } from "../lib/chart-data.ts";
+import type { SeriesInput } from "../lib/chart-data.ts";
+import { formatPrice } from "../lib/format.ts";
+import { RANGE_LABELS } from "../lib/range.ts";
+
+interface Props {
+  series: SeriesInput[];
+  /** The time of the newest snapshot, in milliseconds. */
+  end: number;
+  /** What the chart is of, for the accessible name. */
+  subject: string;
+}
+
+const { series, end, subject } = Astro.props;
+const charts = rangeCharts(series, end);
+const kinds = Object.fromEntries(series.map((one) => [one.id, one.kind]));
+const defaultRange = "24h";
+
+function describe(label: string, summary: (typeof charts)[number]["summaries"][number]): string {
+  if (summary.latest === null || summary.low === null || summary.high === null) {
+    return "";
+  }
+  const spread =
+    summary.low === summary.high
+      ? `steady at ${formatPrice(summary.latest)}`
+      : `now ${formatPrice(summary.latest)}, from ${formatPrice(summary.low)} to ${formatPrice(summary.high)}`;
+  return `${label}: ${spread}`;
+}
+---
+
+<div class="chart-block">
+  <ul class="legend">
+    {series.map((one) => (
+      <li>
+        <span class={`swatch ${one.kind}`} aria-hidden="true" />
+        {one.label}
+      </li>
+    ))}
+  </ul>
+  <div class="segmented" role="radiogroup" aria-label="Time range">
+    {charts.map(({ range }) => (
+      <>
+        <input type="radio" name="range" id={`range-${range}`} value={range} checked={range === defaultRange} />
+        <label for={`range-${range}`}>{RANGE_LABELS[range]}</label>
+      </>
+    ))}
+  </div>
+  {charts.map(({ range, wide, narrow, summaries, snapshots }) => {
+    const title = `${subject}, ${RANGE_LABELS[range].toLowerCase()}. ${summaries.map((s) => describe(s.label, s)).join(". ")}.`;
+    return (
+      <figure id={`chart-${range}`}>
+        {wide.series.length === 0 ? (
+          <p class="empty">No snapshots in this range yet.</p>
+        ) : (
+          <>
+            <ChartSvg chart={wide} size="wide" titleId={`title-${range}-wide`} title={title} kinds={kinds} />
+            <ChartSvg chart={narrow} size="narrow" titleId={`title-${range}-narrow`} title={title} kinds={kinds} />
+          </>
+        )}
+        <figcaption class="chart-summary">
+          {summaries.map((summary) => (
+            <div>
+              {summary.latest === null ? (
+                summary.label
+              ) : (
+                <>
+                  {summary.label}: now <strong class="num">{formatPrice(summary.latest)}</strong>, range{" "}
+                  <span class="num">
+                    {formatPrice(summary.low ?? summary.latest)} to {formatPrice(summary.high ?? summary.latest)}
+                  </span>
+                </>
+              )}
+            </div>
+          ))}
+          <div>
+            {snapshots === 1 ? "One snapshot so far, so there is no line yet. " : ""}
+            {snapshots} snapshots in this range.
+          </div>
+        </figcaption>
+      </figure>
+    );
+  })}
+</div>

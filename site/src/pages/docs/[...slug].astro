@@ -1,0 +1,47 @@
+---
+import { getCollection, render } from "astro:content";
+
+import Base from "../../layouts/Base.astro";
+import { DOCS_NAV, LIBRARY_SLUGS } from "../../lib/docs.ts";
+
+export async function getStaticPaths() {
+  const library = (await getCollection("library")).map((entry) => ({
+    slug: LIBRARY_SLUGS[entry.id],
+    entry,
+  }));
+  const site = (await getCollection("site")).map((entry) => ({ slug: entry.id, entry }));
+  return [...library, ...site].map(({ slug, entry }) => ({ params: { slug }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+const heading = headings.find((one) => one.depth === 1)?.text ?? "Documentation";
+const current = Astro.params.slug;
+const isData = current === "data";
+---
+
+<Base
+  title={`${heading} | perexchange docs`}
+  description="Documentation for perexchange, an asynchronous Python library that fetches PEN/USD rates from Peruvian exchange houses."
+  section={isData ? "data" : "docs"}
+>
+  <div class="docs">
+    <nav class="docs-nav" aria-label="Documentation">
+      <ul>
+        {DOCS_NAV.map((item) => (
+          <li>
+            <a
+              href={item.slug ? `/docs/${item.slug}/` : "/docs/"}
+              aria-current={item.slug === current ? "page" : undefined}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <article class="prose">
+      <Content />
+    </article>
+  </div>
+</Base>

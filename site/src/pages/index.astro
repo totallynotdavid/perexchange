@@ -1,0 +1,97 @@
+---
+import ChartBlock from "../components/ChartBlock.astro";
+import Converter from "../components/Converter.astro";
+import Freshness from "../components/Freshness.astro";
+import RateTable from "../components/RateTable.astro";
+import Base from "../layouts/Base.astro";
+import { formatPrice } from "../lib/format.ts";
+import { loadHistory, loadLatest } from "../lib/load.ts";
+import { marketSeries, missingSourcesNotice, rankingScope, summarize } from "../lib/market.ts";
+
+const latest = await loadLatest();
+const history = await loadHistory();
+const market = summarize(latest.rates, latest.generated_at);
+const missing = missingSourcesNotice(latest.failures);
+const scope = rankingScope(latest.failures);
+const points = marketSeries(history.snapshots);
+const end = Date.parse(latest.generated_at);
+const sourceCount = new Set(latest.rates.map((rate) => rate.source)).size;
+
+const series = [
+  {
+    id: "sell",
+    label: "Lowest price to buy a dollar",
+    kind: "sell" as const,
+    points: points.map((point) => ({ t: point.t, v: point.lowestSell })),
+  },
+  {
+    id: "buy",
+    label: "Highest price to sell a dollar",
+    kind: "buy" as const,
+    points: points.map((point) => ({ t: point.t, v: point.highestBuy })),
+  },
+];
+---
+
+<Base
+  title="perexchange: PEN/USD rates from Peruvian exchange houses"
+  description={`Live dollar to sol rates from Peruvian exchange houses: the cheapest place to buy and the best place to sell${scope}. A converter and price history.`}
+  section="rates"
+>
+  <h1>Dollar rates in Peru</h1>
+  <p class="lede">
+    {latest.rates.length} quotes from {sourceCount} exchange houses, side by side. Prices are soles per US$1 and come
+    straight from each house's public page.
+  </p>
+  <Freshness generatedAt={latest.generated_at} />
+  {missing && <p class="notice">{missing}</p>}
+
+  <div class="cards">
+    <section class="card" aria-labelledby="card-buy">
+      <h2 id="card-buy">Cheapest place to buy US$1{scope}</h2>
+      <p class="figure">S/ {market.cheapestToBuy ? formatPrice(market.cheapestToBuy.sell) : "none"}</p>
+      <p class="where">{market.cheapestToBuy?.name ?? "No current quote"}</p>
+    </section>
+    <section class="card" aria-labelledby="card-sell">
+      <h2 id="card-sell">Best place to sell US$1{scope}</h2>
+      <p class="figure">S/ {market.bestToSell ? formatPrice(market.bestToSell.buy) : "none"}</p>
+      <p class="where">{market.bestToSell?.name ?? "No current quote"}</p>
+    </section>
+    <section class="card" aria-labelledby="card-median">
+      <h2 id="card-median">Median price to buy US$1</h2>
+      <p class="figure">S/ {market.medianSell ? formatPrice(market.medianSell) : "none"}</p>
+      <p class="where">Across {market.fresh.length} current quotes</p>
+    </section>
+  </div>
+
+  <Converter quotes={latest.rates} staleIds={market.stale.map((quote) => quote.id)} scope={scope} />
+
+  <h2>All rates</h2>
+  <RateTable quotes={latest.rates} market={market} generatedAt={latest.generated_at} scope={scope} />
+
+  {latest.failures.length > 0 && (
+    <details class="failures">
+      <summary>
+        {latest.failures.length} {latest.failures.length === 1 ? "source" : "sources"} did not answer in this snapshot
+      </summary>
+      <ul>
+        {latest.failures.map((failure) => (
+          <li>
+            <span class="mono">{failure.source}</span>: {failure.message}
+          </li>
+        ))}
+      </ul>
+    </details>
+  )}
+
+  <h2>Best prices over time</h2>
+  <p class="table-note">Each point is the best price among the houses that answered in that snapshot.</p>
+  <ChartBlock series={series} end={end} subject="Best prices among the houses that answered, in soles per US$1" />
+
+  <Fragment slot="footer">
+    <p>
+      Snapshot of <span class="mono">{latest.generated_at}</span> from perexchange
+      <span class="mono">{latest.library_version}</span>. <a href="/data/latest.json">Raw data</a>
+    </p>
+  </Fragment>
+</Base>

@@ -1,0 +1,86 @@
+---
+import ChartBlock from "../../components/ChartBlock.astro";
+import Freshness from "../../components/Freshness.astro";
+import Base from "../../layouts/Base.astro";
+import { formatAge, formatPrice, formatSpread } from "../../lib/format.ts";
+import { loadHistory, loadLatest } from "../../lib/load.ts";
+import { ageMinutes, houseSeries, isStale, rankingScope, summarize } from "../../lib/market.ts";
+
+export async function getStaticPaths() {
+  const latest = await loadLatest();
+  const history = await loadHistory();
+  const market = summarize(latest.rates, latest.generated_at);
+  return latest.rates.map((quote) => ({
+    params: { id: quote.id },
+    props: { quote, latest, history, market },
+  }));
+}
+
+const { quote, latest, history, market } = Astro.props;
+const age = ageMinutes(quote, latest.generated_at);
+const stale = isStale(age);
+const points = houseSeries(history.snapshots, quote.id);
+const series = [
+  {
+    id: "sell",
+    label: "You pay (sell price)",
+    kind: "sell" as const,
+    points: points.map((point) => ({ t: point.t, v: point.sell })),
+  },
+  {
+    id: "buy",
+    label: "You get (buy price)",
+    kind: "buy" as const,
+    points: points.map((point) => ({ t: point.t, v: point.buy })),
+  },
+];
+const gapToBest = market.cheapestToBuy ? quote.sell - market.cheapestToBuy.sell : null;
+const scope = rankingScope(latest.failures);
+---
+
+<Base
+  title={`${quote.name}: PEN/USD rate history | perexchange`}
+  description={`Buy and sell price of US$1 at ${quote.name}, with its history.`}
+  section="rates"
+>
+  <p class="breadcrumb">
+    <a href="/">All rates</a>
+  </p>
+  <h1 class="mono">{quote.name}</h1>
+  <p class="lede">
+    Source <span class="mono">{quote.source}</span>.
+    {stale ? `Stale: quoted ${formatAge(age)} ago.` : age < 1 ? "Quoted now." : `Quoted ${formatAge(age)} ago.`}
+  </p>
+  <Freshness generatedAt={latest.generated_at} />
+
+  <div class="cards">
+    <section class="card" aria-labelledby="h-get">
+      <h2 id="h-get">You get for US$1</h2>
+      <p class="figure">S/ {formatPrice(quote.buy)}</p>
+      <p class="where">What it pays when you sell a dollar</p>
+    </section>
+    <section class="card" aria-labelledby="h-pay">
+      <h2 id="h-pay">You pay for US$1</h2>
+      <p class="figure">S/ {formatPrice(quote.sell)}</p>
+      <p class="where">
+        {gapToBest === null || stale
+          ? "What it charges when you buy a dollar"
+          : gapToBest <= 0
+            ? `The lowest current price${scope}`
+            : `S/ ${formatPrice(gapToBest)} above the lowest current price${scope}`}
+      </p>
+    </section>
+    <section class="card" aria-labelledby="h-spread">
+      <h2 id="h-spread">Spread</h2>
+      <p class="figure">S/ {formatSpread(quote.buy, quote.sell)}</p>
+      <p class="where">The house's margin on a round trip</p>
+    </section>
+  </div>
+
+  <h2>Price history</h2>
+  <ChartBlock
+    series={series}
+    end={Date.parse(latest.generated_at)}
+    subject={`${quote.name} prices in soles per US$1`}
+  />
+</Base>

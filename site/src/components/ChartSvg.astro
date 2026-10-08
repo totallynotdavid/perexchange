@@ -1,0 +1,44 @@
+---
+import type { Chart } from "../lib/chart.ts";
+
+interface Props {
+  chart: Chart;
+  /** Names the chart for assistive technology. Unique on the page. */
+  titleId: string;
+  title: string;
+  /** Maps a series id to its CSS class, for color and dash. */
+  kinds: Record<string, string>;
+  size: "wide" | "narrow";
+}
+
+const { chart, titleId, title, kinds, size } = Astro.props;
+---
+
+<svg class={`plot ${size}`} viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-labelledby={titleId}>
+  <title id={titleId}>{title}</title>
+  {chart.yTicks.map((tick) => (
+    <>
+      <line class="grid-line" x1={chart.plot.left} x2={chart.plot.right} y1={tick.y} y2={tick.y} />
+      <text x={chart.plot.left - 8} y={tick.y + 4} text-anchor="end">
+        {tick.label}
+      </text>
+    </>
+  ))}
+  {chart.xTicks.map((tick, i) => (
+    <text
+      x={tick.x}
+      y={chart.height - 6}
+      text-anchor={i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle"}
+    >
+      {tick.label}
+    </text>
+  ))}
+  {chart.series.map((one) => (
+    <>
+      {one.dots.length > 1 && <path class={`line ${kinds[one.id]}`} d={one.path} />}
+      {one.dots.length <= 2 &&
+        one.dots.map((dot) => <circle class={`dot ${kinds[one.id]}`} cx={dot.x} cy={dot.y} r="3.5" />)}
+      <circle class={`dot ${kinds[one.id]}`} cx={one.last.x} cy={one.last.y} r="3.5" />
+    </>
+  ))}
+</svg>

@@ -1,0 +1,64 @@
+---
+import fontUrl from "@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2?url";
+
+import "../styles/site.css";
+
+interface Props {
+  title: string;
+  description: string;
+  section?: "rates" | "docs" | "data";
+}
+
+const { title, description, section } = Astro.props;
+const nav = [
+  { href: "/", label: "Rates", section: "rates" },
+  { href: "/docs/", label: "Docs", section: "docs" },
+  { href: "/docs/data/", label: "Open data", section: "data" },
+  { href: "https://github.com/totallynotdavid/perexchange", label: "GitHub" },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href={fontUrl} as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <header class="site-header">
+      <div class="container">
+        <a class="brand" href="/">
+          perexchange
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          {nav.map((item) => (
+            <a href={item.href} aria-current={item.section === section ? "page" : undefined}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
+    <main id="main" class="container">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <slot name="footer" />
+        <p>
+          Built from the open-source
+          <a href="https://github.com/totallynotdavid/perexchange">perexchange</a> library. Apache-2.0. Rates are what
+          each house publishes and are not offers.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

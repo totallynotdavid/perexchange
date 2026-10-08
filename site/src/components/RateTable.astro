@@ -1,0 +1,119 @@
+---
+import { formatAge, formatPrice, formatSpread } from "../lib/format.ts";
+import { ageMinutes, isStale } from "../lib/market.ts";
+import type { Market } from "../lib/market.ts";
+import type { Quote } from "../lib/data.ts";
+
+interface Props {
+  quotes: Quote[];
+  market: Market;
+  generatedAt: string;
+  /** What qualifies a claim of the best price, from `rankingScope`. */
+  scope: string;
+}
+
+const { quotes, market, generatedAt, scope } = Astro.props;
+const rows = [...quotes]
+  .sort((a, b) => a.sell - b.sell)
+  .map((quote) => {
+    const age = ageMinutes(quote, generatedAt);
+    return { quote, age, stale: isStale(age) };
+  });
+const columns = [
+  { key: "name", label: "House", numeric: false },
+  { key: "buy", label: "You get", numeric: true },
+  { key: "sell", label: "You pay", numeric: true },
+  { key: "spread", label: "Spread", numeric: true },
+] as const;
+---
+
+<div class="table-scroll" role="region" aria-label="Exchange rates" tabindex="0">
+  <table class="rates" id="rates">
+    <caption>Soles per US$1, sorted by what you pay. The figure marked best is the best current price{scope}.</caption>
+    <thead>
+      <tr>
+        {columns.map((column) => (
+          <th
+            scope="col"
+            class={column.key === "spread" ? "spread" : undefined}
+            aria-sort={column.key === "sell" ? "ascending" : undefined}
+            data-key={column.key}
+          >
+            {column.label}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map(({ quote, age, stale }) => (
+        <tr
+          class={stale ? "stale" : undefined}
+          data-name={quote.name}
+          data-buy={quote.buy}
+          data-sell={quote.sell}
+          data-spread={quote.sell - quote.buy}
+        >
+          <td>
+            <a href={`/house/${quote.id}/`}>{quote.name}</a>
+            <span class="quoted">
+              {stale ? `Stale, quoted ${formatAge(age)} ago` : age < 1 ? "Quoted now" : `Quoted ${formatAge(age)} ago`}
+            </span>
+          </td>
+          <td class={`num${market.bestToSell?.id === quote.id ? " best" : ""}`}>
+            {formatPrice(quote.buy)}
+            {market.bestToSell?.id === quote.id && <span class="visually-hidden"> (best to sell{scope})</span>}
+          </td>
+          <td class={`num${market.cheapestToBuy?.id === quote.id ? " best" : ""}`}>
+            {formatPrice(quote.sell)}
+            {market.cheapestToBuy?.id === quote.id && <span class="visually-hidden"> (best to buy{scope})</span>}
+          </td>
+          <td class="num spread">{formatSpread(quote.buy, quote.sell)}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<p class="table-note">
+  <strong>You get</strong> is what the house pays for each dollar you sell it. <strong>You pay</strong> is what it
+  charges for each dollar you buy. <strong>Spread</strong> is the difference, the house's margin on a round trip. A
+  stale quote is more than three hours old, so it is listed but not ranked.
+</p>
+
+<script>
+  const table = document.querySelector<HTMLTableElement>("#rates");
+  const body = table?.tBodies[0];
+  const headers = table?.querySelectorAll<HTMLTableCellElement>("thead th");
+
+  if (table && body && headers) {
+    for (const header of headers) {
+      const label = header.textContent?.trim() ?? "";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      header.replaceChildren(button);
+
+      button.addEventListener("click", () => {
+        const key = header.dataset.key ?? "";
+        const current = header.getAttribute("aria-sort");
+        // A first click puts the best first: the highest to get, the lowest of the rest.
+        const ascending = current === null ? key !== "buy" : current === "descending";
+
+        for (const other of headers) {
+          other.removeAttribute("aria-sort");
+        }
+        header.setAttribute("aria-sort", ascending ? "ascending" : "descending");
+
+        const rows = [...body.rows];
+        const value = (row: HTMLTableRowElement) =>
+          key === "name" ? (row.dataset.name ?? "") : Number(row.dataset[key]);
+        rows.sort((a, b) => {
+          const left = value(a);
+          const right = value(b);
+          const order = typeof left === "string" ? left.localeCompare(String(right)) : left - Number(right);
+          return ascending ? order : -order;
+        });
+        body.append(...rows);
+      });
+    }
+  }
+</script>
