@@ -94,3 +94,66 @@ catch other exceptions.
 
 One fetch call owns the default client and closes it on return. A client the caller passes
 stays open, so a polling application can reuse its connections.
+
+## Site data
+
+The [site](../site/README.md) is static pages built from snapshots of
+`fetch_rates_report()`. The only writer of the state below is the `publish` job of
+[`.github/workflows/site.yml`](../.github/workflows/site.yml), which runs every 15 minutes
+and on each push to `master`. Pull requests, the `check` job and manual runs of other
+branches never write it.
+
+### The state
+
+| State                | Where                          | Holds                                                                                  |
+| -------------------- | ------------------------------ | -------------------------------------------------------------------------------------- |
+| The data branch      | the `data` branch, an orphan   | `latest.json`, and `history/YYYY-MM-DD.jsonl` with one line per snapshot for a UTC day |
+| The live site        | Cloudflare Workers assets      | One build: its pages and `/data/latest.json`                                           |
+| The publication lock | concurrency group `site-<ref>` | At most one running `publish` run, and at most one waiting                             |
+| The job's worktree   | `site/data` on the runner      | A private checkout of the data branch. No other run reads or writes it                 |
+
+The build cache of `setup-uv` is keyed by the lockfile. A miss costs time and nothing
+else.
+
+### Transitions
+
+The data branch is either absent or at a head commit, and only `publish` moves it:
+
+1. Absent to one commit. The first run creates the orphan branch, and the commit holds one
+   snapshot.
+2. Head to head plus one commit. The commit appends one line to the file for the UTC day
+   of the fetch, which a new day creates, and replaces `latest.json`. The push is a
+   fast-forward and never forced.
+
+Nothing else is allowed. No run rewrites a history line, a commit, or the branch. A run
+where no source returned a rate exits before the commit, so the branch never gets an empty
+snapshot. A rejected push means the head moved, so the run fails and the next run starts
+from the new head.
+
+A run takes these steps in order, and each depends on the one before:
+
+1. Check that its commit is the head of `master`. A re-run of an old run fails here
+   instead of deploying old code.
+2. Check out the head of the data branch.
+3. Record a snapshot, then push the commit.
+4. Build from that worktree.
+5. Deploy the build. A run without the Cloudflare token stops here and warns.
+
+The lock lets one run hold steps 1 to 5 at a time. A running run is never cancelled,
+because that could stop it between the push and the deploy. A newer waiting run replaces
+an older waiting one, so a busy period costs snapshots, not consistency. Only `master`
+publishes, whether the run was scheduled, pushed or started by hand.
+
+### What a reader sees
+
+- A reader of the data branch sees the old commit or the new one, whole. One commit holds
+  both files, and a ref update is atomic. A cached copy, such as a raw file URL, may lag
+  by a short time.
+- A visitor sees one build. Every page of a build and its `/data/latest.json` come from
+  the same snapshot, and Cloudflare switches to a new build as a whole. Pages from two
+  builds can appear in one visit, one after the other.
+- The live site is never newer than the data branch, because a run pushes before it
+  builds. It can be older when a deploy fails or no token is set. The next run that
+  deploys rebuilds from the whole branch and catches up.
+- The page shows the time of its snapshot and warns when it is more than an hour old, so a
+  stopped schedule is visible.

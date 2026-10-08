@@ -8,8 +8,11 @@ Read [architecture](../docs/architecture.md) first for the module map and fetch 
 
 ## Set up
 
-Install [mise](https://mise.jdx.dev/). It provides the pinned `uv`, `ruff` and `bun`. Run
-the commands below from the repository root.
+Install [mise](https://mise.jdx.dev/). It provides the pinned `uv`, `ruff` and
+[`bun`](https://bun.sh), which `mise run check` needs for the site and the Markdown
+checks. Without mise, install those three at the versions in [`mise.toml`](../mise.toml).
+The site checks also run `bun install`, so they need network access. Run the commands
+below from the repository root.
 
 ```bash
 git clone https://github.com/totallynotdavid/perexchange
@@ -31,7 +34,7 @@ mise run check
 ```
 
 The task checks Python formatting and lint, Markdown and YAML formatting, types, unit
-tests, and built packages. It never rewrites files.
+tests, built packages, and the [site](../site/README.md). It never rewrites files.
 
 Each part has its own task:
 
@@ -40,6 +43,7 @@ Each part has its own task:
 - `mise run format-docs-check` checks Markdown and YAML formatting.
 - `mise run lint` type-checks with mypy.
 - `mise run build-check` builds the packages and verifies them.
+- `mise run site-check` checks the site, and `mise run site-dev` serves it.
 
 Fix formatting with `mise run format` for Python and `mise run format-docs` for Markdown
 and YAML.
