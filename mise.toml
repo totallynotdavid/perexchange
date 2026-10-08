@@ -68,6 +68,26 @@ fi
 exec uv run --extra dev python tools/release.py "${args[@]}"
 '''
 
+[tasks.site-data]
+description = "Fetch every source once and record a snapshot for the site"
+run = "bun install --frozen-lockfile && bun run data"
+dir = "site"
+
+[tasks.site-dev]
+description = "Serve the site with live reload, from the recorded snapshot"
+run = "bun install --frozen-lockfile && bun run dev"
+dir = "site"
+
+[tasks.site-build]
+description = "Build the site into site/dist"
+run = "bun install --frozen-lockfile && bun run build"
+dir = "site"
+
+[tasks.site-check]
+description = "Type-check, lint, format-check and test the site"
+run = "bun install --frozen-lockfile && bun run check"
+dir = "site"
+
 [tasks.check]
 description = "Run formatting, lint, tests, and package checks"
-depends = ["format-check", "format-docs-check", "lint", "test", "build-check"]
+depends = ["format-check", "format-docs-check", "lint", "test", "build-check", "site-check"]
