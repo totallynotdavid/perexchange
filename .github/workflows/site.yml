@@ -1,0 +1,160 @@
+name: site
+
+on:
+  push:
+    branches: ["master"]
+    paths: &paths
+      - "site/**"
+      - "tools/snapshot.py"
+      - "packages/core/src/**"
+      - "README.md"
+      - "docs/**"
+      - "packages/cli/README.md"
+      - ".github/workflows/site.yml"
+  pull_request:
+    paths: *paths
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UV_PYTHON: "3.14.0"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.0"
+
+      - run: uv python install
+
+      - run: uv sync --locked --all-packages --extra dev
+
+      - run: bun install --frozen-lockfile
+        working-directory: site
+
+      - run: uv run pytest packages/core/tests/unit/test_snapshot.py
+      - run: bun run check
+        working-directory: site
+
+      # The build needs a snapshot. A live fetch proves the whole path, and the tool only
+      # fails when no source answers.
+      - run: bun run data
+        working-directory: site
+      - run: bun run build
+        working-directory: site
+
+  publish:
+    # A variable holding a JSON runner label, such as '["self-hosted","pe"]', moves the
+    # fetch to a machine whose address the exchange houses do not block.
+    runs-on:
+      ${{ vars.REFRESH_RUNNER && fromJSON(vars.REFRESH_RUNNER) || 'ubuntu-latest' }}
+    # Only master publishes. A manual run of another branch would otherwise push its
+    # snapshot to the data branch and deploy its build to the live site.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    timeout-minutes: 10
+
+    permissions:
+      contents: write
+
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.0"
+
+      - run: uv python install
+
+      - run: uv sync --locked --all-packages
+
+      - run: bun install --frozen-lockfile
+        working-directory: site
+
+      # A re-run of an old run, or a run that queued behind a newer push, would deploy
+      # code older than master.
+      - name: Check this commit is the head of master
+        run: |
+          git fetch --no-tags --depth=1 origin master
+          if [ "$(git rev-parse FETCH_HEAD)" != "$GITHUB_SHA" ]; then
+            echo "::error::$GITHUB_SHA is not the head of master, so this run would deploy old code."
+            exit 1
+          fi
+
+      # The history lives on an orphan `data` branch, so snapshots never touch master.
+      # A self-hosted runner keeps its clone between runs. The checkout deletes the old
+      # worktree directory but not git's record of it, which would block the branch.
+      - name: Check out the data branch
+        run: |
+          git worktree prune
+          if git ls-remote --exit-code --heads origin data > /dev/null; then
+            git fetch --depth=1 origin data
+            git worktree add -B data site/data FETCH_HEAD
+          else
+            git worktree add --orphan -b data site/data
+          fi
+
+      - run: bun run data
+        working-directory: site
+
+      # The site says which sources are missing beside its best prices. This makes the
+      # run say so too, because a blocked runner address is fixed outside the code.
+      - name: Report sources that did not answer
+        working-directory: site
+        run: |
+          # shellcheck disable=SC2016
+          bun -e '
+            const latest = await Bun.file("data/latest.json").json();
+            const names = latest.failures.map((failure) => failure.source);
+            if (names.length > 0) {
+              console.log(`::warning title=Sources did not answer::${names.join(", ")}. If this runner address is blocked, set the REFRESH_RUNNER variable to a runner on another network.`);
+            }
+          '
+
+      - name: Publish the snapshot
+        working-directory: site/data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit --message "data: snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push origin HEAD:data
+
+      - run: bun run build
+        working-directory: site
+
+      - name: Deploy
+        working-directory: site
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set, so the site was built but not deployed."
+            exit 0
+          fi
+          bun run deploy

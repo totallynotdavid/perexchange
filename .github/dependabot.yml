@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: "weekly"
 
+  - package-ecosystem: "bun"
+    directory: "/site"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "pip"
     directory: "/packages/core"
     schedule:
