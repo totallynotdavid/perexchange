@@ -61,5 +61,6 @@ the [API reference](docs/api.md) for every field.
   releases are made.
 - [Examples](examples): list every rate, find the best rates to buy and sell, summarize
   the market, and cache results. Run one with `uv run python examples/best_rates.py`.
-- [Site](site/README.md): the rates site, its open data, and how it is built and deployed.
+- [Site](site/README.md): the rates site at <https://perexchange.vercel.app>, its open
+  data, and how it is built and deployed.
 - [Contributing](.github/CONTRIBUTING.md): set up, run the checks, and add a source.

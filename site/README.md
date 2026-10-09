@@ -1,8 +1,8 @@
 # perexchange site
 
 The site shows the current PEN/USD rates, a converter, history charts and the library
-docs. It is a static [Astro](https://astro.build) site on Cloudflare Workers static
-assets. There is no server code.
+docs. It is an [Astro](https://astro.build) site, live at
+<https://perexchange.vercel.app>.
 
 ## How it works
 
@@ -12,13 +12,16 @@ The tool calls `perexchange.fetch_rates_report()` once and writes two files:
 - `latest.json`, the newest fetch.
 - `history/YYYY-MM-DD.jsonl`, one more line per fetch, in the file for that UTC day.
 
-The workflow commits both to the orphan `data` branch, builds the site from them, and
-deploys it. Each page is plain HTML with the figures and the SVG charts already in it. A
-small script sorts the table, runs the converter and updates the "quoted N minutes ago"
-text. Without scripts the page still shows every rate and chart.
+The workflow commits both to the orphan `data` branch. The rates pages render on request
+from that branch and Vercel caches each for 15 minutes. The docs pages are built once per
+deploy. Each page is plain HTML with the figures and the SVG charts already in it. A small
+script sorts the table, runs the converter and updates the "quoted N minutes ago" text.
+Without scripts the page still shows every rate and chart.
 
 A live API would fetch about 28 sites for each visitor and take around 8 seconds. A
-snapshot is fetched once for everyone, and the pages are served from the edge for free.
+snapshot is fetched once for everyone, and the pages are served from the cache.
+
+The charts cover the last 30 days. The page reads at most that many history files.
 
 The file formats are in [Open data](src/docs/data.md). Who may write the data branch, and
 what a reader sees while a run is in progress, are in
@@ -39,25 +42,27 @@ Run these from the repository root with `mise`, or from `site/` with `bun`.
 read them. Prettier moves spaces around inline tags, so the build test checks that the
 spaces in the rendered text survive.
 
-The build reads `site/data`, which is ignored by git. `bun run data` fills it. Set
-`PEREXCHANGE_DATA` to read another directory.
+The site reads the published `data` branch. `bun run dev` and `bun run preview` read
+`site/data` instead, which is ignored by git. `bun run data` fills it. Set
+`PEREXCHANGE_DATA` to read another directory, relative to `site/`.
 
 The tests cover the data path. `tests/contract.test.ts` runs the real Python tool on a few
 made-up quotes and reads its output with the loaders the site uses, so a change to the
 format on either side fails a test. `tests/build.test.ts` builds the site from that
-output. The tool's own tests run it against the captured source responses. The tests build
-into `site/.scratch`, because Astro cannot move files across filesystems.
+output, starts the server and requests the pages. The tool's own tests run it against the
+captured source responses. The tests build into `site/.scratch`, because Astro cannot move
+files across filesystems.
 
 ## Deploy
 
-[`.github/workflows/site.yml`](../.github/workflows/site.yml) deploys with
-`wrangler deploy`. It needs two repository secrets:
+The site is the Vercel project `perexchange` in the `empiricalhq` team, connected to this
+repository. A push to `master` deploys it, with no token or workflow. The project's root
+directory is `site/`. [`vercel.json`](vercel.json) holds an `ignoreCommand` that skips the
+deploy when the push changed nothing in `site/`, the READMEs or `docs/`, which the docs
+pages render. A push to the `data` branch never deploys.
 
-- `CLOUDFLARE_API_TOKEN`, a token with the Workers Scripts edit permission.
-- `CLOUDFLARE_ACCOUNT_ID`.
-
-Without them the workflow still records snapshots and builds, and it warns that it did not
-deploy. Only `master` publishes, whether the run is scheduled, pushed or started by hand.
+The workflow [`.github/workflows/site.yml`](../.github/workflows/site.yml) only records
+snapshots. Only `master` records, whether the run is scheduled or started by hand.
 
 Some exchange houses block the address ranges of GitHub-hosted runners. A snapshot then
 lists them under `failures`. The site leaves their prices out, so it calls a price the
@@ -66,5 +71,5 @@ missing. The run prints a warning that names them. To fetch from a machine they 
 register a self-hosted runner and set the repository variable `REFRESH_RUNNER` to its
 labels as JSON, for example `["self-hosted","peru"]`.
 
-[`public/_headers`](public/_headers) sets the content security policy. It allows no inline
-script, so every script must be an external file.
+[`vercel.json`](vercel.json) sets the response headers, including the content security
+policy. The policy allows no inline script, so every script must be an external file.

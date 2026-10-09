@@ -97,19 +97,19 @@ stays open, so a polling application can reuse its connections.
 
 ## Site data
 
-The [site](../site/README.md) is static pages built from snapshots of
-`fetch_rates_report()`. The only writer of the state below is the `publish` job of
-[`.github/workflows/site.yml`](../.github/workflows/site.yml), which runs every 15 minutes
-and on each push to `master`. Pull requests, the `check` job and manual runs of other
-branches never write it.
+The [site](../site/README.md) renders snapshots of `fetch_rates_report()`. The only writer
+of the state below is the `snapshot` job of
+[`.github/workflows/site.yml`](../.github/workflows/site.yml), which runs every 15
+minutes. Pull requests, the `check` job and manual runs of other branches never write it.
+The site reads the data branch when a page renders. A deploy does not record a snapshot.
 
 ### The state
 
 | State                | Where                          | Holds                                                                                  |
 | -------------------- | ------------------------------ | -------------------------------------------------------------------------------------- |
 | The data branch      | the `data` branch, an orphan   | `latest.json`, and `history/YYYY-MM-DD.jsonl` with one line per snapshot for a UTC day |
-| The live site        | Cloudflare Workers assets      | One build: its pages and `/data/latest.json`                                           |
-| The publication lock | concurrency group `site-<ref>` | At most one running `publish` run, and at most one waiting                             |
+| The live site        | Vercel project `perexchange`   | The docs pages, and a function that renders the rates pages from the data branch       |
+| The publication lock | concurrency group `site-<ref>` | At most one running `snapshot` run, and at most one waiting                            |
 | The job's worktree   | `site/data` on the runner      | A private checkout of the data branch. No other run reads or writes it                 |
 
 The build cache of `setup-uv` is keyed by the lockfile. A miss costs time and nothing
@@ -117,7 +117,7 @@ else.
 
 ### Transitions
 
-The data branch is either absent or at a head commit, and only `publish` moves it:
+The data branch is either absent or at a head commit, and only `snapshot` moves it:
 
 1. Absent to one commit. The first run creates the orphan branch, and the commit holds one
    snapshot.
@@ -132,28 +132,25 @@ from the new head.
 
 A run takes these steps in order, and each depends on the one before:
 
-1. Check that its commit is the head of `master`. A re-run of an old run fails here
-   instead of deploying old code.
-2. Check out the head of the data branch.
-3. Record a snapshot, then push the commit.
-4. Build from that worktree.
-5. Deploy the build. A run without the Cloudflare token stops here and warns.
+1. Check out the head of the data branch.
+2. Record a snapshot.
+3. Push the commit.
 
-The lock lets one run hold steps 1 to 5 at a time. A running run is never cancelled,
-because that could stop it between the push and the deploy. A newer waiting run replaces
+The lock lets one run hold these steps at a time. A running run is never cancelled,
+because that could stop it between the record and the push. A newer waiting run replaces
 an older waiting one, so a busy period costs snapshots, not consistency. Only `master`
-publishes, whether the run was scheduled, pushed or started by hand.
+records, whether the run was scheduled or started by hand.
 
 ### What a reader sees
 
 - A reader of the data branch sees the old commit or the new one, whole. One commit holds
   both files, and a ref update is atomic. A cached copy, such as a raw file URL, may lag
   by a short time.
-- A visitor sees one build. Every page of a build and its `/data/latest.json` come from
-  the same snapshot, and Cloudflare switches to a new build as a whole. Pages from two
-  builds can appear in one visit, one after the other.
-- The live site is never newer than the data branch, because a run pushes before it
-  builds. It can be older when a deploy fails or no token is set. The next run that
-  deploys rebuilds from the whole branch and catches up.
+- A rates page and `/data/latest.json` are cached for 15 minutes, and the function keeps
+  the files it read for 5 minutes, and GitHub caches a raw file for 5. A visitor sees data
+  up to about 25 minutes older than the data branch. Two pages from different times can
+  appear in one visit, one after the other.
+- The live site is never newer than the data branch. A run that fails leaves the branch
+  where it was, and the pages keep showing it until the next run succeeds.
 - The page shows the time of its snapshot and warns when it is more than an hour old, so a
   stopped schedule is visible.
