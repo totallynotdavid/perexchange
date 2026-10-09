@@ -55,29 +55,20 @@ jobs:
       - run: bun run check
         working-directory: site
 
-      # The build needs a snapshot. A live fetch proves the whole path, and the tool only
-      # fails when no source answers.
-      - run: bun run data
-        working-directory: site
-      - run: bun run build
-        working-directory: site
-
-  publish:
+  snapshot:
     # A variable holding a JSON runner label, such as '["self-hosted","pe"]', moves the
     # fetch to a machine whose address the exchange houses do not block.
     runs-on:
       ${{ vars.REFRESH_RUNNER && fromJSON(vars.REFRESH_RUNNER) || 'ubuntu-latest' }}
-    # Only master publishes. A manual run of another branch would otherwise push its
-    # snapshot to the data branch and deploy its build to the live site.
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    # Only master records snapshots. A manual run of another branch would otherwise push its
+    # snapshot to the data branch.
+    if: >-
+      github.ref == 'refs/heads/master' && (github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch')
     timeout-minutes: 10
 
     permissions:
       contents: write
-
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -94,19 +85,6 @@ jobs:
       - run: uv python install
 
       - run: uv sync --locked --all-packages
-
-      - run: bun install --frozen-lockfile
-        working-directory: site
-
-      # A re-run of an old run, or a run that queued behind a newer push, would deploy
-      # code older than master.
-      - name: Check this commit is the head of master
-        run: |
-          git fetch --no-tags --depth=1 origin master
-          if [ "$(git rev-parse FETCH_HEAD)" != "$GITHUB_SHA" ]; then
-            echo "::error::$GITHUB_SHA is not the head of master, so this run would deploy old code."
-            exit 1
-          fi
 
       # The history lives on an orphan `data` branch, so snapshots never touch master.
       # A self-hosted runner keeps its clone between runs. The checkout deletes the old
@@ -146,15 +124,3 @@ jobs:
           git add --all
           git commit --message "data: snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push origin HEAD:data
-
-      - run: bun run build
-        working-directory: site
-
-      - name: Deploy
-        working-directory: site
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::warning::CLOUDFLARE_API_TOKEN is not set, so the site was built but not deployed."
-            exit 0
-          fi
-          bun run deploy
