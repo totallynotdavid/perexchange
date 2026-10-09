@@ -1,7 +1,6 @@
 /node_modules/
 /dist/
 /.astro/
-/.wrangler/
 # Directories the tests build into, inside the site so Astro can rename across them.
 /.scratch/
 # Written by `bun run data` and held on the data branch. Anchored, because the route in
