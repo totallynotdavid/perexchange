@@ -17,6 +17,18 @@ function git(...args: string[]): string {
   return run.stdout.trim();
 }
 
+/** The exit code Vercel would read for a push of HEAD, with the given previous SHA. */
+function ignore(ref: string, previous: string | undefined): number | null {
+  const env: NodeJS.ProcessEnv = { ...process.env, VERCEL_GIT_COMMIT_REF: ref };
+  if (previous === undefined) {
+    delete env.VERCEL_GIT_PREVIOUS_SHA;
+  } else {
+    env.VERCEL_GIT_PREVIOUS_SHA = previous;
+  }
+  return spawnSync("sh", ["-c", ignoreCommand], { cwd: path.join(repo, "site"), env })
+    .status;
+}
+
 /** Commit one file change and return the exit code Vercel would read for that push. */
 function push(file: string, ref: string): number | null {
   const previous = git("rev-parse", "HEAD");
@@ -24,13 +36,7 @@ function push(file: string, ref: string): number | null {
   writeFileSync(path.join(repo, file), String(Math.random()));
   git("add", "--all");
   git("commit", "--message", "change");
-  const env = {
-    ...process.env,
-    VERCEL_GIT_COMMIT_REF: ref,
-    VERCEL_GIT_PREVIOUS_SHA: previous,
-  };
-  return spawnSync("sh", ["-c", ignoreCommand], { cwd: path.join(repo, "site"), env })
-    .status;
+  return ignore(ref, previous);
 }
 
 beforeAll(() => {
@@ -66,5 +72,31 @@ describe("the ignoreCommand in vercel.json", () => {
   it("skips every push to the data branch, even one that changes the site", () => {
     expect(push("site/src/page.astro", "data")).toBe(0);
     expect(push("history/2026-10-09.jsonl", "data")).toBe(0);
+  });
+
+  // Vercel reads any exit code other than 0 and 1 as a failed command, not a build.
+  it("builds, and does not fail, when the previous commit is gone from the clone", () => {
+    const gone = "047eb4dea315264dd8c2f67f5799118a219d4e0b";
+
+    expect(ignore("master", gone)).toBe(1);
+    expect(ignore("master", "not-a-commit")).toBe(1);
+  });
+
+  it("compares with the parent commit when Vercel gives no previous SHA", () => {
+    push("other/c", "master");
+    expect(ignore("master", undefined)).toBe(0);
+    push("site/src/page.astro", "master");
+    expect(ignore("master", undefined)).toBe(1);
+  });
+
+  it("builds a first commit, which has no parent", () => {
+    const first = spawnSync("git", ["rev-list", "--max-parents=0", "HEAD"], {
+      cwd: repo,
+      encoding: "utf8",
+    }).stdout.trim();
+    git("checkout", "--quiet", first);
+
+    expect(ignore("master", undefined)).toBe(1);
+    git("checkout", "--quiet", "master");
   });
 });

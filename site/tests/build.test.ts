@@ -23,7 +23,7 @@ let data: string;
 let main: Running;
 let complete: Running;
 
-/** The body of a page by the file it would be in a static build, from a running site. */
+/** Fetch the URL that corresponds to a static-build file from a running site. */
 async function page(file: string, from = main): Promise<string> {
   const response = await fetch(from.origin + "/" + file.replace(/index\.html$/, ""));
   expect(response.status, file).toBe(200);
