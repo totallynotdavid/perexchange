@@ -35,9 +35,9 @@ describe("rangeCharts", () => {
   it("takes the low and high from every snapshot, not from the drawn points", () => {
     const input = series(1000);
     input[0].points[500].v = 9;
-    const all = rangeCharts(input, END).find((chart) => chart.range === "all");
+    const month = rangeCharts(input, END).find((chart) => chart.range === "30d");
 
-    expect(all?.summaries[0].high).toBe(9);
+    expect(month?.summaries[0].high).toBe(9);
   });
 
   it("leaves a range with no snapshots empty", () => {

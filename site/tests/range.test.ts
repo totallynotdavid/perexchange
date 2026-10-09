@@ -13,10 +13,6 @@ describe("sliceRange", () => {
     expect(sliceRange(points, "24h", END)).toEqual([hoursAgo(5), hoursAgo(0)]);
     expect(sliceRange(points, "7d", END)).toHaveLength(4);
   });
-
-  it("keeps everything for all", () => {
-    expect(sliceRange(points, "all", END)).toBe(points);
-  });
 });
 
 describe("downsample", () => {

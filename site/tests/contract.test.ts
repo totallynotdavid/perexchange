@@ -1,4 +1,6 @@
-import { rm } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -75,6 +77,32 @@ describe("data written by tools/snapshot.py", () => {
     const latest = await loadLatest(dir);
 
     expect(summarize(latest.rates, latest.generated_at).cheapestToBuy?.sell).toBe(3.45);
+  });
+});
+
+describe("data published at a URL", () => {
+  it("loads like the directory it was copied from, reading only the last days", async () => {
+    const served = createServer((request, response) => {
+      readFile(path.join(dir, request.url ?? ""), "utf8").then(
+        (body) => response.end(body),
+        () => response.writeHead(404).end(),
+      );
+    });
+    await new Promise<void>((resolve) => served.listen(0, "127.0.0.1", resolve));
+    const { port } = served.address() as AddressInfo;
+    const url = `http://127.0.0.1:${port}`;
+
+    try {
+      const now = new Date("2026-10-09T01:00:00Z");
+
+      expect(await loadLatest(url)).toEqual(await loadLatest(dir));
+      expect(await loadHistory(url, now)).toEqual(await loadHistory(dir));
+      expect(
+        (await loadHistory(url, new Date("2026-12-31T00:00:00Z"))).snapshots,
+      ).toEqual([]);
+    } finally {
+      served.close();
+    }
   });
 });
 
