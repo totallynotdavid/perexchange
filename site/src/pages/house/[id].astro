@@ -6,17 +6,15 @@ import { formatAge, formatPrice, formatSpread } from "../../lib/format.ts";
 import { loadHistory, loadLatest } from "../../lib/load.ts";
 import { ageMinutes, houseSeries, isStale, rankingScope, summarize } from "../../lib/market.ts";
 
-export async function getStaticPaths() {
-  const latest = await loadLatest();
-  const history = await loadHistory();
-  const market = summarize(latest.rates, latest.generated_at);
-  return latest.rates.map((quote) => ({
-    params: { id: quote.id },
-    props: { quote, latest, history, market },
-  }));
-}
+export const prerender = false;
 
-const { quote, latest, history, market } = Astro.props;
+const latest = await loadLatest();
+const quote = latest.rates.find((rate) => rate.id === Astro.params.id);
+if (quote === undefined) {
+  return new Response(null, { status: 404 });
+}
+const history = await loadHistory();
+const market = summarize(latest.rates, latest.generated_at);
 const age = ageMinutes(quote, latest.generated_at);
 const stale = isStale(age);
 const points = houseSeries(history.snapshots, quote.id);

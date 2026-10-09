@@ -543,8 +543,7 @@ table.rates tr.stale .quoted {
 
 .chart-block:has(#range-24h:checked) #chart-24h,
 .chart-block:has(#range-7d:checked) #chart-7d,
-.chart-block:has(#range-30d:checked) #chart-30d,
-.chart-block:has(#range-all:checked) #chart-all {
+.chart-block:has(#range-30d:checked) #chart-30d {
   display: block;
 }
 

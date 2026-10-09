@@ -1,15 +1,14 @@
-export const RANGES = ["24h", "7d", "30d", "all"] as const;
+export const RANGES = ["24h", "7d", "30d"] as const;
 export type Range = (typeof RANGES)[number];
 
 export const RANGE_LABELS: Record<Range, string> = {
   "24h": "24 hours",
   "7d": "7 days",
   "30d": "30 days",
-  all: "All",
 };
 
 const HOUR = 3_600_000;
-const SPAN: Record<Exclude<Range, "all">, number> = {
+const SPAN: Record<Range, number> = {
   "24h": 24 * HOUR,
   "7d": 7 * 24 * HOUR,
   "30d": 30 * 24 * HOUR,
@@ -21,9 +20,6 @@ export function sliceRange<T extends { t: number }>(
   range: Range,
   end: number,
 ): T[] {
-  if (range === "all") {
-    return points;
-  }
   const start = end - SPAN[range];
   return points.filter((point) => point.t >= start && point.t <= end);
 }

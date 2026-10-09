@@ -8,6 +8,8 @@ import { formatPrice } from "../lib/format.ts";
 import { loadHistory, loadLatest } from "../lib/load.ts";
 import { marketSeries, missingSourcesNotice, rankingScope, summarize } from "../lib/market.ts";
 
+export const prerender = false;
+
 const latest = await loadLatest();
 const history = await loadHistory();
 const market = summarize(latest.rates, latest.generated_at);

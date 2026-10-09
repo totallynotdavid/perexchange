@@ -4,28 +4,28 @@
   "type": "module",
   "scripts": {
     "data": "uv run --project .. python ../tools/snapshot.py --data-dir data",
-    "dev": "astro dev",
+    "dev": "PEREXCHANGE_DATA=data astro dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "PEREXCHANGE_DATA=data astro preview",
     "format:astro": "prettier --plugin prettier-plugin-astro --print-width 120 --write \"src/**/*.astro\"",
     "check": "astro check && oxlint && oxfmt --check . && prettier --plugin prettier-plugin-astro --print-width 120 --check \"src/**/*.astro\" && vitest run",
-    "test": "vitest run",
-    "deploy": "wrangler deploy"
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
     "@astrojs/markdown-remark": "^7.3.2",
+    "@astrojs/vercel": "^11.0.13",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "astro": "^7.3.7",
     "typescript": "^6"
   },
   "devDependencies": {
+    "@astrojs/node": "^11.1.7",
     "@types/node": "^26.6.4",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
     "prettier": "^3.9.9",
     "prettier-plugin-astro": "^1.1.0",
-    "vitest": "^5.0.3",
-    "wrangler": "^4.148.0"
+    "vitest": "^5.0.3"
   }
 }
