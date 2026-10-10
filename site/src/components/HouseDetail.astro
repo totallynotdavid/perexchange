@@ -1,0 +1,107 @@
+---
+import Age from "./Age.astro";
+import ChartBlock from "./ChartBlock.astro";
+import { formatPrice } from "../lib/format.ts";
+import type { History, Latest, Quote } from "../lib/data.ts";
+import { isVariant, quoteHouse, variantLabel } from "../lib/houses.ts";
+import { houseSeries, placeOf, rateFor } from "../lib/market.ts";
+import type { Side } from "../lib/market.ts";
+
+interface Props {
+  latest: Latest;
+  quote: Quote;
+  /** Null when the history could not be read. The rates still show. */
+  history: History | null;
+}
+
+const { latest, quote, history } = Astro.props;
+const now = Date.now();
+const variant = isVariant(quote);
+const house = quoteHouse(quote);
+const heading = variant ? `${house}, ${variantLabel(quote)}` : house;
+const variants = latest.rates.filter((rate) => rate.id !== quote.id && rate.source === quote.source);
+
+const sides: { side: Side; title: string }[] = [
+  { side: "buy", title: "To buy dollars, you pay" },
+  { side: "sell", title: "To sell dollars, you get" },
+];
+
+function standing(one: Quote, side: Side): string {
+  const place = placeOf(latest.rates, one, side, latest.generated_at);
+  if (variant) {
+    return "A special rate, so it is not ranked against other houses";
+  }
+  if (place === null) {
+    return "Not ranked: this rate has not changed for over a day";
+  }
+  if (place.place === 1) {
+    return place.of === 1 ? "The only house with a current rate" : `Best of ${place.of} houses`;
+  }
+  return `No. ${place.place} of ${place.of}, S/ ${formatPrice(place.gap)} behind the best`;
+}
+
+const points = history === null ? [] : houseSeries(history.snapshots, quote.id);
+const series = [
+  {
+    id: "sell",
+    label: "You pay to buy dollars",
+    kind: "sell" as const,
+    points: points.map((point) => ({ t: point.t, v: point.sell })),
+  },
+  {
+    id: "buy",
+    label: "You get for selling dollars",
+    kind: "buy" as const,
+    points: points.map((point) => ({ t: point.t, v: point.buy })),
+  },
+];
+---
+
+<p class="breadcrumb">
+  <a href="/">All houses</a>
+</p>
+<h1>{heading}</h1>
+<p class="where">
+  Rate from <Age at={quote.timestamp} now={now} />
+</p>
+
+<div class="figures">
+  {sides.map(({ side, title }) => (
+    <section class="figure" aria-labelledby={`figure-${side}`}>
+      <h2 id={`figure-${side}`}>{title}</h2>
+      <p class="best-rate num">
+        <span class="unit">S/</span> {formatPrice(rateFor(quote, side))}
+      </p>
+      <p class="standing">{standing(quote, side)}</p>
+    </section>
+  ))}
+</div>
+
+{variants.length > 0 && (
+  <section class="variants">
+    <h2>Other rates from {house}</h2>
+    <ul>
+      {variants.map((other) => (
+        <li>
+          <a href={`/house/${other.id}/`}>{isVariant(other) ? variantLabel(other) : "Standard rate"}</a>
+          <span class="num">
+            pay {formatPrice(other.sell)}, get {formatPrice(other.buy)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<h2>Recent rates</h2>
+{history === null ? (
+  <section class="state error" role="alert">
+    <h3>The history is not available right now</h3>
+    <p>The rates above are current. The chart needs the recorded readings, which we could not read.</p>
+    <a class="button" href="">
+      Try again
+    </a>
+  </section>
+) : (
+  <ChartBlock series={series} end={Date.parse(latest.generated_at)} subject={`${heading} in soles per US$1`} />
+)}

@@ -1,6 +1,7 @@
 ---
 import Age from "../components/Age.astro";
 import RateTable from "../components/RateTable.astro";
+import Unavailable from "../components/Unavailable.astro";
 import Base from "../layouts/Base.astro";
 import { formatPrice } from "../lib/format.ts";
 import { loadHistory, loadLatest } from "../lib/load.ts";
@@ -37,6 +38,7 @@ const panels = latest
       return { ...one, ranked, best: ranked[0] };
     })
   : [];
+const compared = panels[0]?.ranked.length ?? 0;
 const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots, latest.generated_at) : [];
 ---
 
@@ -45,14 +47,18 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
   description="The best current rate to buy or sell US dollars with Peruvian exchange houses, and how recent it is."
   section="rates"
 >
-  <h1>Dollar rates in Peru</h1>
+  <div class="page-head">
+    <div>
+      <h1>Dollar rates in Peru</h1>
+      {compared > 0 && latest !== null && (
+        <p class="meta">
+          {compared} {compared === 1 ? "house" : "houses"} compared, fetched <Age at={latest.generated_at} now={now} />
+        </p>
+      )}
+    </div>
+  </div>
 
-  {latest === null && (
-    <section class="state" role="alert">
-      <h2>Rates are not available right now</h2>
-      <p>We could not read the latest rates. Nothing is wrong with your connection. Try again in a few minutes.</p>
-    </section>
-  )}
+  {latest === null && <Unavailable />}
 
   {latest !== null && (
     <div class="board">
@@ -75,55 +81,66 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
 
       {panels.map(({ side, title, field, unit, ranked, best }) => (
         <section class="panel" data-side={side} aria-labelledby={`title-${side}`}>
-          <h2 id={`title-${side}`}>{title}</h2>
           {best === undefined ? (
-            <p class="empty">No house has a current rate. See the houses we could not read below.</p>
+            <>
+              <h2 id={`title-${side}`} class="visually-hidden">
+                {title}
+              </h2>
+              <p class="empty">No house has a current rate. See the houses we could not read below.</p>
+            </>
           ) : (
             <>
-              <p class="best-rate num">S/ {formatPrice(rateFor(best, side))}</p>
-              <p class="best-house">
-                <a href={`/house/${best.id}/`}>{quoteHouse(best)}</a>, <Age at={best.timestamp} now={now} />
-              </p>
+              <div class="hero">
+                <h2 id={`title-${side}`}>{title}</h2>
+                <p class="best-rate num">
+                  <span class="unit">S/</span> {formatPrice(rateFor(best, side))}
+                </p>
+                <p class="best-house">
+                  <a href={`/house/${best.id}/`}>{quoteHouse(best)}</a>, <Age at={best.timestamp} now={now} />
+                </p>
 
-              <div class="amount" hidden>
-                <label for={`amount-${side}`}>{field}</label>
-                <input
-                  type="text"
-                  id={`amount-${side}`}
-                  inputmode="decimal"
-                  autocomplete="off"
-                  placeholder="1,000"
-                  data-side={side}
-                />
-                <output for={`amount-${side}`} data-side={side} data-unit={unit} data-rate={rateFor(best, side)} />
+                <div class="amount" hidden>
+                  <label for={`amount-${side}`}>{field}</label>
+                  <input
+                    type="text"
+                    id={`amount-${side}`}
+                    inputmode="decimal"
+                    autocomplete="off"
+                    placeholder="1,000"
+                    data-side={side}
+                  />
+                  <output for={`amount-${side}`} data-side={side} data-unit={unit} data-rate={rateFor(best, side)} />
+                </div>
               </div>
 
-              <RateTable
-                quotes={ranked.slice(0, SHOWN)}
-                best={best}
-                side={side}
-                now={now}
-                caption={`Houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
-              />
-              {ranked.length > SHOWN && (
-                <details>
-                  <summary>Show the other {ranked.length - SHOWN} houses</summary>
-                  <RateTable
-                    quotes={ranked.slice(SHOWN)}
-                    best={best}
-                    side={side}
-                    now={now}
-                    caption={`The other houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
-                  />
-                </details>
-              )}
+              <div class="results">
+                <RateTable
+                  quotes={ranked.slice(0, SHOWN)}
+                  best={best}
+                  side={side}
+                  now={now}
+                  caption={`Houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
+                />
+                {ranked.length > SHOWN && (
+                  <details>
+                    <summary>Show the other {ranked.length - SHOWN} houses</summary>
+                    <RateTable
+                      quotes={ranked.slice(SHOWN)}
+                      best={best}
+                      side={side}
+                      now={now}
+                      caption={`The other houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
+                    />
+                  </details>
+                )}
+              </div>
             </>
           )}
         </section>
       ))}
 
       {missing.length > 0 && (
-        <details class="missing">
+        <details class="missing" open={panels.every((panel) => panel.best === undefined)}>
           <summary>
             {missing.length} {missing.length === 1 ? "house is" : "houses are"} not compared
           </summary>

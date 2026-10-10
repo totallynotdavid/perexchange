@@ -1,5 +1,6 @@
 ---
-import fontUrl from "@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2?url";
+import sansUrl from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
+import monoUrl from "@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2?url";
 
 import "../styles/site.css";
 
@@ -25,7 +26,8 @@ const nav = [
     <meta name="description" content={description} />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preload" href={fontUrl} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={sansUrl} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={monoUrl} as="font" type="font/woff2" crossorigin />
   </head>
   <body>
     <a class="skip-link" href="#main">
@@ -34,11 +36,15 @@ const nav = [
     <header class="site-header">
       <div class="container">
         <a class="brand" href="/">
+          <img src="/favicon.svg" alt="" width="24" height="24" />
           perexchange
         </a>
         <nav class="site-nav" aria-label="Main">
           {nav.map((item) => (
-            <a href={item.href} aria-current={item.section === section ? "page" : undefined}>
+            <a
+              href={item.href}
+              aria-current={item.section !== undefined && item.section === section ? "page" : undefined}
+            >
               {item.label}
             </a>
           ))}
@@ -57,8 +63,10 @@ const nav = [
     </footer>
     <script>
       import { keepAgesFresh } from "../lib/live.ts";
+      import { showPendingNavigation } from "../lib/pending.ts";
 
       keepAgesFresh();
+      showPendingNavigation(window, document);
     </script>
   </body>
 </html>

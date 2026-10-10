@@ -1,62 +1,32 @@
 ---
-import Age from "../../components/Age.astro";
-import ChartBlock from "../../components/ChartBlock.astro";
+import HouseDetail from "../../components/HouseDetail.astro";
+import Unavailable from "../../components/Unavailable.astro";
 import Base from "../../layouts/Base.astro";
-import { formatPrice } from "../../lib/format.ts";
-import type { Quote } from "../../lib/data.ts";
 import { loadHistory, loadLatest } from "../../lib/load.ts";
 import { isVariant, quoteHouse, variantLabel } from "../../lib/houses.ts";
-import { houseSeries, placeOf, rateFor } from "../../lib/market.ts";
-import type { Side } from "../../lib/market.ts";
 
 export const prerender = false;
 
-const latest = await loadLatest();
-const quote = latest.rates.find((rate) => rate.id === Astro.params.id);
-if (quote === undefined) {
+const latest = await loadLatest().catch((error: unknown) => {
+  console.error(error);
+  return null;
+});
+const quote = latest?.rates.find((rate) => rate.id === Astro.params.id);
+if (latest !== null && quote === undefined) {
   return new Response(null, { status: 404 });
 }
-const history = await loadHistory();
-const now = Date.now();
-const variant = isVariant(quote);
-const house = quoteHouse(quote);
-const heading = variant ? `${house}, ${variantLabel(quote)}` : house;
-const variants = latest.rates.filter((rate) => rate.id !== quote.id && rate.source === quote.source);
-
-const sides: { side: Side; title: string }[] = [
-  { side: "buy", title: "To buy dollars, you pay" },
-  { side: "sell", title: "To sell dollars, you get" },
-];
-
-function standing(one: Quote, side: Side): string {
-  const place = placeOf(latest.rates, one, side, latest.generated_at);
-  if (variant) {
-    return "A special rate, so it is not ranked against other houses";
-  }
-  if (place === null) {
-    return "Not ranked: this rate has not changed for over a day";
-  }
-  if (place.place === 1) {
-    return place.of === 1 ? "The only house with a current rate" : `Best of ${place.of} houses`;
-  }
-  return `No. ${place.place} of ${place.of}, S/ ${formatPrice(place.gap)} behind the best`;
+if (latest === null) {
+  Astro.response.status = 503;
 }
+const history = latest
+  ? await loadHistory().catch((error: unknown) => {
+      console.error(error);
+      return null;
+    })
+  : null;
 
-const points = houseSeries(history.snapshots, quote.id);
-const series = [
-  {
-    id: "sell",
-    label: "You pay to buy dollars",
-    kind: "sell" as const,
-    points: points.map((point) => ({ t: point.t, v: point.sell })),
-  },
-  {
-    id: "buy",
-    label: "You get for selling dollars",
-    kind: "buy" as const,
-    points: points.map((point) => ({ t: point.t, v: point.buy })),
-  },
-];
+const house = quote ? quoteHouse(quote) : "This house";
+const heading = !quote ? "Rates not available" : isVariant(quote) ? `${house}, ${variantLabel(quote)}` : house;
 ---
 
 <Base
@@ -64,40 +34,12 @@ const series = [
   description={`What ${house} charges to buy US$1 and pays to sell it, with its recent history.`}
   section="rates"
 >
-  <p class="breadcrumb">
-    <a href="/">All houses</a>
-  </p>
-  <h1>{heading}</h1>
-  <p class="where">
-    Rate from <Age at={quote.timestamp} now={now} />
-  </p>
-
-  <div class="figures">
-    {sides.map(({ side, title }) => (
-      <section aria-labelledby={`figure-${side}`}>
-        <h2 id={`figure-${side}`}>{title}</h2>
-        <p class="best-rate num">S/ {formatPrice(rateFor(quote, side))}</p>
-        <p class="standing">{standing(quote, side)}</p>
-      </section>
-    ))}
-  </div>
-
-  {variants.length > 0 && (
-    <section class="variants">
-      <h2>Other rates from {house}</h2>
-      <ul>
-        {variants.map((other) => (
-          <li>
-            <a href={`/house/${other.id}/`}>{isVariant(other) ? variantLabel(other) : "Standard rate"}</a>
-            <span class="num">
-              pay {formatPrice(other.sell)}, get {formatPrice(other.buy)}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
+  {latest === null || quote === undefined ? (
+    <>
+      <h1>Rates not available</h1>
+      <Unavailable />
+    </>
+  ) : (
+    <HouseDetail latest={latest} quote={quote} history={history} />
   )}
-
-  <h2>Recent rates</h2>
-  <ChartBlock series={series} end={Date.parse(latest.generated_at)} subject={`${heading} in soles per US$1`} />
 </Base>

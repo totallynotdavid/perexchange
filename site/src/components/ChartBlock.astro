@@ -60,20 +60,17 @@ function describe(label: string, summary: (typeof charts)[number]["summaries"][n
           </>
         )}
         <figcaption class="chart-summary">
-          {summaries.map((summary) => (
-            <div>
-              {summary.latest === null ? (
-                summary.label
-              ) : (
-                <>
+          {summaries.map(
+            (summary) =>
+              summary.latest !== null && (
+                <div>
                   {summary.label}: now <strong class="num">{formatPrice(summary.latest)}</strong>, range{" "}
                   <span class="num">
                     {formatPrice(summary.low ?? summary.latest)} to {formatPrice(summary.high ?? summary.latest)}
                   </span>
-                </>
-              )}
-            </div>
-          ))}
+                </div>
+              ),
+          )}
           <div>
             {snapshots === 1 ? "One reading so far, so there is no line yet." : `${snapshots} readings in this range.`}
           </div>

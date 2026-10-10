@@ -39,8 +39,14 @@ const { quotes, best, side, now, caption } = Astro.props;
             <a href={`/house/${quote.id}/`}>{quoteHouse(quote)}</a>
             <Age at={quote.timestamp} now={now} />
           </th>
-          <td class="num">{formatPrice(rateFor(quote, side))}</td>
-          <td class="num gap">{gap === 0 ? "best" : `−${formatPrice(gap)}`}</td>
+          <td class="num price">{formatPrice(rateFor(quote, side))}</td>
+          {gap === 0 ? (
+            <td class="num gap best">
+              <span>best</span>
+            </td>
+          ) : (
+            <td class="num gap">{`−${formatPrice(gap)}`}</td>
+          )}
         </tr>
       );
     })}
