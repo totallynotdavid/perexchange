@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -11,9 +11,7 @@ URL = "https://kambio.com.pe/api/rates/current"
 
 
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
-    timestamp = parse_source_timestamp(
-        data.get("createdAt"), datetime.now(timezone.utc)
-    )
+    timestamp = parse_source_timestamp(data.get("createdAt"), datetime.now(UTC))
 
     rate = rate_from_fields(data, SOURCE, SOURCE, "buy", "sell", timestamp)
     if rate is None:

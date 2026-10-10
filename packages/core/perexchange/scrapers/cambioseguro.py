@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -20,7 +20,7 @@ _RATE_CONFIGS = [
 
 
 def _parse_json(response_data: dict[str, Any]) -> list[ExchangeRate]:
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
     data = response_data.get("data", {})
 
     rates = [

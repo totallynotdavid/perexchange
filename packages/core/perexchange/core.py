@@ -140,12 +140,7 @@ async def _safe_fetch(
             rates = await operation
         _validate_source_rates(source, rates)
         return _SourceResult(source=source, rates=rates, failure=None)
-    except (
-        httpx.HTTPError,
-        SourceError,
-        TimeoutError,
-        asyncio.TimeoutError,
-    ) as error:
+    except (httpx.HTTPError, SourceError, TimeoutError) as error:
         logger.warning("source %s failed: %s", source.id, error)
         return _SourceResult(
             source=source,
@@ -173,7 +168,7 @@ def _failure_message(error: Exception, total_timeout: float | None) -> str:
     message = str(error)
     if message:
         return message
-    if isinstance(error, (TimeoutError, asyncio.TimeoutError)) and total_timeout:
+    if isinstance(error, TimeoutError) and total_timeout:
         return f"source exceeded total timeout of {total_timeout:g} seconds"
     return type(error).__name__
 

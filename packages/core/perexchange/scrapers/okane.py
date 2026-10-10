@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -32,7 +32,7 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
                 sell_price=sell_price,
                 # `fecha` has no offset and is local time in Peru.
                 timestamp=parse_source_timestamp(
-                    entry.get("fecha"), datetime.now(timezone.utc), PERU_TZ
+                    entry.get("fecha"), datetime.now(UTC), PERU_TZ
                 ),
             )
         ]

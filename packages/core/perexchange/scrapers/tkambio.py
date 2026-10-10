@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -10,7 +10,7 @@ URL = "https://tkambio.com/wp-admin/admin-ajax.php"
 
 
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
     rates = []
 
     base_rate = rate_from_fields(

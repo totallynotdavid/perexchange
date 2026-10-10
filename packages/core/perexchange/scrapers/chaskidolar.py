@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -13,7 +13,7 @@ URL = "https://chaskidolar.com/"
 
 
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
 
     rate = rate_from_convert_fields(data, SOURCE, SOURCE, timestamp)
     if rate is None:

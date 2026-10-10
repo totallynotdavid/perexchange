@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -14,7 +14,7 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
         msg = "No exchange rates data"
         raise ValueError(msg)
 
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
 
     rate = rate_from_fields(
         response_data[0], SOURCE, SOURCE, "tcBuy", "tcSale", timestamp

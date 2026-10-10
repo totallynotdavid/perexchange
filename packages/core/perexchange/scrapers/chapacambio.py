@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -32,11 +32,9 @@ def _try_create_rate(data: dict[str, Any]) -> ExchangeRate | None:
         if buy_price > 0 and sell_price > 0:
             timestamp_str = data.get("updateAt")
             if timestamp_str:
-                timestamp = parse_source_timestamp(
-                    timestamp_str, datetime.now(timezone.utc)
-                )
+                timestamp = parse_source_timestamp(timestamp_str, datetime.now(UTC))
             else:
-                timestamp = datetime.now(timezone.utc)
+                timestamp = datetime.now(UTC)
             return ExchangeRate(
                 source=SOURCE,
                 name=SOURCE,

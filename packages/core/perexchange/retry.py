@@ -2,14 +2,11 @@ import asyncio
 import math
 
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
 
 import httpx
 
 from perexchange.errors import SourceParseError
 
-
-T = TypeVar("T")
 
 PARSE_ERRORS = (ValueError, KeyError, TypeError, AttributeError, IndexError)
 
@@ -60,7 +57,7 @@ def _backoff(error: httpx.HTTPError, retry_delay: float, attempt: int) -> float:
     return min(parsed, 30.0)
 
 
-async def fetch_with_retry(
+async def fetch_with_retry[T](
     client: httpx.AsyncClient,
     fetch_fn: Callable[[httpx.AsyncClient], Awaitable[T]],
     max_attempts: int,

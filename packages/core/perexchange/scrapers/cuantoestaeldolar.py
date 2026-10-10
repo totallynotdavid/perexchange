@@ -1,7 +1,7 @@
 import json
 import re
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -90,10 +90,10 @@ def _find_houses(html_content: str) -> list[dict[str, Any]] | None:
 def _parse_timestamp(raw: Any) -> datetime:
     if raw:
         try:
-            return datetime.fromtimestamp(int(raw) / 1000, tz=timezone.utc)
+            return datetime.fromtimestamp(int(raw) / 1000, tz=UTC)
         except (TypeError, ValueError, OSError):
             pass
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _house_to_rate(house: dict[str, Any]) -> ExchangeRate | None:

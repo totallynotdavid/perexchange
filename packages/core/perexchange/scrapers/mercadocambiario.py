@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -33,7 +33,7 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
             buy_price=buy_price,
             sell_price=sell_price,
             timestamp=parse_source_timestamp(
-                open_data.get("dayHourStart"), datetime.now(timezone.utc)
+                open_data.get("dayHourStart"), datetime.now(UTC)
             ),
         )
     ]

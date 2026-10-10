@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -18,7 +18,7 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
     )
     # `fecha` has no offset and is local time in Peru.
     timestamp = parse_source_timestamp(
-        entry.get("fecha") if entry else None, datetime.now(timezone.utc), PERU_TZ
+        entry.get("fecha") if entry else None, datetime.now(UTC), PERU_TZ
     )
     rate = (
         rate_from_fields(entry, SOURCE, SOURCE, "buy", "sell", timestamp)

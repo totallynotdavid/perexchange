@@ -1,7 +1,7 @@
 import re
 
 from collections.abc import Callable, Mapping
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -195,7 +195,7 @@ def digital_tc_parser(source: str) -> Callable[[Any], list[ExchangeRate]]:
             raise ValueError(msg)
         # The server time has no offset and is local time in Peru.
         timestamp = parse_source_timestamp(
-            data.get("serverTime"), datetime.now(timezone.utc), PERU_TZ
+            data.get("serverTime"), datetime.now(UTC), PERU_TZ
         )
         rate = rate_from_fields(data, source, source, "compra", "venta", timestamp)
         if rate is None:

@@ -1,6 +1,6 @@
 import re
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from bs4 import BeautifulSoup
 
@@ -43,7 +43,7 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
             name="cambiosol",
             buy_price=buy_price,
             sell_price=sell_price,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
     ]
 

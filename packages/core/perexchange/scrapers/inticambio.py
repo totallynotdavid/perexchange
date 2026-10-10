@@ -2,7 +2,7 @@ import html
 import json
 import re
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -23,7 +23,7 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
         msg = "No valid exchange rates parsed"
         raise ValueError(msg)
 
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
     rate = rate_from_fields(latest, SOURCE, SOURCE, "tc_Compra", "tc_Venta", timestamp)
     if rate is None:
         msg = "No valid exchange rates parsed"

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -68,7 +68,7 @@ def _extract_verification_token(html_content: str) -> str:
 
 
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
 
     rate = rate_from_fields(data, SOURCE, SOURCE, "DT_Compra", "DT_Venta", timestamp)
     if rate is None:

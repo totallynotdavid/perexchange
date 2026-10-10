@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
@@ -10,7 +10,7 @@ URL = "https://apim.tucambista.pe/api/rates"
 
 
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
 
     rate = rate_from_fields(data, SOURCE, SOURCE, "bidRate", "offerRate", timestamp)
     if rate is None:

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -21,7 +21,7 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
         msg = "No valid exchange rates parsed"
         raise ValueError(msg)
 
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
     return [
         ExchangeRate(
             source=SOURCE,
