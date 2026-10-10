@@ -9,11 +9,11 @@ The rules the site's look follows, and the values that carry them. The values li
 perexchange publishes the PEN/USD rates that Peruvian exchange houses post. Three kinds of
 page serve three readers.
 
-| Page      | Reader                                                  | The page must                                                                                       |
-| --------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `/`       | Someone in Peru about to exchange dollars, on a phone   | Name the best house for their side, its rate and its age, rank the others, and work out an amount   |
-| `/house/` | The same person checking one house, or a developer      | Show both sides, where the house stands, its other rates, and the 24 hour, 7 day and 30 day history |
-| `/docs/`  | A developer deciding whether to use the library or data | Render the README, API, CLI, architecture and open-data documents                                   |
+| Page      | Reader                                                  | The page must                                                                                                       |
+| --------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `/`       | Someone in Peru about to exchange dollars, on a phone   | Name the best house for their side, its rate and its age, rank the others, price an amount, and chart the best rate |
+| `/house/` | The same person checking one house, or a developer      | Show both sides, where the house stands, its other rates, and the 24 hour, 7 day and 30 day history                 |
+| `/docs/`  | A developer deciding whether to use the library or data | Render the README, API, CLI, architecture and open-data documents                                                   |
 
 The product is a table of numbers that go stale. So the design does three things: it puts
 one figure large, it writes every figure in one monospaced face with equal digit widths,
@@ -152,6 +152,101 @@ At 390 px nothing scrolls sideways. A row of the rate table is one link: its nam
 the row, so a thumb has a row-high target. Docs tables and code blocks scroll inside their
 own box. The charts switch to a narrow drawing below 40 rem.
 
+## The calculator
+
+The home page prices an amount on each side of the spread. A house has two rates: the
+**sell rate** is what it charges for US$1, and the **buy rate** is what it pays for US$1.
+A person who buys dollars pays the sell rate. A person who sells dollars gets the buy
+rate. Each panel says which one it lists: "Each rate is the house's sell rate: what it
+charges you for US$1", and "Each rate is the house's buy rate: what it pays you for
+US$1".
+
+### Buying dollars
+
+The panel's first control is a two-item switch, "Dollars to buy" and "Soles to spend",
+over one amount field. The switch sets the field's label, "I want to buy" or "I have", and
+its prefix, `US$` or `S/`.
+
+| Mode           | The person types | The table shows                              | The saving is                                |
+| -------------- | ---------------- | -------------------------------------------- | -------------------------------------------- |
+| Dollars to buy | US$, default 200 | "You pay", soles at each house's sell rate   | How much less than the dearest house pays    |
+| Soles to spend | S/, default 1000 | "You get", dollars at each house's sell rate | How many more dollars than the dearest gives |
+
+The table is ordered by rate, cheapest first, so the dearest house is the last row. Its
+columns are:
+
+- The house.
+- The sell rate, headed "you pay per US$1".
+- The total, with a sub-line that names the amount: "S/ for US$200.00".
+- The saving, headed "vs the dearest".
+
+The cheapest house's total is green, and a house that matches the dearest shows "–" for
+its saving.
+
+A one-line summary under the field names the best house and the gap. It reads "US$200.00
+costs S/ 691.00 at X. That is S/ 5.00 less than at Y, the dearest." When every house gives
+the same result at the amount, the summary says so instead of naming a gap.
+
+Each mode keeps its own amount. The page remembers the side, the mode and each amount in
+`localStorage`. An empty store, an empty saved amount or a blocked store gives the
+defaults.
+
+### Rounding and limits
+
+The arithmetic runs in whole cents.
+
+- A typed amount is rounded to the nearest cent. Grouping commas, spaces and underscores
+  are ignored.
+- Soles to pay are rounded to the nearest cent.
+- Dollars received are rounded down, because a house hands over whole cents and the figure
+  never exceeds what the money buys.
+- The saving is the difference between the two rounded results, so the figures on the page
+  add up.
+- Binary noise is removed before rounding: 690 soles at 3.45 is exactly US$200.00.
+- The largest amount is 1,000,000,000.
+
+| Input                        | The field | The summary says                               |
+| ---------------------------- | --------- | ---------------------------------------------- |
+| Empty                        | Normal    | Type an amount to see what each house charges. |
+| Zero, or rounds to zero      | Red edge  | Type an amount above zero.                     |
+| Letters, symbols, two points | Red edge  | Use digits only, for example 200 or 1,250.50.  |
+| Above 1,000,000,000          | Red edge  | Type 1,000,000,000 or less.                    |
+
+For these four inputs the table's total and saving columns show "–".
+
+The server renders the page for the default US$200, so the table and the summary are
+complete before any script runs. The script reads the saved mode and amount and replaces
+the figures on every keystroke with the same function the server used.
+
+### Selling dollars
+
+The sell panel has one field, "Dollars to sell", and one line: "You get S/ …", the amount
+times the best buy rate, rounded to the nearest cent. It has no default: the field shows
+the placeholder "1,000", and the line stays empty until the field holds a valid amount. A
+zero, an invalid or a too large amount gets the same red edge and the same hint as in the
+buy panel, in the body type instead of the figure's mono.
+
+## The best-rate chart
+
+Each panel of the home page ends with a line chart of the best rate over time: the
+cheapest sell rate on the buying side and the highest buy rate on the selling side. The
+points are the runs the pipeline recorded in `history/`, one per run, so the chart needs
+no storage of its own.
+
+- A point is the best rate among the houses that were current in that run: a quote older
+  than 24 hours does not count, and neither does a variant, a house's second rate such as
+  "from US$5,000".
+- The range switch has 7 days, 30 days and All, and starts on 7 days. A range counts back
+  from the newest point. How many days All reads is in the
+  [site README](../site/README.md).
+- The line is a single series with one dot per point, drawn in SVG by `lib/chart.ts`, with
+  a wide and a narrow drawing like the house charts. The legend names the series, and the
+  chart's text description gives the current value with the range's low and high.
+- The time axis labels ticks with a clock time when the chart covers up to a day and a
+  half, with a date when the ticks are a day or more apart, and with both between.
+- When the first and the last point are under two days apart, the chart is replaced by one
+  sentence. A few hours of readings would read as a trend, so the page waits.
+
 ## States
 
 Every page has the states below. The site loads no data in the browser: the server reads
@@ -172,24 +267,28 @@ A link or form that goes to another site, a jump within the page, a new tab, a d
 dialog form, a click with a modifier key and an event another script already handled start
 no wait and set no mark. Under `prefers-reduced-motion: reduce` the bar stops moving and
 shows as a still line. Without scripts the browser's own loading indicator is all there
-is. No page has a form today: the amount field computes in the page, and the side and
-range switches are CSS.
+is. No page has a form today: the amount fields compute in the page, and the side, mode
+and range switches are CSS.
 
 ### Cases
 
-| Where                       | Condition                                | What shows                                                                                               |
-| --------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `/`                         | Rates are late                           | An amber notice with the age, and ages in amber. A script shows the notice if the open page ages into it |
-| `/`                         | A side has no current rate               | A dashed card pointing to the houses that could not be read, which opens by default                      |
-| `/`                         | Some houses could not be read            | A disclosure naming each house and the reason                                                            |
-| `/`, `/house/`              | `latest.json` cannot be read             | Status 503 and a red card with a "Try again" link                                                        |
-| `/house/`                   | The history cannot be read               | The rates show; the chart area becomes a red card with a "Try again" link                                |
-| `/house/`                   | A range holds no reading, or one reading | A dashed card saying so, or a point and the sentence "One reading so far, so there is no line yet"       |
-| `/house/` for an unknown id | The id is not in the snapshot            | Status 404 and the not-found page                                                                        |
-| Any other address           | No such page                             | The not-found page with links to the rates and the docs                                                  |
+| Where                       | Condition                                | What shows                                                                                                      |
+| --------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `/`                         | Rates are late                           | An amber notice with the age, and ages in amber. A script shows the notice if the open page ages into it        |
+| `/`                         | A side has no current rate               | A dashed card pointing to the houses that could not be read, which opens by default                             |
+| `/`                         | Some houses could not be read            | A disclosure naming each house and the reason                                                                   |
+| `/`                         | The best rate spans under two days       | In place of the chart, one sentence: the chart appears once two days are recorded, and the first is from a date |
+| `/`                         | No reading is recorded                   | In place of the chart, "No readings are recorded yet."                                                          |
+| `/`                         | The amount is empty, zero, invalid, huge | A hint replaces the summary and the table's figures show "–". Zero, invalid and huge also turn the border red   |
+| `/`, `/house/`              | `latest.json` cannot be read             | Status 503 and a red card with a "Try again" link                                                               |
+| `/house/`                   | The history cannot be read               | The rates show; the chart area becomes a red card with a "Try again" link                                       |
+| `/house/`                   | A range holds no reading, or one reading | A dashed card saying so, or a point and the sentence "One reading so far, so there is no line yet"              |
+| `/house/` for an unknown id | The id is not in the snapshot            | Status 404 and the not-found page                                                                               |
+| Any other address           | No such page                             | The not-found page with links to the rates and the docs                                                         |
 
-Without scripts the page still shows every rate. The amount field stays hidden, because it
-cannot work, and the side switch still works, because it is CSS.
+Without scripts the page still shows every rate, the table priced for US$200 and the
+chart. The amount fields stay hidden, because they cannot work, and the side and range
+switches still work, because they are CSS.
 
 ## Checking a change
 

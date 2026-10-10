@@ -21,8 +21,10 @@ it. A small script keeps the ages true while the page is open, and another remem
 side and the amount a visitor chose. Without scripts the page still shows every rate and
 chart.
 
-The charts cover the last 30 days. The page reads at most that many history files. The
-look, from colour tokens to the error states, is in [Site design](../docs/design.md).
+A house page charts the last 30 days and reads at most that many history files. The home
+page reads every recorded day, up to 365, for the All range of its best-rate chart. The
+look, from colour tokens to the calculator and the error states, is in
+[Site design](../docs/design.md).
 
 The file formats are in [Open data](src/docs/data.md). Who may write the data branch, and
 what a reader sees while a run is in progress, are in
