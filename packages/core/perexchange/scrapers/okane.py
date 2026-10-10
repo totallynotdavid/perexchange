@@ -5,7 +5,7 @@ import httpx
 
 from perexchange.models import ExchangeRate
 from perexchange.retry import fetch_with_retry
-from perexchange.time import PERU_TZ
+from perexchange.time import PERU_TZ, parse_source_timestamp
 from perexchange.transport import send
 
 
@@ -30,7 +30,10 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
                 name=SOURCE,
                 buy_price=buy_price,
                 sell_price=sell_price,
-                timestamp=datetime.now(timezone.utc),
+                # `fecha` has no offset and is local time in Peru.
+                timestamp=parse_source_timestamp(
+                    entry.get("fecha"), datetime.now(timezone.utc), PERU_TZ
+                ),
             )
         ]
 

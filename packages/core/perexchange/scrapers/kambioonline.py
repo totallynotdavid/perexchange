@@ -3,6 +3,7 @@ from typing import Any
 
 from perexchange.models import ExchangeRate
 from perexchange.scrapers.factories import json_scraper, rate_from_fields
+from perexchange.time import parse_source_timestamp
 
 
 SOURCE = "kambioonline"
@@ -10,7 +11,9 @@ URL = "https://kambio.com.pe/api/rates/current"
 
 
 def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
-    timestamp = datetime.now(timezone.utc)
+    timestamp = parse_source_timestamp(
+        data.get("createdAt"), datetime.now(timezone.utc)
+    )
 
     rate = rate_from_fields(data, SOURCE, SOURCE, "buy", "sell", timestamp)
     if rate is None:

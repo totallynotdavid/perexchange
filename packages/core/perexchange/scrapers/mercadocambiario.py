@@ -3,6 +3,7 @@ from typing import Any
 
 from perexchange.models import ExchangeRate
 from perexchange.scrapers.factories import json_scraper
+from perexchange.time import parse_source_timestamp
 
 
 SOURCE = "mercadocambiario"
@@ -31,7 +32,9 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
             name=SOURCE,
             buy_price=buy_price,
             sell_price=sell_price,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=parse_source_timestamp(
+                open_data.get("dayHourStart"), datetime.now(timezone.utc)
+            ),
         )
     ]
 

@@ -69,11 +69,16 @@ def _validate_timestamp(timestamp: object) -> None:
 
 @dataclass(frozen=True, slots=True)
 class SourceFailure:
-    """A source that did not produce rates during a fetch."""
+    """A source that did not produce rates during a fetch.
+
+    `status_code` is the HTTP status when the source answered with an error status, and
+    `None` when it did not answer or its response could not be read.
+    """
 
     source: str
     error_type: str
     message: str
+    status_code: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

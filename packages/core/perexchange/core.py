@@ -154,6 +154,11 @@ async def _safe_fetch(
                 source=source.id,
                 error_type=type(error).__name__,
                 message=_failure_message(error, total_timeout),
+                status_code=(
+                    error.response.status_code
+                    if isinstance(error, httpx.HTTPStatusError)
+                    else None
+                ),
             ),
         )
 
