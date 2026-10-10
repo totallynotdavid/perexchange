@@ -50,27 +50,54 @@ export async function loadLatest(source = __DATA_SOURCE__): Promise<Latest> {
   return parseLatest(text);
 }
 
-/** The history files of the last `HISTORY_DAYS` UTC days. */
-async function historyNames(source: string, now: Date): Promise<string[]> {
-  if (isUrl(source)) {
-    return Array.from({ length: HISTORY_DAYS }, (_, back) => {
-      const day = new Date(now.getTime() - back * 86_400_000);
-      return `history/${day.toISOString().slice(0, 10)}.jsonl`;
-    });
+/** The most days the best-rate chart reads. Its "All" range ends here. */
+export const ALL_DAYS = 365;
+
+/** A published copy has no listing, so days are asked for in batches of this size. */
+const BATCH_DAYS = 30;
+
+const dayFile = (now: Date, back: number) =>
+  `history/${new Date(now.getTime() - back * 86_400_000).toISOString().slice(0, 10)}.jsonl`;
+
+/**
+ * The text of the history files of the last `days` UTC days. A published copy is read
+ * newest first, and reading stops at the first batch that holds no file.
+ */
+async function historyFiles(source: string, now: Date, days: number): Promise<string[]> {
+  if (!isUrl(source)) {
+    const names = await readdir(path.join(source, "history")).catch(() => []);
+    const kept = names
+      .filter((name) => name.endsWith(".jsonl"))
+      .sort()
+      .slice(-days);
+    const files = await Promise.all(
+      kept.map((name) => readText(source, `history/${name}`)),
+    );
+    return files.filter((text) => text !== null);
   }
-  const names = await readdir(path.join(source, "history")).catch(() => []);
-  return names
-    .filter((name) => name.endsWith(".jsonl"))
-    .sort()
-    .slice(-HISTORY_DAYS)
-    .map((name) => `history/${name}`);
+
+  const found: string[] = [];
+  for (let from = 0; from < days; from += BATCH_DAYS) {
+    const backs = Array.from(
+      { length: Math.min(BATCH_DAYS, days - from) },
+      (_, i) => from + i,
+    );
+    const batch = await Promise.all(
+      backs.map((back) => readText(source, dayFile(now, back))),
+    );
+    const present = batch.filter((text) => text !== null);
+    if (present.length === 0) {
+      break;
+    }
+    found.push(...present);
+  }
+  return found;
 }
 
 export async function loadHistory(
   source = __DATA_SOURCE__,
   now = new Date(),
+  days = HISTORY_DAYS,
 ): Promise<History> {
-  const names = await historyNames(source, now);
-  const files = await Promise.all(names.map((name) => readText(source, name)));
-  return parseHistory(files.filter((text) => text !== null));
+  return parseHistory(await historyFiles(source, now, days));
 }

@@ -1,10 +1,14 @@
-export const RANGES = ["24h", "7d", "30d"] as const;
-export type Range = (typeof RANGES)[number];
+export type Range = "24h" | "7d" | "30d" | "all";
+
+export const HOUSE_RANGES: readonly Range[] = ["24h", "7d", "30d"];
+
+export const BEST_RANGES: readonly Range[] = ["7d", "30d", "all"];
 
 export const RANGE_LABELS: Record<Range, string> = {
   "24h": "24 hours",
   "7d": "7 days",
   "30d": "30 days",
+  all: "All",
 };
 
 const HOUR = 3_600_000;
@@ -12,6 +16,7 @@ const SPAN: Record<Range, number> = {
   "24h": 24 * HOUR,
   "7d": 7 * 24 * HOUR,
   "30d": 30 * 24 * HOUR,
+  all: Infinity,
 };
 
 /** Points up to `end` that fall inside the range, which counts back from `end`. */

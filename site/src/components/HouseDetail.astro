@@ -2,6 +2,7 @@
 import Age from "./Age.astro";
 import ChartBlock from "./ChartBlock.astro";
 import { formatPrice } from "../lib/format.ts";
+import { HOUSE_RANGES } from "../lib/range.ts";
 import type { History, Latest, Quote } from "../lib/data.ts";
 import { isVariant, quoteHouse, variantLabel } from "../lib/houses.ts";
 import { houseSeries, placeOf, rateFor } from "../lib/market.ts";
@@ -103,5 +104,12 @@ const series = [
     </a>
   </section>
 ) : (
-  <ChartBlock series={series} end={Date.parse(latest.generated_at)} subject={`${heading} in soles per US$1`} />
+  <ChartBlock
+    series={series}
+    end={Date.parse(latest.generated_at)}
+    subject={`${heading} in soles per US$1`}
+    name="house"
+    ranges={HOUSE_RANGES}
+    initial="24h"
+  />
 )}

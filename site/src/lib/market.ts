@@ -83,24 +83,6 @@ export function placeOf(
   return { place: better + 1, of: ranked.length, gap: gapToBest(quote, best, side) };
 }
 
-/**
- * Calculates the proceeds of a transaction and rounds them to cents.
- */
-export function proceeds(amount: number, side: Side, rate: number): number {
-  const raw = side === "buy" ? amount / rate : amount * rate;
-  return Math.round(raw * 100) / 100;
-}
-
-/** Parses a positive amount with optional grouping separators. */
-export function parseAmount(text: string): number | null {
-  const cleaned = text.replace(/[,\s_]/g, "");
-  if (!/^\d*\.?\d+$|^\d+\.$/.test(cleaned)) {
-    return null;
-  }
-  const amount = Number(cleaned);
-  return Number.isFinite(amount) && amount > 0 ? amount : null;
-}
-
 export interface MissingSince {
   at: number;
   atLeast: boolean;
@@ -189,6 +171,44 @@ export function houseSeries(snapshots: Snapshot[], id: string): HousePoint[] {
     const price = snapshot.prices[id];
     if (price !== undefined && price.ageMinutes <= DEAD_AFTER_MINUTES) {
       points.push({ t: snapshot.t, buy: price.buy, sell: price.sell });
+    }
+  }
+  return points;
+}
+
+/** The shortest span of readings the best-rate chart draws. */
+export const MIN_CHART_MS = 2 * 24 * 60 * MINUTE;
+
+/**
+ * The best rate on one side at each snapshot: the lowest sell rate for someone buying
+ * dollars, the highest buy rate for someone selling them, over the base rates of houses
+ * with a current quote, as `rank` does. A history line keeps no source, so a special
+ * rate is told by its id: a house's `sources` or base id in the line, a hyphen, a suffix.
+ */
+export function bestSeries(
+  snapshots: Snapshot[],
+  side: Side,
+  sources: ReadonlySet<string>,
+): { t: number; v: number }[] {
+  const points: { t: number; v: number }[] = [];
+  for (const snapshot of snapshots) {
+    const isSpecial = (id: string) => {
+      for (let at = id.indexOf("-"); at > 0; at = id.indexOf("-", at + 1)) {
+        const base = id.slice(0, at);
+        if (sources.has(base) || base in snapshot.prices) {
+          return true;
+        }
+      }
+      return false;
+    };
+    const rates = Object.entries(snapshot.prices)
+      .filter(([id, price]) => !isSpecial(id) && price.ageMinutes <= DEAD_AFTER_MINUTES)
+      .map(([, price]) => (side === "buy" ? price.sell : price.buy));
+    if (rates.length > 0) {
+      points.push({
+        t: snapshot.t,
+        v: side === "buy" ? Math.min(...rates) : Math.max(...rates),
+      });
     }
   }
   return points;

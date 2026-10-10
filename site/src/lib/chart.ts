@@ -58,11 +58,19 @@ export function priceAxis(
   return { min, max, ticks };
 }
 
-function timeLabel(t: number, spanMs: number): string {
-  const options: Intl.DateTimeFormatOptions =
-    spanMs <= 1.5 * DAY
-      ? { hour: "2-digit", minute: "2-digit", hour12: false }
-      : { day: "numeric", month: "short" };
+/**
+ * A tick label that tells its neighbours apart: the clock time when the chart covers a
+ * day or so, the date when ticks are a day or more apart, and both between the two.
+ */
+function timeLabel(t: number, spanMs: number, spacingMs: number): string {
+  const clock: Intl.DateTimeFormatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  };
+  const date: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+  const options =
+    spanMs <= 1.5 * DAY ? clock : spacingMs >= DAY ? date : { ...date, ...clock };
   return new Date(t).toLocaleString("en-GB", { timeZone: "America/Lima", ...options });
 }
 
@@ -122,10 +130,13 @@ export function buildChart(
     : 3;
   const xTicks =
     spanMs === 0
-      ? [{ x: round(x(startT)), label: timeLabel(startT, 0) }]
+      ? [{ x: round(x(startT)), label: timeLabel(startT, 0, 0) }]
       : Array.from({ length: xTickCount }, (_, i) => {
           const t = startT + (spanMs * i) / (xTickCount - 1);
-          return { x: round(x(t)), label: timeLabel(t, spanMs) };
+          return {
+            x: round(x(t)),
+            label: timeLabel(t, spanMs, spanMs / (xTickCount - 1)),
+          };
         });
 
   return {

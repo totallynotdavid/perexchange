@@ -4,6 +4,7 @@ import { rangeCharts } from "../lib/chart-data.ts";
 import type { SeriesInput } from "../lib/chart-data.ts";
 import { formatPrice } from "../lib/format.ts";
 import { RANGE_LABELS } from "../lib/range.ts";
+import type { Range } from "../lib/range.ts";
 
 interface Props {
   series: SeriesInput[];
@@ -11,12 +12,14 @@ interface Props {
   end: number;
   /** What the chart is of, for the accessible name. */
   subject: string;
+  name: string;
+  ranges: readonly Range[];
+  initial: Range;
 }
 
-const { series, end, subject } = Astro.props;
-const charts = rangeCharts(series, end);
+const { series, end, subject, name, ranges, initial } = Astro.props;
+const charts = rangeCharts(series, end, ranges);
 const kinds = Object.fromEntries(series.map((one) => [one.id, one.kind]));
-const defaultRange = "24h";
 
 function describe(label: string, summary: (typeof charts)[number]["summaries"][number]): string {
   if (summary.latest === null || summary.low === null || summary.high === null) {
@@ -42,21 +45,33 @@ function describe(label: string, summary: (typeof charts)[number]["summaries"][n
   <div class="segmented" role="radiogroup" aria-label="Time range">
     {charts.map(({ range }) => (
       <>
-        <input type="radio" name="range" id={`range-${range}`} value={range} checked={range === defaultRange} />
-        <label for={`range-${range}`}>{RANGE_LABELS[range]}</label>
+        <input
+          type="radio"
+          name={`range-${name}`}
+          id={`range-${name}-${range}`}
+          value={range}
+          checked={range === initial}
+        />
+        <label for={`range-${name}-${range}`}>{RANGE_LABELS[range]}</label>
       </>
     ))}
   </div>
   {charts.map(({ range, wide, narrow, summaries, snapshots }) => {
     const title = `${subject}, ${RANGE_LABELS[range].toLowerCase()}. ${summaries.map((s) => describe(s.label, s)).join(". ")}.`;
     return (
-      <figure id={`chart-${range}`}>
+      <figure id={`chart-${name}-${range}`} data-range={range}>
         {wide.series.length === 0 ? (
           <p class="empty">No readings in this range yet.</p>
         ) : (
           <>
-            <ChartSvg chart={wide} size="wide" titleId={`title-${range}-wide`} title={title} kinds={kinds} />
-            <ChartSvg chart={narrow} size="narrow" titleId={`title-${range}-narrow`} title={title} kinds={kinds} />
+            <ChartSvg chart={wide} size="wide" titleId={`title-${name}-${range}-wide`} title={title} kinds={kinds} />
+            <ChartSvg
+              chart={narrow}
+              size="narrow"
+              titleId={`title-${name}-${range}-narrow`}
+              title={title}
+              kinds={kinds}
+            />
           </>
         )}
         <figcaption class="chart-summary">

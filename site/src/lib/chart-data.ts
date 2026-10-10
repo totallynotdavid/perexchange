@@ -1,6 +1,6 @@
 import { buildChart } from "./chart.ts";
 import type { Chart, ChartPoint } from "./chart.ts";
-import { RANGES, downsample, sliceRange } from "./range.ts";
+import { HOUSE_RANGES, downsample, sliceRange } from "./range.ts";
 import type { Range } from "./range.ts";
 
 /** Enough points for a 30 day line at the widest chart. */
@@ -58,8 +58,12 @@ function summarize(series: SeriesInput): SeriesSummary {
  * summaries come from the full-resolution points, so a low or high is never smoothed
  * away by downsampling.
  */
-export function rangeCharts(series: SeriesInput[], end: number): RangeChart[] {
-  return RANGES.map((range) => {
+export function rangeCharts(
+  series: SeriesInput[],
+  end: number,
+  ranges: readonly Range[] = HOUSE_RANGES,
+): RangeChart[] {
+  return ranges.map((range) => {
     const inRange = series.map((one) => ({
       ...one,
       points: sliceRange(one.points, range, end),
