@@ -18,7 +18,8 @@ on:
   pull_request:
     paths: *paths
   schedule:
-    - cron: "*/15 * * * *"
+    # Keep off :00 and the other quarter hours, where GitHub delays and drops runs most.
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
 
 concurrency:
