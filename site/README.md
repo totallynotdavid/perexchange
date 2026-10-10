@@ -18,8 +18,8 @@ from that branch and Vercel caches them
 ([Architecture](../docs/architecture.md#what-a-reader-sees)). The docs pages are built
 once per deploy. Each page is plain HTML with the figures and the SVG charts already in
 it. A small script keeps the ages true while the page is open, and another remembers the
-side and the amount a visitor chose. Without scripts the page still shows every rate and
-chart.
+side, the unit and the amount a visitor chose. Without scripts the page still shows every
+rate and chart.
 
 A house page charts the last 30 days and reads at most that many history files. The home
 page reads every recorded day, up to 365, for the All range of its best-rate chart. The
