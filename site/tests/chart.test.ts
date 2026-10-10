@@ -86,6 +86,28 @@ describe("buildChart", () => {
     expect(month.xTicks[0].label).toBe("7 Oct");
   });
 
+  it("gives every tick of a span of a few days its own label", () => {
+    const days = buildChart(
+      [
+        {
+          id: "s",
+          label: "s",
+          points: [
+            { t: START, v: 3.4 },
+            { t: START + 2.6 * 24 * HOUR, v: 3.5 },
+          ],
+        },
+      ],
+      760,
+      280,
+      5,
+    );
+    const labels = days.xTicks.map((tick) => tick.label);
+
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(labels[0]).toMatch(/^7 Oct,? 19:00$/);
+  });
+
   it("draws a single point as a dot in the middle", () => {
     const chart = buildChart(
       [{ id: "s", label: "s", points: [{ t: START, v: 3.45 }] }],

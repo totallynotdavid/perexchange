@@ -81,6 +81,7 @@ const TEXT: [string, string][] = [
   ["danger", "danger-bg"],
   ["positive", "positive-bg"],
   ["positive", "bg"],
+  ["positive", "bg-muted"],
 ];
 
 const GRAPHICS: [string, string][] = [

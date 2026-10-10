@@ -4,13 +4,12 @@ import type { Failure } from "../src/lib/data.ts";
 import {
   DEAD_AFTER_MINUTES,
   ageMinutes,
+  bestSeries,
   gapToBest,
   houseSeries,
   missingHouses,
   missingSince,
-  parseAmount,
   placeOf,
-  proceeds,
   rank,
 } from "../src/lib/market.ts";
 import { GENERATED_AT, quote, snapshot } from "./fixtures.ts";
@@ -95,33 +94,6 @@ describe("ageMinutes", () => {
   it("is the whole minutes between the snapshot and the quote, never negative", () => {
     expect(ageMinutes(quote("a", 1, 1, minutesBefore(154)), GENERATED_AT)).toBe(154);
     expect(ageMinutes(quote("a", 1, 1, minutesBefore(-3)), GENERATED_AT)).toBe(0);
-  });
-});
-
-describe("proceeds", () => {
-  it("gives dollars for the soles spent when buying, at the sell rate", () => {
-    expect(proceeds(3450, "buy", 3.45)).toBe(1000);
-    expect(proceeds(100, "buy", 3.45)).toBe(28.99);
-  });
-
-  it("gives soles for the dollars handed over when selling, at the buy rate", () => {
-    expect(proceeds(1000, "sell", 3.4)).toBe(3400);
-    expect(proceeds(0.01, "sell", 3.4333)).toBe(0.03);
-  });
-});
-
-describe("parseAmount", () => {
-  it("reads plain and grouped numbers", () => {
-    expect(parseAmount("250")).toBe(250);
-    expect(parseAmount("1,250.50")).toBe(1250.5);
-    expect(parseAmount(" 1 250 ")).toBe(1250);
-    expect(parseAmount("5.")).toBe(5);
-  });
-
-  it("refuses what is not a positive number", () => {
-    for (const text of ["", "0", "-5", "abc", "1e3", "1.2.3", "Infinity"]) {
-      expect(parseAmount(text), text).toBeNull();
-    }
   });
 });
 
@@ -215,5 +187,54 @@ describe("houseSeries", () => {
     );
 
     expect(points.map((p) => p.sell)).toEqual([3.46, 3.48]);
+  });
+});
+
+describe("bestSeries", () => {
+  const snapshots = [
+    snapshot(0, { a: [3.4, 3.46], b: [3.41, 3.45], "b-5000": [3.3, 3.2] }),
+    snapshot(15, { a: [3.42, 3.47], b: [3.41, 3.45, DEAD_AFTER_MINUTES + 1] }),
+    snapshot(30, { b: [3.4, 3.5, DEAD_AFTER_MINUTES + 1] }),
+    snapshot(45, { a: [3.43, 3.44] }),
+  ];
+  const variants = new Set(["a", "b"]);
+
+  it("leaves out a special rate that only older history holds", () => {
+    const older = [
+      snapshot(0, {
+        a: [3.4, 3.46],
+        "a-5000": [3.3, 3.2],
+        gone: [3.4, 3.47],
+        "gone-big": [3.3, 3.1],
+      }),
+    ];
+
+    expect(bestSeries(older, "buy", variants).map((p) => p.v)).toEqual([3.46]);
+    expect(bestSeries(older, "sell", variants).map((p) => p.v)).toEqual([3.4]);
+  });
+
+  it("keeps a house whose id has a hyphen but is nobody's special rate", () => {
+    const hyphen = [snapshot(0, { "cambio-mundial": [3.43, 3.44], a: [3.4, 3.46] })];
+
+    expect(bestSeries(hyphen, "buy", variants).map((p) => p.v)).toEqual([3.44]);
+  });
+
+  it("takes the lowest sell rate for someone buying, without special rates", () => {
+    expect(bestSeries(snapshots, "buy", variants).map((p) => p.v)).toEqual([
+      3.45, 3.47, 3.44,
+    ]);
+  });
+
+  it("takes the highest buy rate for someone selling, without special rates", () => {
+    expect(bestSeries(snapshots, "sell", variants).map((p) => p.v)).toEqual([
+      3.41, 3.42, 3.43,
+    ]);
+  });
+
+  it("leaves out a snapshot in which no house has a current rate", () => {
+    const times = bestSeries(snapshots, "buy", variants).map((p) => p.t);
+
+    expect(times).toHaveLength(3);
+    expect(times).not.toContain(snapshots[2]?.t);
   });
 });

@@ -117,6 +117,59 @@ describe("data published at a URL", () => {
   });
 });
 
+describe("reading a longer history from a URL", () => {
+  const line = (t: string) => `{"t":"${t}","r":{"a":[3.4,3.45,0]},"f":[]}\n`;
+  const files: Record<string, string> = {
+    "/history/2026-10-08.jsonl": line("2026-10-08T12:00:00Z"),
+    "/history/2026-08-29.jsonl": line("2026-08-29T12:00:00Z"),
+    "/history/2026-04-01.jsonl": line("2026-04-01T12:00:00Z"),
+  };
+
+  async function withServer<T>(use: (url: string, asked: string[]) => Promise<T>) {
+    const asked: string[] = [];
+    const served = createServer((request, response) => {
+      asked.push(request.url ?? "");
+      const body = files[request.url ?? ""];
+      if (body === undefined) {
+        response.writeHead(404).end();
+      } else {
+        response.end(body);
+      }
+    });
+    await new Promise<void>((resolve) => served.listen(0, "127.0.0.1", resolve));
+    try {
+      return await use(
+        `http://127.0.0.1:${(served.address() as AddressInfo).port}`,
+        asked,
+      );
+    } finally {
+      served.close();
+    }
+  }
+
+  const now = new Date("2026-10-08T13:00:00Z");
+
+  it("reads past 30 days when asked, and stops at a month with no file", async () => {
+    await withServer(async (url, asked) => {
+      const { snapshots } = await loadHistory(url, now, 365);
+
+      expect(
+        snapshots.map((snapshot) => new Date(snapshot.t).toISOString().slice(0, 10)),
+      ).toEqual(["2026-08-29", "2026-10-08"]);
+      expect(asked).toHaveLength(90);
+    });
+  });
+
+  it("reads only the last 30 days by default", async () => {
+    await withServer(async (url, asked) => {
+      const { snapshots } = await loadHistory(url, now);
+
+      expect(snapshots).toHaveLength(1);
+      expect(asked).toHaveLength(30);
+    });
+  });
+});
+
 describe("loading an empty data directory", () => {
   it("names the command that records a snapshot", async () => {
     await expect(loadLatest(path.join(dir, "missing"))).rejects.toThrow(/bun run data/);

@@ -36,7 +36,11 @@ second = FetchReport(
 snapshot.write_snapshot(second, data_dir, start + timedelta(minutes=15))
 `;
 
-/** Records one fetch with enough houses to exercise the site's overflow layout. */
+/**
+ * Records thirteen houses and a special rate, which the chart must ignore, at five
+ * moments, 40, 20, 3, 1 and 0 days before the newest, so every chart range differs. Every
+ * price moves by the shift of its moment, so the best price is 3.455 plus that shift.
+ */
 const RECORD_COMPLETE = `
 import importlib.util, sys
 from datetime import datetime, timedelta, timezone
@@ -47,17 +51,19 @@ spec = importlib.util.spec_from_file_location("snapshot", sys.argv[1] + "/tools/
 snapshot = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(snapshot)
 
-start = datetime(2026, 10, 8, 12, 0, tzinfo=timezone.utc)
+newest = datetime(2026, 10, 8, 12, 0, tzinfo=timezone.utc)
 houses = ["cambiafx", "tkambio", "tucambista", "okane", "dolarex", "inkamoney", "inticambio",
           "moneyplus", "srcambio", "masscambio", "metafx", "westernunion"]
-rates = [
-    ExchangeRate(house, house, 3.43 + i * 0.001, 3.458 + i * 0.002, start)
-    for i, house in enumerate(houses)
-]
-rates.append(ExchangeRate("cuantoestaeldolar", "Gordito digital", 3.435, 3.455, start))
-rates.append(ExchangeRate("tkambio", "tkambio_5000", 3.44, 3.45, start))
-report = FetchReport(rates=tuple(rates), failures=())
-snapshot.write_snapshot(report, Path(sys.argv[2]), start)
+moments = [(40, 0.02), (20, 0.01), (3, -0.005), (1, 0.0), (0, 0.0)]
+for days_back, shift in moments:
+    at = newest - timedelta(days=days_back)
+    rates = [
+        ExchangeRate(house, house, 3.43 + i * 0.001 + shift, 3.458 + i * 0.002 + shift, at)
+        for i, house in enumerate(houses)
+    ]
+    rates.append(ExchangeRate("cuantoestaeldolar", "Gordito digital", 3.435 + shift, 3.455 + shift, at))
+    rates.append(ExchangeRate("tkambio", "tkambio_5000", 3.38 + shift, 3.40 + shift, at))
+    snapshot.write_snapshot(FetchReport(rates=tuple(rates), failures=()), Path(sys.argv[2]), at)
 `;
 
 function run(script: string, dataDir: string): void {
