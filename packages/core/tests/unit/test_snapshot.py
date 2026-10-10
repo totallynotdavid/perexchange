@@ -48,7 +48,14 @@ def history_lines(data_dir: Path, day: str) -> list[dict]:
 def test_latest_lists_every_rate_with_utc_times_and_the_failures(tmp_path):
     report = FetchReport(
         rates=(quote("tkambio", "tkambio_5000", 3.425, 3.452),),
-        failures=(SourceFailure("okane", "HTTPStatusError", "403 Forbidden"),),
+        failures=(
+            SourceFailure(
+                "okane",
+                "HTTPStatusError",
+                "Client error '403 Forbidden'\nFor more information check: a link",
+                403,
+            ),
+        ),
     )
 
     snapshot.write_snapshot(report, tmp_path, MORNING)
@@ -66,8 +73,63 @@ def test_latest_lists_every_rate_with_utc_times_and_the_failures(tmp_path):
         }
     ]
     assert latest["failures"] == [
-        {"source": "okane", "error_type": "HTTPStatusError", "message": "403 Forbidden"}
+        {
+            "source": "okane",
+            "reason": "blocked",
+            "error_type": "HTTPStatusError",
+            "message": "Client error '403 Forbidden'",
+        }
     ]
+
+
+@pytest.mark.parametrize(
+    ("failure", "reason"),
+    [
+        (SourceFailure("a", "HTTPStatusError", "", 403), "blocked"),
+        (SourceFailure("a", "HTTPStatusError", "", 429), "blocked"),
+        (SourceFailure("a", "HTTPStatusError", "", 500), "error"),
+        (SourceFailure("a", "SourceParseError", ""), "changed"),
+        (SourceFailure("a", "ReadTimeout", ""), "timeout"),
+        (SourceFailure("a", "TimeoutError", ""), "timeout"),
+        (SourceFailure("a", "ConnectError", ""), "unreachable"),
+    ],
+)
+def test_latest_gives_each_failure_a_reason_the_site_can_show(failure, reason):
+    assert snapshot.failure_reason(failure) == reason
+
+
+def test_a_quote_that_pays_more_than_it_charges_is_reported_not_recorded(tmp_path):
+    report = FetchReport(
+        rates=(quote("a", "a", 3.3, 3.4), quote("m", "m", 3.446, 3.445)), failures=()
+    )
+
+    written = snapshot.write_snapshot(report, tmp_path, MORNING)
+
+    latest = json.loads((tmp_path / "latest.json").read_text(encoding="utf-8"))
+    assert [rate["id"] for rate in latest["rates"]] == ["a"]
+    assert latest["failures"] == [
+        {
+            "source": "m",
+            "reason": "invalid",
+            "error_type": "CrossedQuote",
+            "message": "pays 3.446 for a dollar and charges 3.445",
+        }
+    ]
+    [line] = history_lines(tmp_path, "2026-10-08")
+    assert (list(line["r"]), line["f"]) == (["a"], ["m"])
+    assert [failure.source for failure in written.failures] == ["m"]
+
+
+def test_history_lists_the_sources_that_returned_nothing(tmp_path):
+    report = FetchReport(
+        rates=(quote("a", "a", 3.3, 3.4),),
+        failures=(SourceFailure("okane", "HTTPStatusError", "", 403),),
+    )
+
+    snapshot.write_snapshot(report, tmp_path, MORNING)
+
+    [line] = history_lines(tmp_path, "2026-10-08")
+    assert line["f"] == ["okane"]
 
 
 def test_each_fetch_appends_one_line_to_the_utc_day_it_happened_in(tmp_path):
