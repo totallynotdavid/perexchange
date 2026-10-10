@@ -233,7 +233,6 @@ h2 {
 }
 
 .label,
-.hero h2,
 .figure h2 {
   margin: 0;
   color: var(--fg-muted);
@@ -267,22 +266,6 @@ time.old {
 
 .button:hover {
   background: var(--bg-muted);
-}
-
-input[type="text"] {
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--fg);
-  font: 400 1rem/1.5rem var(--font-mono);
-  transition: border-color var(--duration) var(--ease);
-}
-
-input[type="text"]:hover {
-  border-color: var(--fg-muted);
 }
 
 input::placeholder {
@@ -347,10 +330,10 @@ input::placeholder {
 .page-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 1rem 2rem;
-  margin-bottom: 1.5rem;
+  gap: 0.25rem 2rem;
+  margin-bottom: 1rem;
 }
 
 .page-head h1 {
@@ -358,21 +341,10 @@ input::placeholder {
 }
 
 .meta {
-  margin: 0.25rem 0 0;
+  margin: 0;
   color: var(--fg-muted);
   font-size: 0.875rem;
   line-height: 1.25rem;
-}
-
-.board > .segmented {
-  width: 100%;
-  margin-bottom: 1.25rem;
-}
-
-@media (min-width: 40rem) {
-  .board > .segmented {
-    width: fit-content;
-  }
 }
 
 .notice {
@@ -390,28 +362,34 @@ input::placeholder {
   font-weight: 600;
 }
 
-.board .panel {
-  display: none;
-}
-
-.board:has(#side-buy:checked) .panel[data-side="buy"],
-.board:has(#side-sell:checked) .panel[data-side="sell"] {
+.layout {
   display: grid;
-  gap: 1.5rem 2.5rem;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
 @media (min-width: 62rem) {
-  .board:has(#side-buy:checked) .panel[data-side="buy"],
-  .board:has(#side-sell:checked) .panel[data-side="sell"] {
-    grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+  .layout {
+    grid-template-columns: minmax(20rem, 22rem) minmax(0, 1fr);
+    gap: 2.5rem;
   }
 }
 
-.hero,
+.board .hero,
+.board .results {
+  display: none;
+}
+
+.board:has(#side-buy:checked) [data-side="buy"],
+.board:has(#side-sell:checked) [data-side="sell"] {
+  display: block;
+}
+
+.composer,
 .figure,
 .state,
-.panel > .empty {
+.board > .empty {
   padding: 1rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -419,19 +397,39 @@ input::placeholder {
 }
 
 @media (min-width: 40rem) {
-  .hero,
+  .composer,
   .figure,
   .state,
-  .panel > .empty {
+  .board > .empty {
     padding: 1.5rem;
   }
 }
 
+.composer {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
 @media (min-width: 62rem) {
-  .hero {
+  .composer {
     position: sticky;
     top: calc(var(--header-height) + 1.5rem);
   }
+}
+
+.composer .segmented {
+  width: 100%;
+}
+
+.composer .segmented label {
+  padding-inline: 0.5rem;
+}
+
+.board > .empty {
+  margin: 0;
+  border-style: dashed;
+  color: var(--fg-secondary);
 }
 
 .best-rate {
@@ -456,7 +454,6 @@ input::placeholder {
   vertical-align: 0.35em;
 }
 
-.best-house,
 .where,
 .standing {
   margin: 0.25rem 0 0;
@@ -465,111 +462,176 @@ input::placeholder {
   overflow-wrap: anywhere;
 }
 
-.best-house a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
+.field {
+  display: flex;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  background: var(--bg);
+  transition: border-color var(--duration) var(--ease);
+}
+
+.field:hover {
+  border-color: var(--fg-muted);
+}
+
+.field:has(input[aria-invalid="true"]) {
+  border-color: var(--danger);
+}
+
+.field:has(input:focus-visible) {
+  outline: var(--focus-width) solid var(--accent);
+  outline-offset: var(--focus-offset);
+}
+
+.field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 3.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
   color: var(--fg);
-  font-weight: 500;
+  font: 500 1.375rem/1.75rem var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-.amount {
-  display: grid;
+.field input:focus-visible {
+  outline: none;
+}
+
+.field input::placeholder {
+  font-weight: 400;
+}
+
+.field .unit {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
   gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  min-width: 4.5rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
+  background: var(--bg-subtle);
+  color: var(--fg);
+  cursor: pointer;
+  font: 500 1rem/1.5rem var(--font-mono);
+  transition: background-color var(--duration) var(--ease);
 }
 
-.amount > label {
+.field .unit:hover {
+  background: var(--bg-muted);
+}
+
+.field .unit .swap {
+  color: var(--fg-muted);
+  font: 400 0.875rem/1 var(--font-sans);
+}
+
+.answer {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.answer > * {
+  display: block;
+}
+
+.answer-label {
   color: var(--fg-muted);
   font-size: 0.8125rem;
   font-weight: 450;
   line-height: 1.25rem;
 }
 
-.amount .segmented {
-  width: 100%;
+.answer-figure {
+  font-size: 2.5rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 2.75rem;
+  overflow-wrap: anywhere;
 }
 
-.field {
-  position: relative;
+@media (min-width: 40rem) and (max-width: 61.99rem) {
+  .answer-figure {
+    font-size: 3.5rem;
+    line-height: 4rem;
+  }
 }
 
-.field [data-affix] {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0.75rem;
-  display: flex;
-  align-items: center;
+.answer-figure .unit {
   color: var(--fg-muted);
-  font: 400 1rem/1.5rem var(--font-mono);
-  pointer-events: none;
+  font-size: 0.5em;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
-.field input[type="text"] {
-  padding-inline-start: 3.25rem;
-}
-
-.field input[aria-invalid="true"] {
-  border-color: var(--danger);
-}
-
-.amount output {
-  display: block;
-  min-height: 1.375rem;
-  color: var(--fg-secondary);
-  font-size: 0.9375rem;
-  line-height: 1.375rem;
-}
-
-.amount[data-calc="sell"] output {
-  min-height: 1.75rem;
+.answer-house {
+  margin-top: 0.25rem;
   color: var(--fg);
-  font: 600 1.125rem/1.75rem var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.amount[data-calc="sell"][data-reading="zero"] output,
-.amount[data-calc="sell"][data-reading="invalid"] output,
-.amount[data-calc="sell"][data-reading="huge"] output {
-  color: var(--fg-secondary);
-  font: 400 0.9375rem/1.75rem var(--font-sans);
-}
-
-.spread {
-  margin: 0.25rem 0 0;
-  color: var(--fg-muted);
-  font-size: 0.8125rem;
-  line-height: 1.25rem;
-}
-
-.history {
-  margin-top: 2rem;
-}
-
-.history h3 {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
+  font-size: 1.0625rem;
   font-weight: 500;
   line-height: 1.5rem;
 }
 
-.history > .empty {
+.answer-note {
+  min-height: 1.25rem;
+  margin-top: 0.25rem;
+  color: var(--fg-secondary);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  margin-top: 1rem;
+  padding-inline: 1.25rem;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color var(--duration) var(--ease);
+}
+
+.cta:hover {
+  background: color-mix(in oklch, var(--accent) 85%, var(--fg));
+}
+
+.late {
+  margin: 0.5rem 0 0;
+  color: var(--warn);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.hero.empty {
+  color: var(--fg-secondary);
+}
+
+.hero.empty p {
   margin: 0;
+}
+
+.results details.history {
+  margin-top: 1.5rem;
+}
+
+.results details.history > .empty {
+  margin: 0.25rem 0 0;
   padding: 1rem;
   border: 1px dashed var(--border);
   border-radius: var(--radius);
   background: var(--bg-subtle);
   color: var(--fg-secondary);
   font-size: 0.9375rem;
-}
-
-.panel > .empty {
-  margin: 0;
-  border-style: dashed;
-  color: var(--fg-secondary);
-  grid-column: 1 / -1;
 }
 
 /* Rate tables */
@@ -649,16 +711,10 @@ table.rates tbody th a:focus-visible::after {
   outline-offset: -2px;
 }
 
-table.rates tbody th time {
+table.rates tbody th .late {
   display: block;
-  color: var(--fg-muted);
-  font-size: 0.8125rem;
+  margin: 0;
   font-weight: 400;
-  line-height: 1.25rem;
-}
-
-table.rates tbody th time.old {
-  color: var(--warn);
 }
 
 table.rates td.price {
@@ -671,7 +727,6 @@ table.rates thead th small {
   font-size: 0.75rem;
   font-weight: 400;
   line-height: 1rem;
-  white-space: normal;
 }
 
 table.rates td.total {
@@ -683,14 +738,20 @@ table.rates td.total.best {
   color: var(--positive);
 }
 
-.panel[data-reading]:not([data-reading="ok"]) table.rates td.total.best {
-  color: inherit;
+.board:not([data-reading="ok"]) table.rates .total-col {
+  display: none;
 }
 
-table.rates td.edge,
-table.rates td.gap {
+/* The row link covers the row. The history link sits above it. */
+table.rates td.history-col a {
+  position: relative;
+  z-index: 1;
   color: var(--fg-muted);
   font-size: 0.8125rem;
+}
+
+table.rates td.history-col a:hover {
+  color: var(--fg);
 }
 
 @media (max-width: 40rem) {
@@ -698,16 +759,6 @@ table.rates td.gap {
   table.rates td {
     padding-inline: 0.5rem;
   }
-}
-
-table.rates td.gap.best span {
-  display: inline-block;
-  padding: 0 0.5rem;
-  border: 1px solid var(--positive-border);
-  border-radius: 999px;
-  background: var(--positive-bg);
-  color: var(--positive);
-  font: 500 0.75rem/1.25rem var(--font-sans);
 }
 
 details {
@@ -748,7 +799,7 @@ details > table.rates {
   margin-top: 2rem;
 }
 
-.panel + .missing {
+.layout + .missing {
   padding-top: 0.5rem;
   border-top: 1px solid var(--border-subtle);
 }
@@ -890,11 +941,18 @@ details > table.rates {
   border-radius: var(--radius-lg);
 }
 
+.chart-block .segmented {
+  justify-self: start;
+}
+
 @media (min-width: 40rem) {
   .chart-block {
+    padding: 1.5rem;
+  }
+
+  .chart-block:has(.legend) {
     grid-template-columns: 1fr auto;
     align-items: center;
-    padding: 1.5rem;
   }
 }
 
@@ -995,17 +1053,14 @@ details > table.rates {
 .chart-summary {
   display: grid;
   gap: 0.25rem;
-  margin: 1rem 0 0;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border-subtle);
-  color: var(--fg-muted);
-  font-size: 0.8125rem;
-  line-height: 1.25rem;
+  margin: 0 0 0.75rem;
+  color: var(--fg-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
 }
 
-.chart-summary strong {
-  color: var(--fg);
-  font-weight: 600;
+.chart-summary p {
+  margin: 0;
 }
 
 .chart-block .empty {

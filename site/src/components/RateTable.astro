@@ -1,22 +1,22 @@
 ---
 import Age from "./Age.astro";
 import { formatPrice } from "../lib/format.ts";
-import type { BuyView } from "../lib/amount.ts";
-import { gapToBest, rateFor } from "../lib/market.ts";
+import { houseLink, quoteHouse } from "../lib/houses.ts";
+import { gapToBest, isOld, minutesSince, rateFor } from "../lib/market.ts";
 import type { Side } from "../lib/market.ts";
 import type { Quote } from "../lib/data.ts";
-import { quoteHouse } from "../lib/houses.ts";
 
 interface Props {
   quotes: Quote[];
   best: Quote;
   side: Side;
   now: number;
+  /** When the rates were fetched. A rate is late when it is old next to this. */
+  fetchedAt: string;
   caption: string;
-  view?: Pick<BuyView, "heads" | "cells"> | undefined;
 }
 
-const { quotes, best, side, now, caption, view } = Astro.props;
+const { quotes, best, side, now, fetchedAt, caption } = Astro.props;
 ---
 
 <table class="rates">
@@ -25,54 +25,45 @@ const { quotes, best, side, now, caption, view } = Astro.props;
     <tr>
       <th scope="col">House</th>
       <th scope="col" class="num">
-        {side === "buy" ? "Sell rate" : "Buy rate"}
-        <small>{side === "buy" ? "you pay per US$1" : "you get per US$1"}</small>
+        Rate per US$1
       </th>
-      {view ? (
-        <>
-          <th scope="col" class="num">
-            <span data-head="total">{view.heads.total}</span>
-            <small data-note="total">{view.heads.totalNote}</small>
-          </th>
-          <th scope="col" class="num">
-            <span data-head="edge">{view.heads.edge}</span>
-            <small>vs the dearest</small>
-          </th>
-        </>
-      ) : (
-        <th scope="col" class="num">
-          Behind best
-        </th>
-      )}
+      <th scope="col" class="num total-col">
+        <span data-head="label">{side === "buy" ? "You pay" : "You get"}</span>
+        <small data-head="for"></small>
+      </th>
+      <th scope="col" class="history-col">
+        <span class="visually-hidden">Rate history</span>
+      </th>
     </tr>
   </thead>
   <tbody>
-    {quotes.map((quote, i) => {
-      const gap = gapToBest(quote, best, side);
-      const cells = view?.cells[i];
+    {quotes.map((quote) => {
+      const link = houseLink(quote);
+      const late = isOld(minutesSince(quote.timestamp, fetchedAt));
       return (
-        <tr data-rate={view ? rateFor(quote, side) : undefined} data-house={view ? quoteHouse(quote) : undefined}>
+        <tr data-rate={rateFor(quote, side)} data-house={quoteHouse(quote)}>
           <th scope="row">
-            <a href={`/house/${quote.id}/`}>{quoteHouse(quote)}</a>
-            <Age at={quote.timestamp} now={now} />
+            <a
+              href={link.href}
+              target={link.external ? "_blank" : undefined}
+              rel={link.external ? "noopener noreferrer" : undefined}
+            >
+              {quoteHouse(quote)}
+              {link.external && <span class="visually-hidden">, opens its website</span>}
+            </a>
+            {late && (
+              <span class="late">
+                Rate from <Age at={quote.timestamp} now={now} />
+              </span>
+            )}
           </th>
           <td class="num price">{formatPrice(rateFor(quote, side))}</td>
-          {cells ? (
-            <>
-              <td class:list={["num", "total", { best: gap === 0 }]} data-total>
-                {cells.total}
-              </td>
-              <td class="num edge" data-edge>
-                {cells.edge}
-              </td>
-            </>
-          ) : gap === 0 ? (
-            <td class="num gap best">
-              <span>best</span>
-            </td>
-          ) : (
-            <td class="num gap">{`−${formatPrice(gap)}`}</td>
-          )}
+          <td class:list={["num", "total-col", "total", { best: gapToBest(quote, best, side) === 0 }]} data-total />
+          <td class="history-col">
+            <a href={`/house/${quote.id}/`}>
+              History<span class="visually-hidden"> of {quoteHouse(quote)}</span>
+            </a>
+          </td>
         </tr>
       );
     })}

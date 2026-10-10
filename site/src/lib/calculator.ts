@@ -1,10 +1,11 @@
-import { buyView, DEFAULT_AMOUNT, readAmount, sellSummary } from "./amount.ts";
-import type { Mode, Reading, Row } from "./amount.ts";
+import { answer, flipped, readAmount } from "./amount.ts";
+import type { Row, Unit } from "./amount.ts";
+import type { Side } from "./market.ts";
 
 const KEYS = {
   side: "perexchange:side",
-  mode: "perexchange:mode",
-  amount: (name: string) => `perexchange:amount:${name}`,
+  unit: "perexchange:unit",
+  amount: "perexchange:amount",
 };
 
 type Store = Pick<Storage, "getItem" | "setItem">;
@@ -50,114 +51,134 @@ function query<T extends Element>(root: ParentNode, selector: string): T {
   return found;
 }
 
-/** An empty field is waiting for a number; any other reading but a good one is a mistake. */
-const isRejected = (reading: Reading) =>
-  reading.kind !== "ok" && reading.kind !== "empty";
-
 const setText = (element: Element, text: string) => {
   if (element.textContent !== text) {
     element.textContent = text;
   }
 };
 
-function bindSell(calc: HTMLElement, store: Store): void {
-  const input = query<HTMLInputElement>(calc, "input[type='text']");
-  const output = query<HTMLOutputElement>(calc, "output");
-  const rate = Number(output.dataset.rate);
-  const key = KEYS.amount("sell");
-
-  const update = () => {
-    const reading = readAmount(input.value);
-    input.setAttribute("aria-invalid", String(isRejected(reading)));
-    output.value = sellSummary(reading, rate);
-    calc.setAttribute("data-reading", reading.kind);
-  };
-
-  input.value = store.getItem(key) ?? "";
-  input.addEventListener("input", () => {
-    store.setItem(key, input.value);
-    update();
-  });
-  calc.hidden = false;
-  update();
+interface Panel {
+  side: Side;
+  hero: HTMLElement;
+  rows: HTMLElement[];
+  table: Row[];
 }
 
-function bindBuy(panel: Element, calc: HTMLElement, store: Store): void {
-  const radios = [...calc.querySelectorAll<HTMLInputElement>("input[name='mode']")];
+function panelsOf(board: ParentNode): Panel[] {
+  return [...board.querySelectorAll<HTMLElement>(".hero[data-side]")].flatMap((hero) => {
+    const side = hero.dataset.side === "sell" ? "sell" : "buy";
+    const results = board.querySelector(`.results[data-side="${side}"]`);
+    if (results === null) {
+      return [];
+    }
+    const rows = [...results.querySelectorAll<HTMLElement>("tr[data-rate]")];
+    return [
+      {
+        side,
+        hero,
+        rows,
+        table: rows.map((row) => ({
+          rate: Number(row.dataset.rate),
+          house: row.dataset.house ?? "",
+        })),
+      } satisfies Panel,
+    ];
+  });
+}
+
+/**
+ * Binds the amount field, the unit button and the side switch to the hero and the table
+ * of each side. One field serves both sides, so the amount survives a change of side.
+ */
+export function bindBoard(doc: Document): void {
+  const board = doc.querySelector<HTMLElement>(".board");
+  const calc = board?.querySelector<HTMLElement>(".amount");
+  // A page with no rate has no amount to price.
+  if (board === null || calc === null || calc === undefined) {
+    return;
+  }
+  const store = storageOf(doc);
   const input = query<HTMLInputElement>(calc, "input[type='text']");
-  const output = query<HTMLOutputElement>(calc, "output");
   const label = query(calc, "[data-label]");
-  const affix = query(calc, "[data-affix]");
-  const rows = [...panel.querySelectorAll<HTMLElement>("tr[data-rate]")];
-  const table: Row[] = rows.map((row) => ({
-    rate: Number(row.dataset.rate),
-    house: row.dataset.house ?? "",
-  }));
-  const mode = (): Mode =>
-    radios.find((radio) => radio.checked)?.value === "pen" ? "pen" : "usd";
+  const button = query<HTMLButtonElement>(calc, "[data-unit]");
+  const sides = [...board.querySelectorAll<HTMLInputElement>("input[name='side']")];
+  const panels = panelsOf(board);
+
+  let unit: Unit = store.getItem(KEYS.unit) === "pen" ? "pen" : "usd";
+  const side = (): Side =>
+    sides.find((radio) => radio.checked)?.value === "sell" ? "sell" : "buy";
 
   const render = () => {
-    const current = mode();
     const reading = readAmount(input.value);
-    const view = buyView(current, reading, table);
+    const current = side();
+    const soles = unit === "pen";
 
-    setText(label, current === "usd" ? "I want to buy" : "I have");
-    setText(affix, current === "usd" ? "US$" : "S/");
-    input.setAttribute("aria-invalid", String(isRejected(reading)));
-    output.value = view.summary;
-    panel.setAttribute("data-reading", reading.kind);
+    setText(label, current === "buy" ? "Amount to buy" : "Amount to sell");
+    setText(query(button, "[data-unit-text]"), soles ? "S/" : "US$");
+    setText(
+      query(button, "[data-unit-hint]"),
+      soles ? ", change to dollars" : ", change to soles",
+    );
+    input.setAttribute(
+      "aria-invalid",
+      String(reading.kind !== "ok" && reading.kind !== "empty"),
+    );
+    board.dataset.reading = reading.kind;
 
-    rows.forEach((row, i) => {
-      const cell = view.cells[i];
-      if (cell !== undefined) {
-        setText(query(row, "[data-total]"), cell.total);
-        setText(query(row, "[data-edge]"), cell.edge);
+    for (const panel of panels) {
+      const view = answer(panel.side, unit, reading, panel.table);
+      const part = (name: string) => query(panel.hero, `[data-part='${name}']`);
+      setText(part("label"), view.label);
+      setText(part("currency"), view.currency);
+      setText(part("figure"), view.figure);
+      setText(part("note"), view.note);
+
+      const results = board.querySelector(`.results[data-side="${panel.side}"]`);
+      for (const head of results?.querySelectorAll("[data-head='label']") ?? []) {
+        setText(head, view.head.label);
       }
-    });
-    for (const head of panel.querySelectorAll("[data-head='total']"))
-      setText(head, view.heads.total);
-    for (const note of panel.querySelectorAll("[data-note='total']"))
-      setText(note, view.heads.totalNote);
-    for (const head of panel.querySelectorAll("[data-head='edge']"))
-      setText(head, view.heads.edge);
+      for (const head of results?.querySelectorAll("[data-head='for']") ?? []) {
+        setText(head, view.head.for);
+      }
+      panel.rows.forEach((row, i) => {
+        setText(query(row, "[data-total]"), view.totals[i] ?? "");
+      });
+    }
   };
-
-  const load = () => {
-    input.value = store.getItem(KEYS.amount(mode())) || String(DEFAULT_AMOUNT[mode()]);
-    render();
-  };
-
-  const saved = store.getItem(KEYS.mode);
-  for (const radio of radios) {
-    radio.checked = radio.value === (saved === "pen" ? "pen" : "usd");
-    radio.addEventListener("change", () => {
-      store.setItem(KEYS.mode, mode());
-      load();
-    });
-  }
-  input.addEventListener("input", () => {
-    store.setItem(KEYS.amount(mode()), input.value);
-    render();
-  });
-  calc.hidden = false;
-  load();
-}
-
-export function bindBoard(doc: Document): void {
-  const store = storageOf(doc);
 
   const saved = store.getItem(KEYS.side);
-  for (const input of doc.querySelectorAll<HTMLInputElement>("input[name='side']")) {
-    input.checked = input.value === (saved ?? "buy");
-    input.addEventListener("change", () => store.setItem(KEYS.side, input.value));
+  for (const radio of sides) {
+    radio.checked = radio.value === (saved === "sell" ? "sell" : "buy");
+    radio.addEventListener("change", () => {
+      store.setItem(KEYS.side, side());
+      render();
+    });
   }
 
-  for (const panel of doc.querySelectorAll(".panel[data-side]")) {
-    const calc = panel.querySelector<HTMLElement>(".amount[data-calc]");
-    if (calc?.dataset.calc === "buy") {
-      bindBuy(panel, calc, store);
-    } else if (calc?.dataset.calc === "sell") {
-      bindSell(calc, store);
+  input.value = store.getItem(KEYS.amount) ?? "";
+  input.addEventListener("input", () => {
+    store.setItem(KEYS.amount, input.value);
+    render();
+  });
+  button.addEventListener("click", () => {
+    const best = panels.find((panel) => panel.side === side())?.table[0]?.rate;
+    input.value = flipped(side(), unit, input.value, best);
+    unit = unit === "usd" ? "pen" : "usd";
+    store.setItem(KEYS.unit, unit);
+    store.setItem(KEYS.amount, input.value);
+    render();
+  });
+
+  // The history is below the answer, so a phone starts with it closed.
+  if (doc.defaultView?.matchMedia("(min-width: 40em)").matches === false) {
+    for (const history of board.querySelectorAll<HTMLDetailsElement>("details.history")) {
+      history.open = false;
     }
+  }
+
+  calc.hidden = false;
+  render();
+  if (doc.activeElement === null || doc.activeElement === doc.body) {
+    input.focus({ preventScroll: true });
   }
 }

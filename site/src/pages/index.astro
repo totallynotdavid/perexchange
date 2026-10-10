@@ -4,17 +4,17 @@ import ChartBlock from "../components/ChartBlock.astro";
 import RateTable from "../components/RateTable.astro";
 import Unavailable from "../components/Unavailable.astro";
 import Base from "../layouts/Base.astro";
-import { buyView, DEFAULT_AMOUNT } from "../lib/amount.ts";
-import { formatDay, formatPrice } from "../lib/format.ts";
+import { answer } from "../lib/amount.ts";
+import { formatDay } from "../lib/format.ts";
 import { ALL_DAYS, loadHistory, loadLatest } from "../lib/load.ts";
-import { quoteHouse } from "../lib/houses.ts";
+import { houseLink, quoteHouse } from "../lib/houses.ts";
 import { MIN_CHART_MS, bestSeries, isOld, minutesSince, missingHouses, rank, rateFor } from "../lib/market.ts";
 import type { Side } from "../lib/market.ts";
 import { BEST_RANGES } from "../lib/range.ts";
 
 export const prerender = false;
 
-const SHOWN = 10;
+const SHOWN = 5;
 
 const latest = await loadLatest().catch((error: unknown) => {
   console.error(error);
@@ -35,19 +35,16 @@ const sources = new Set((latest?.rates ?? []).map((quote) => quote.source));
 const sides: {
   side: Side;
   title: string;
-  rateNote: string;
   series: { label: string; kind: "sell" | "buy" };
 }[] = [
   {
     side: "buy",
     title: "Cheapest place to buy dollars",
-    rateNote: "Each rate is the house's sell rate: what it charges you for US$1.",
     series: { label: "Cheapest price for US$1", kind: "sell" },
   },
   {
     side: "sell",
     title: "Best place to sell dollars",
-    rateNote: "Each rate is the house's buy rate: what it pays you for US$1.",
     series: { label: "Best price for US$1", kind: "buy" },
   },
 ];
@@ -55,9 +52,10 @@ const panels = latest
   ? sides.map((one) => {
       const ranked = rank(latest.rates, one.side, latest.generated_at);
       const points = bestSeries(snapshots, one.side, sources);
-      const view = buyView(
+      const view = answer(
+        one.side,
         "usd",
-        { kind: "ok", amount: DEFAULT_AMOUNT.usd },
+        { kind: "empty" },
         ranked.map((quote) => ({ rate: rateFor(quote, one.side), house: quoteHouse(quote) })),
       );
       const first = points[0];
@@ -74,6 +72,7 @@ function waiting(points: { t: number }[]): string {
     : `The chart appears once two days of readings are recorded. The first is from ${formatDay(first.t)}.`;
 }
 const compared = panels[0]?.ranked.length ?? 0;
+const anyRate = panels.some((panel) => panel.best !== undefined);
 const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots, latest.generated_at) : [];
 ---
 
@@ -83,20 +82,18 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
   section="rates"
 >
   <div class="page-head">
-    <div>
-      <h1>Dollar rates in Peru</h1>
-      {compared > 0 && latest !== null && (
-        <p class="meta">
-          {compared} {compared === 1 ? "house" : "houses"} compared, fetched <Age at={latest.generated_at} now={now} />
-        </p>
-      )}
-    </div>
+    <h1>Dollar rates in Peru</h1>
+    {compared > 0 && latest !== null && (
+      <p class="meta">
+        {compared} {compared === 1 ? "house" : "houses"} compared, updated <Age at={latest.generated_at} now={now} />
+      </p>
+    )}
   </div>
 
   {latest === null && <Unavailable />}
 
   {latest !== null && (
-    <div class="board">
+    <div class="board" data-reading="empty">
       <p
         class="notice"
         role="status"
@@ -107,120 +104,143 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
         rate with the house before you go.
       </p>
 
-      <div class="segmented" role="radiogroup" aria-label="I want to">
-        <input type="radio" name="side" id="side-buy" value="buy" checked />
-        <label for="side-buy">Buy dollars</label>
-        <input type="radio" name="side" id="side-sell" value="sell" />
-        <label for="side-sell">Sell dollars</label>
-      </div>
+      {!anyRate && <p class="empty">No house has a current rate. See the houses we could not read below.</p>}
 
-      {panels.map(({ side, title, rateNote, series, ranked, best, points, end, view }) => (
-        <section class="panel" data-side={side} aria-labelledby={`title-${side}`}>
-          {best === undefined ? (
-            <>
-              <h2 id={`title-${side}`} class="visually-hidden">
-                {title}
-              </h2>
-              <p class="empty">No house has a current rate. See the houses we could not read below.</p>
-            </>
-          ) : (
-            <>
-              <div class="hero">
-                <h2 id={`title-${side}`}>{title}</h2>
-                <p class="best-rate num">
-                  <span class="unit">S/</span> {formatPrice(rateFor(best, side))}
-                </p>
-                <p class="best-house">
-                  <a href={`/house/${best.id}/`}>{quoteHouse(best)}</a>, <Age at={best.timestamp} now={now} />
-                </p>
+      {anyRate && (
+        <div class="layout">
+          <div class="composer">
+            <div class="segmented" role="radiogroup" aria-label="I want to">
+              <input type="radio" name="side" id="side-buy" value="buy" checked />
+              <label for="side-buy">I want to buy US$</label>
+              <input type="radio" name="side" id="side-sell" value="sell" />
+              <label for="side-sell">I want to sell US$</label>
+            </div>
 
-                <p class="spread">{rateNote}</p>
-
-                {side === "buy" ? (
-                  <div class="amount" data-calc="buy" hidden>
-                    <div class="segmented" role="radiogroup" aria-label="Amount in">
-                      <input type="radio" name="mode" id="mode-usd" value="usd" checked />
-                      <label for="mode-usd">Dollars to buy</label>
-                      <input type="radio" name="mode" id="mode-pen" value="pen" />
-                      <label for="mode-pen">Soles to spend</label>
-                    </div>
-                    <label for="amount-buy" data-label>
-                      I want to buy
-                    </label>
-                    <div class="field">
-                      <span data-affix aria-hidden="true">
-                        US$
-                      </span>
-                      <input
-                        type="text"
-                        id="amount-buy"
-                        inputmode="decimal"
-                        autocomplete="off"
-                        value={DEFAULT_AMOUNT.usd}
-                      />
-                    </div>
-                    <output for="amount-buy">{view.summary}</output>
-                  </div>
-                ) : (
-                  <div class="amount" data-calc="sell" hidden>
-                    <label for="amount-sell">Dollars to sell</label>
-                    <div class="field">
-                      <span data-affix aria-hidden="true">
-                        US$
-                      </span>
-                      <input type="text" id="amount-sell" inputmode="decimal" autocomplete="off" placeholder="1,000" />
-                    </div>
-                    <output for="amount-sell" data-rate={rateFor(best, side)} />
-                  </div>
-                )}
-              </div>
-
-              <div class="results">
-                <RateTable
-                  quotes={ranked.slice(0, SHOWN)}
-                  best={best}
-                  side={side}
-                  now={now}
-                  caption={`Houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
-                  view={side === "buy" ? { heads: view.heads, cells: view.cells.slice(0, SHOWN) } : undefined}
+            <div class="amount" hidden>
+              <label for="amount" class="visually-hidden" data-label>
+                Amount to buy
+              </label>
+              <div class="field">
+                <button type="button" class="unit" data-unit>
+                  <span data-unit-text>US$</span>
+                  <span class="visually-hidden" data-unit-hint>
+                    , change to soles
+                  </span>
+                  <span class="swap" aria-hidden="true">
+                    ⇄
+                  </span>
+                </button>
+                <input
+                  type="text"
+                  id="amount"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  enterkeyhint="done"
+                  placeholder="Amount"
                 />
-                {ranked.length > SHOWN && (
-                  <details>
-                    <summary>Show the other {ranked.length - SHOWN} houses</summary>
-                    <RateTable
-                      quotes={ranked.slice(SHOWN)}
-                      best={best}
-                      side={side}
-                      now={now}
-                      caption={`The other houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
-                      view={side === "buy" ? { heads: view.heads, cells: view.cells.slice(SHOWN) } : undefined}
-                    />
-                  </details>
-                )}
+              </div>
+            </div>
 
-                <section class="history" aria-labelledby={`history-${side}`}>
-                  <h3 id={`history-${side}`}>{side === "buy" ? "Cheapest price over time" : "Best price over time"}</h3>
-                  {end !== null ? (
-                    <ChartBlock
-                      series={[{ id: side, label: series.label, kind: series.kind, points }]}
-                      end={end}
-                      subject={`${series.label}, in soles`}
-                      name={side}
-                      ranges={BEST_RANGES}
-                      initial="7d"
-                    />
-                  ) : (
-                    <p class="empty">{waiting(points)}</p>
+            {panels.map(({ side, title, best, view }) =>
+              best === undefined ? (
+                <section class="hero empty" data-side={side} aria-labelledby={`title-${side}`}>
+                  <h2 id={`title-${side}`} class="visually-hidden">
+                    {title}
+                  </h2>
+                  <p>No house has a current rate on this side. See the houses we could not read below.</p>
+                </section>
+              ) : (
+                <section class="hero" data-side={side} aria-labelledby={`title-${side}`}>
+                  <h2 id={`title-${side}`} class="visually-hidden">
+                    {title}
+                  </h2>
+                  <output class="answer" for="amount">
+                    <span class="answer-label" data-part="label">
+                      {view.label}
+                    </span>
+                    <span class="answer-figure num">
+                      <span class="unit" data-part="currency">
+                        {view.currency}
+                      </span>
+                      <span data-part="figure">{view.figure}</span>
+                    </span>
+                    <span class="answer-house">at {quoteHouse(best)}</span>
+                    <span class="answer-note" data-part="note">
+                      {view.note}
+                    </span>
+                  </output>
+                  <a
+                    class="cta"
+                    href={houseLink(best).href}
+                    target={houseLink(best).external ? "_blank" : undefined}
+                    rel={houseLink(best).external ? "noopener noreferrer" : undefined}
+                  >
+                    {houseLink(best).external ? "Go to" : "See"} {quoteHouse(best)}
+                    {houseLink(best).external && <span class="visually-hidden">, opens its website</span>}
+                  </a>
+                  {isOld(minutesSince(best.timestamp, latest.generated_at)) && (
+                    <p class="late">
+                      Rate from <Age at={best.timestamp} now={now} />
+                    </p>
                   )}
                 </section>
-              </div>
-            </>
-          )}
-        </section>
-      ))}
+              ),
+            )}
+          </div>
+
+          <div class="results-column">
+            {panels.map(({ side, ranked, best, points, end, series }) =>
+              best === undefined ? null : (
+                <section class="results" data-side={side} aria-labelledby={`houses-${side}`}>
+                  <h2 id={`houses-${side}`} class="visually-hidden">
+                    Houses, best first
+                  </h2>
+                  <RateTable
+                    quotes={ranked.slice(0, SHOWN)}
+                    best={best}
+                    side={side}
+                    now={now}
+                    fetchedAt={latest.generated_at}
+                    caption={`Houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
+                  />
+                  {ranked.length > SHOWN && (
+                    <details class="others">
+                      <summary>Show the other {ranked.length - SHOWN} houses</summary>
+                      <RateTable
+                        quotes={ranked.slice(SHOWN)}
+                        best={best}
+                        side={side}
+                        now={now}
+                        fetchedAt={latest.generated_at}
+                        caption={`The other houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
+                      />
+                    </details>
+                  )}
+
+                  <details class="history" open>
+                    <summary>Rate history</summary>
+                    {end !== null ? (
+                      <ChartBlock
+                        series={[{ id: side, label: series.label, kind: series.kind, points }]}
+                        end={end}
+                        subject={`${series.label}, in soles`}
+                        name={side}
+                        ranges={BEST_RANGES}
+                        initial="7d"
+                      />
+                    ) : (
+                      <p class="empty">{waiting(points)}</p>
+                    )}
+                  </details>
+                </section>
+              ),
+            )}
+          </div>
+        </div>
+      )}
 
       {missing.length > 0 && (
-        <details class="missing" open={panels.every((panel) => panel.best === undefined)}>
+        <details class="missing" open={!anyRate}>
           <summary>
             {missing.length} {missing.length === 1 ? "house is" : "houses are"} not compared
           </summary>
