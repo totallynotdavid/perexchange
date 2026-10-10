@@ -23,10 +23,15 @@ from pathlib import Path
 import httpx
 import perexchange
 
-from perexchange import ExchangeRate, FetchReport
+from perexchange import ExchangeRate, FetchReport, SourceFailure
 
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / "site" / "data"
+
+# These statuses indicate that the runner's address was refused or rate-limited.
+BLOCKING_STATUSES = frozenset({401, 403, 429})
+
+CROSSED = "CrossedQuote"
 
 _NOT_ALNUM = re.compile(r"[^a-z0-9]+")
 
@@ -38,6 +43,27 @@ class SnapshotError(Exception):
 def quote_id(rate: ExchangeRate) -> str:
     """A URL-safe key for a quote, equal across sources that list the same house."""
     return _NOT_ALNUM.sub("-", rate.name.lower()).strip("-")
+
+
+def failure_reason(failure: SourceFailure) -> str:
+    """Why a source returned nothing, in the words the site can show.
+
+    `blocked` is a source that refuses this address, `changed` one whose response no
+    longer parses, `timeout` one that answered too slowly, `error` one that answered with
+    another error status, `invalid` one whose quote pays more than it charges, and
+    `unreachable` one that did not answer at all.
+    """
+    if failure.error_type == CROSSED:
+        return "invalid"
+    if failure.status_code in BLOCKING_STATUSES:
+        return "blocked"
+    if failure.status_code is not None:
+        return "error"
+    if failure.error_type == "SourceParseError":
+        return "changed"
+    if failure.error_type.endswith("Timeout") or failure.error_type == "TimeoutError":
+        return "timeout"
+    return "unreachable"
 
 
 def utc_iso(moment: datetime) -> str:
@@ -74,8 +100,9 @@ def latest_document(report: FetchReport, fetched_at: datetime) -> dict[str, obje
         "failures": [
             {
                 "source": failure.source,
+                "reason": failure_reason(failure),
                 "error_type": failure.error_type,
-                "message": failure.message,
+                "message": failure.message.splitlines()[0] if failure.message else "",
             }
             for failure in report.failures
         ],
@@ -87,19 +114,45 @@ def age_minutes(rate: ExchangeRate, fetched_at: datetime) -> int:
 
 
 def history_line(report: FetchReport, fetched_at: datetime) -> str:
-    """One fetch as `{"t": time, "r": {id: [buy, sell, minutes since the quote]}}`.
+    """One fetch as `{"t": time, "r": {id: [buy, sell, minutes]}, "f": [source, ...]}`.
 
-    The age lets a reader of history tell a current price from one a house stopped
-    updating.
+    The minutes are the quote age. `f` lists sources that returned nothing.
     """
     prices = {
         quote_id(rate): [rate.buy_price, rate.sell_price, age_minutes(rate, fetched_at)]
         for rate in unique_rates(report.rates)
     }
-    return json.dumps({"t": utc_iso(fetched_at), "r": prices}, separators=(",", ":"))
+    line = {
+        "t": utc_iso(fetched_at),
+        "r": prices,
+        "f": [failure.source for failure in report.failures],
+    }
+    return json.dumps(line, separators=(",", ":"))
 
 
-def write_snapshot(report: FetchReport, data_dir: Path, fetched_at: datetime) -> None:
+def drop_crossed(report: FetchReport) -> FetchReport:
+    """Move a quote whose house pays more than it charges from the rates to the failures.
+
+    A round trip through such a quote would earn money, so one side is wrong and the
+    quote must not take part in a ranking.
+    """
+    kept = tuple(rate for rate in report.rates if rate.buy_price <= rate.sell_price)
+    crossed = tuple(
+        SourceFailure(
+            rate.name,
+            CROSSED,
+            f"pays {rate.buy_price:g} for a dollar and charges {rate.sell_price:g}",
+        )
+        for rate in report.rates
+        if rate.buy_price > rate.sell_price
+    )
+    return FetchReport(rates=kept, failures=report.failures + crossed)
+
+
+def write_snapshot(
+    report: FetchReport, data_dir: Path, fetched_at: datetime
+) -> FetchReport:
+    report = drop_crossed(report)
     if not report.rates:
         failed = ", ".join(failure.source for failure in report.failures) or "none"
         msg = f"no source returned a rate (failed: {failed})"
@@ -119,12 +172,12 @@ def write_snapshot(report: FetchReport, data_dir: Path, fetched_at: datetime) ->
     document = latest_document(report, fetched_at)
     pending.write_text(json.dumps(document, indent=1) + "\n", encoding="utf-8")
     pending.replace(latest)
+    return report
 
 
 async def run(data_dir: Path, client: httpx.AsyncClient | None = None) -> FetchReport:
     report = await perexchange.fetch_rates_report(client=client)
-    write_snapshot(report, data_dir, datetime.now(timezone.utc))
-    return report
+    return write_snapshot(report, data_dir, datetime.now(timezone.utc))
 
 
 def main() -> None:
