@@ -24,12 +24,8 @@ const { chart, titleId, title, kinds, size } = Astro.props;
       </text>
     </>
   ))}
-  {chart.xTicks.map((tick, i) => (
-    <text
-      x={tick.x}
-      y={chart.height - 6}
-      text-anchor={i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle"}
-    >
+  {chart.xTicks.map((tick) => (
+    <text x={tick.x} y={chart.height - 6} text-anchor={tick.anchor}>
       {tick.label}
     </text>
   ))}

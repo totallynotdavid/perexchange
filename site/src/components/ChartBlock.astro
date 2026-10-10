@@ -1,6 +1,6 @@
 ---
 import ChartSvg from "./ChartSvg.astro";
-import { rangeCharts } from "../lib/chart-data.ts";
+import { describeChange, rangeCharts } from "../lib/chart-data.ts";
 import type { SeriesInput } from "../lib/chart-data.ts";
 import { formatPrice } from "../lib/format.ts";
 import { RANGE_LABELS } from "../lib/range.ts";
@@ -34,14 +34,16 @@ function describe(label: string, summary: (typeof charts)[number]["summaries"][n
 ---
 
 <div class="chart-block">
-  <ul class="legend">
-    {series.map((one) => (
-      <li>
-        <span class={`swatch ${one.kind}`} aria-hidden="true" />
-        {one.label}
-      </li>
-    ))}
-  </ul>
+  {series.length > 1 && (
+    <ul class="legend">
+      {series.map((one) => (
+        <li>
+          <span class={`swatch ${one.kind}`} aria-hidden="true" />
+          {one.label}
+        </li>
+      ))}
+    </ul>
+  )}
   <div class="segmented" role="radiogroup" aria-label="Time range">
     {charts.map(({ range }) => (
       <>
@@ -56,10 +58,18 @@ function describe(label: string, summary: (typeof charts)[number]["summaries"][n
       </>
     ))}
   </div>
-  {charts.map(({ range, wide, narrow, summaries, snapshots }) => {
+  {charts.map(({ range, wide, narrow, summaries }) => {
     const title = `${subject}, ${RANGE_LABELS[range].toLowerCase()}. ${summaries.map((s) => describe(s.label, s)).join(". ")}.`;
     return (
       <figure id={`chart-${name}-${range}`} data-range={range}>
+        <figcaption class="chart-summary">
+          {summaries.map((summary) => (
+            <p>
+              {series.length > 1 && `${summary.label}: `}
+              {describeChange(summary, range)}
+            </p>
+          ))}
+        </figcaption>
         {wide.series.length === 0 ? (
           <p class="empty">No readings in this range yet.</p>
         ) : (
@@ -74,22 +84,6 @@ function describe(label: string, summary: (typeof charts)[number]["summaries"][n
             />
           </>
         )}
-        <figcaption class="chart-summary">
-          {summaries.map(
-            (summary) =>
-              summary.latest !== null && (
-                <div>
-                  {summary.label}: now <strong class="num">{formatPrice(summary.latest)}</strong>, range{" "}
-                  <span class="num">
-                    {formatPrice(summary.low ?? summary.latest)} to {formatPrice(summary.high ?? summary.latest)}
-                  </span>
-                </div>
-              ),
-          )}
-          <div>
-            {snapshots === 1 ? "One reading so far, so there is no line yet." : `${snapshots} readings in this range.`}
-          </div>
-        </figcaption>
       </figure>
     );
   })}

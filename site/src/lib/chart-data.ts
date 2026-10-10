@@ -1,6 +1,7 @@
 import { buildChart } from "./chart.ts";
 import type { Chart, ChartPoint } from "./chart.ts";
-import { HOUSE_RANGES, downsample, sliceRange } from "./range.ts";
+import { formatDay, formatPrice } from "./format.ts";
+import { HOUSE_RANGES, RANGE_LABELS, downsample, sliceRange } from "./range.ts";
 import type { Range } from "./range.ts";
 
 /** Enough points for a 30 day line at the widest chart. */
@@ -11,8 +12,8 @@ const MAX_POINTS = 240;
  * The narrow one is for a phone, and the page shows one of the two.
  */
 const SIZES = {
-  wide: { width: 760, height: 280, xTicks: 5 },
-  narrow: { width: 330, height: 250, xTicks: 3 },
+  wide: { width: 760, height: 280, xTicks: 8 },
+  narrow: { width: 330, height: 250, xTicks: 4 },
 } as const;
 
 export interface SeriesInput {
@@ -27,9 +28,32 @@ export interface SeriesSummary {
   id: string;
   label: string;
   count: number;
+  /** The time and value of the oldest point in the range. */
+  first: ChartPoint | null;
   latest: number | null;
   low: number | null;
   high: number | null;
+}
+
+export function describeChange(summary: SeriesSummary, range: Range): string {
+  const { first, latest } = summary;
+  if (first === null || latest === null || summary.count === 0) {
+    return "";
+  }
+  if (summary.count === 1) {
+    return "One reading so far, so there is no line yet.";
+  }
+  const span =
+    range === "all"
+      ? `since ${formatDay(first.t)}`
+      : `in ${RANGE_LABELS[range].toLowerCase()}`;
+  const change = Math.round((latest - first.v) * 10_000) / 10_000;
+  if (change === 0) {
+    return `Unchanged ${span}, at S/ ${formatPrice(latest)}.`;
+  }
+  const percent = (Math.abs(change) / first.v) * 100;
+  const size = percent < 0.1 ? "under 0.1%" : `${percent.toFixed(1)}%`;
+  return `${change > 0 ? "Up" : "Down"} S/ ${formatPrice(Math.abs(change))} (${size}) ${span}, from S/ ${formatPrice(first.v)} to S/ ${formatPrice(latest)}.`;
 }
 
 export interface RangeChart {
@@ -37,8 +61,6 @@ export interface RangeChart {
   wide: Chart;
   narrow: Chart;
   summaries: SeriesSummary[];
-  /** The number of snapshots behind the longest series. */
-  snapshots: number;
 }
 
 function summarize(series: SeriesInput): SeriesSummary {
@@ -47,6 +69,7 @@ function summarize(series: SeriesInput): SeriesSummary {
     id: series.id,
     label: series.label,
     count: values.length,
+    first: series.points[0] ?? null,
     latest: values.at(-1) ?? null,
     low: values.length === 0 ? null : Math.min(...values),
     high: values.length === 0 ? null : Math.max(...values),
@@ -79,7 +102,6 @@ export function rangeCharts(
       wide: draw(SIZES.wide),
       narrow: draw(SIZES.narrow),
       summaries: inRange.map(summarize),
-      snapshots: Math.max(0, ...inRange.map((one) => one.points.length)),
     };
   });
 }
