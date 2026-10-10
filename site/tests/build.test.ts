@@ -21,6 +21,7 @@ let root: string;
 let data: string;
 let main: Running;
 let complete: Running;
+let empty: Running;
 
 /** Fetch the URL that corresponds to a static-build file from a running site. */
 async function page(file: string, from = main): Promise<string> {
@@ -92,11 +93,15 @@ beforeAll(async () => {
   recordCompleteSnapshot(completeData);
   build(completeData, path.join(root, "complete-dist"));
   complete = await serve(path.join(root, "complete-dist"));
-}, 240_000);
+
+  build(path.join(root, "no-data"), path.join(root, "empty-dist"));
+  empty = await serve(path.join(root, "empty-dist"));
+}, 360_000);
 
 afterAll(async () => {
   main?.server.kill();
   complete?.server.kill();
+  empty?.server.kill();
   await rm(root, { recursive: true, force: true });
 });
 
@@ -214,6 +219,17 @@ describe("the site built from a recorded snapshot", () => {
       );
 
       expect(inline, file).toBeNull();
+    }
+  });
+
+  it("says the rates are not available, with a 503, when there is no snapshot", async () => {
+    for (const pathname of ["/", "/house/cambiafx/"]) {
+      const response = await fetch(empty.origin + pathname);
+      const html = await response.text();
+
+      expect(response.status, pathname).toBe(503);
+      expect(text(html), pathname).toContain("Rates are not available right now");
+      expect(html, pathname).toContain('role="alert"');
     }
   });
 
