@@ -1,13 +1,16 @@
 ---
 import Age from "../components/Age.astro";
+import ChartBlock from "../components/ChartBlock.astro";
 import RateTable from "../components/RateTable.astro";
 import Unavailable from "../components/Unavailable.astro";
 import Base from "../layouts/Base.astro";
-import { formatPrice } from "../lib/format.ts";
-import { loadHistory, loadLatest } from "../lib/load.ts";
+import { buyView, DEFAULT_AMOUNT } from "../lib/amount.ts";
+import { formatDay, formatPrice } from "../lib/format.ts";
+import { ALL_DAYS, loadHistory, loadLatest } from "../lib/load.ts";
 import { quoteHouse } from "../lib/houses.ts";
-import { isOld, minutesSince, missingHouses, rank, rateFor } from "../lib/market.ts";
+import { MIN_CHART_MS, bestSeries, isOld, minutesSince, missingHouses, rank, rateFor } from "../lib/market.ts";
 import type { Side } from "../lib/market.ts";
+import { BEST_RANGES } from "../lib/range.ts";
 
 export const prerender = false;
 
@@ -21,23 +24,55 @@ if (latest === null) {
   Astro.response.status = 503;
 }
 const snapshots = latest
-  ? await loadHistory().then(
+  ? await loadHistory(undefined, undefined, ALL_DAYS).then(
       (history) => history.snapshots,
       () => [],
     )
   : [];
 const now = Date.now();
+const sources = new Set((latest?.rates ?? []).map((quote) => quote.source));
 
-const sides: { side: Side; title: string; field: string; unit: string }[] = [
-  { side: "buy", title: "Cheapest place to buy dollars", field: "Soles to spend", unit: "US$" },
-  { side: "sell", title: "Best place to sell dollars", field: "Dollars to sell", unit: "S/" },
+const sides: {
+  side: Side;
+  title: string;
+  rateNote: string;
+  series: { label: string; kind: "sell" | "buy" };
+}[] = [
+  {
+    side: "buy",
+    title: "Cheapest place to buy dollars",
+    rateNote: "Each rate is the house's sell rate: what it charges you for US$1.",
+    series: { label: "Cheapest price for US$1", kind: "sell" },
+  },
+  {
+    side: "sell",
+    title: "Best place to sell dollars",
+    rateNote: "Each rate is the house's buy rate: what it pays you for US$1.",
+    series: { label: "Best price for US$1", kind: "buy" },
+  },
 ];
 const panels = latest
   ? sides.map((one) => {
       const ranked = rank(latest.rates, one.side, latest.generated_at);
-      return { ...one, ranked, best: ranked[0] };
+      const points = bestSeries(snapshots, one.side, sources);
+      const view = buyView(
+        "usd",
+        { kind: "ok", amount: DEFAULT_AMOUNT.usd },
+        ranked.map((quote) => ({ rate: rateFor(quote, one.side), house: quoteHouse(quote) })),
+      );
+      const first = points[0];
+      const last = points.at(-1);
+      const end = first && last && last.t - first.t >= MIN_CHART_MS ? last.t : null;
+      return { ...one, ranked, best: ranked[0], points, end, view };
     })
   : [];
+
+function waiting(points: { t: number }[]): string {
+  const first = points[0];
+  return first === undefined
+    ? "No readings are recorded yet."
+    : `The chart appears once two days of readings are recorded. The first is from ${formatDay(first.t)}.`;
+}
 const compared = panels[0]?.ranked.length ?? 0;
 const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots, latest.generated_at) : [];
 ---
@@ -79,7 +114,7 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
         <label for="side-sell">Sell dollars</label>
       </div>
 
-      {panels.map(({ side, title, field, unit, ranked, best }) => (
+      {panels.map(({ side, title, rateNote, series, ranked, best, points, end, view }) => (
         <section class="panel" data-side={side} aria-labelledby={`title-${side}`}>
           {best === undefined ? (
             <>
@@ -99,18 +134,45 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
                   <a href={`/house/${best.id}/`}>{quoteHouse(best)}</a>, <Age at={best.timestamp} now={now} />
                 </p>
 
-                <div class="amount" hidden>
-                  <label for={`amount-${side}`}>{field}</label>
-                  <input
-                    type="text"
-                    id={`amount-${side}`}
-                    inputmode="decimal"
-                    autocomplete="off"
-                    placeholder="1,000"
-                    data-side={side}
-                  />
-                  <output for={`amount-${side}`} data-side={side} data-unit={unit} data-rate={rateFor(best, side)} />
-                </div>
+                <p class="spread">{rateNote}</p>
+
+                {side === "buy" ? (
+                  <div class="amount" data-calc="buy" hidden>
+                    <div class="segmented" role="radiogroup" aria-label="Amount in">
+                      <input type="radio" name="mode" id="mode-usd" value="usd" checked />
+                      <label for="mode-usd">Dollars to buy</label>
+                      <input type="radio" name="mode" id="mode-pen" value="pen" />
+                      <label for="mode-pen">Soles to spend</label>
+                    </div>
+                    <label for="amount-buy" data-label>
+                      I want to buy
+                    </label>
+                    <div class="field">
+                      <span data-affix aria-hidden="true">
+                        US$
+                      </span>
+                      <input
+                        type="text"
+                        id="amount-buy"
+                        inputmode="decimal"
+                        autocomplete="off"
+                        value={DEFAULT_AMOUNT.usd}
+                      />
+                    </div>
+                    <output for="amount-buy">{view.summary}</output>
+                  </div>
+                ) : (
+                  <div class="amount" data-calc="sell" hidden>
+                    <label for="amount-sell">Dollars to sell</label>
+                    <div class="field">
+                      <span data-affix aria-hidden="true">
+                        US$
+                      </span>
+                      <input type="text" id="amount-sell" inputmode="decimal" autocomplete="off" placeholder="1,000" />
+                    </div>
+                    <output for="amount-sell" data-rate={rateFor(best, side)} />
+                  </div>
+                )}
               </div>
 
               <div class="results">
@@ -120,6 +182,7 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
                   side={side}
                   now={now}
                   caption={`Houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
+                  view={side === "buy" ? { heads: view.heads, cells: view.cells.slice(0, SHOWN) } : undefined}
                 />
                 {ranked.length > SHOWN && (
                   <details>
@@ -130,9 +193,26 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
                       side={side}
                       now={now}
                       caption={`The other houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
+                      view={side === "buy" ? { heads: view.heads, cells: view.cells.slice(SHOWN) } : undefined}
                     />
                   </details>
                 )}
+
+                <section class="history" aria-labelledby={`history-${side}`}>
+                  <h3 id={`history-${side}`}>{side === "buy" ? "Cheapest price over time" : "Best price over time"}</h3>
+                  {end !== null ? (
+                    <ChartBlock
+                      series={[{ id: side, label: series.label, kind: series.kind, points }]}
+                      end={end}
+                      subject={`${series.label}, in soles`}
+                      name={side}
+                      ranges={BEST_RANGES}
+                      initial="7d"
+                    />
+                  ) : (
+                    <p class="empty">{waiting(points)}</p>
+                  )}
+                </section>
               </div>
             </>
           )}
@@ -157,60 +237,8 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
   )}
 
   <script>
-    import { formatMoney } from "../lib/format.ts";
-    import { parseAmount, proceeds } from "../lib/market.ts";
-    import type { Side } from "../lib/market.ts";
+    import { bindBoard } from "../lib/calculator.ts";
 
-    const SIDE_KEY = "perexchange:side";
-
-    // The page works without storage, as when a browser blocks it.
-    function recall(key: string): string | null {
-      try {
-        return localStorage.getItem(key);
-      } catch {
-        return null;
-      }
-    }
-
-    function remember(key: string, value: string): void {
-      try {
-        localStorage.setItem(key, value);
-      } catch {
-        // Nothing to do: the choice lasts until the page closes.
-      }
-    }
-
-    const sideInputs = document.querySelectorAll<HTMLInputElement>("input[name='side']");
-    const saved = recall(SIDE_KEY);
-    for (const input of sideInputs) {
-      input.checked = input.value === (saved ?? "buy");
-      input.addEventListener("change", () => remember(SIDE_KEY, input.value));
-    }
-
-    for (const output of document.querySelectorAll<HTMLOutputElement>("output[data-side]")) {
-      const field = output.parentElement;
-      const input = field?.querySelector<HTMLInputElement>("input");
-      const side: Side = output.dataset.side === "sell" ? "sell" : "buy";
-      if (!field || !input) {
-        continue;
-      }
-      const key = `perexchange:amount:${side}`;
-
-      const update = () => {
-        const amount = parseAmount(input.value);
-        output.value =
-          amount === null
-            ? ""
-            : `You get ${output.dataset.unit} ${formatMoney(proceeds(amount, side, Number(output.dataset.rate)))}`;
-      };
-
-      input.value = recall(key) ?? "";
-      input.addEventListener("input", () => {
-        remember(key, input.value);
-        update();
-      });
-      field.hidden = false;
-      update();
-    }
+    bindBoard(document);
   </script>
 </Base>

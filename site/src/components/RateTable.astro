@@ -1,6 +1,7 @@
 ---
 import Age from "./Age.astro";
 import { formatPrice } from "../lib/format.ts";
+import type { BuyView } from "../lib/amount.ts";
 import { gapToBest, rateFor } from "../lib/market.ts";
 import type { Side } from "../lib/market.ts";
 import type { Quote } from "../lib/data.ts";
@@ -12,9 +13,10 @@ interface Props {
   side: Side;
   now: number;
   caption: string;
+  view?: Pick<BuyView, "heads" | "cells"> | undefined;
 }
 
-const { quotes, best, side, now, caption } = Astro.props;
+const { quotes, best, side, now, caption, view } = Astro.props;
 ---
 
 <table class="rates">
@@ -23,24 +25,48 @@ const { quotes, best, side, now, caption } = Astro.props;
     <tr>
       <th scope="col">House</th>
       <th scope="col" class="num">
-        {side === "buy" ? "You pay" : "You get"}
+        {side === "buy" ? "Sell rate" : "Buy rate"}
+        <small>{side === "buy" ? "you pay per US$1" : "you get per US$1"}</small>
       </th>
-      <th scope="col" class="num">
-        Behind best
-      </th>
+      {view ? (
+        <>
+          <th scope="col" class="num">
+            <span data-head="total">{view.heads.total}</span>
+            <small data-note="total">{view.heads.totalNote}</small>
+          </th>
+          <th scope="col" class="num">
+            <span data-head="edge">{view.heads.edge}</span>
+            <small>vs the dearest</small>
+          </th>
+        </>
+      ) : (
+        <th scope="col" class="num">
+          Behind best
+        </th>
+      )}
     </tr>
   </thead>
   <tbody>
-    {quotes.map((quote) => {
+    {quotes.map((quote, i) => {
       const gap = gapToBest(quote, best, side);
+      const cells = view?.cells[i];
       return (
-        <tr>
+        <tr data-rate={view ? rateFor(quote, side) : undefined} data-house={view ? quoteHouse(quote) : undefined}>
           <th scope="row">
             <a href={`/house/${quote.id}/`}>{quoteHouse(quote)}</a>
             <Age at={quote.timestamp} now={now} />
           </th>
           <td class="num price">{formatPrice(rateFor(quote, side))}</td>
-          {gap === 0 ? (
+          {cells ? (
+            <>
+              <td class:list={["num", "total", { best: gap === 0 }]} data-total>
+                {cells.total}
+              </td>
+              <td class="num edge" data-edge>
+                {cells.edge}
+              </td>
+            </>
+          ) : gap === 0 ? (
             <td class="num gap best">
               <span>best</span>
             </td>
