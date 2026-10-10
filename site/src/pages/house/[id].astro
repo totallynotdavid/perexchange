@@ -1,10 +1,13 @@
 ---
+import Age from "../../components/Age.astro";
 import ChartBlock from "../../components/ChartBlock.astro";
-import Freshness from "../../components/Freshness.astro";
 import Base from "../../layouts/Base.astro";
-import { formatAge, formatPrice, formatSpread } from "../../lib/format.ts";
+import { formatPrice } from "../../lib/format.ts";
+import type { Quote } from "../../lib/data.ts";
 import { loadHistory, loadLatest } from "../../lib/load.ts";
-import { ageMinutes, houseSeries, isStale, rankingScope, summarize } from "../../lib/market.ts";
+import { isVariant, quoteHouse, variantLabel } from "../../lib/houses.ts";
+import { houseSeries, placeOf, rateFor } from "../../lib/market.ts";
+import type { Side } from "../../lib/market.ts";
 
 export const prerender = false;
 
@@ -14,71 +17,87 @@ if (quote === undefined) {
   return new Response(null, { status: 404 });
 }
 const history = await loadHistory();
-const market = summarize(latest.rates, latest.generated_at);
-const age = ageMinutes(quote, latest.generated_at);
-const stale = isStale(age);
+const now = Date.now();
+const variant = isVariant(quote);
+const house = quoteHouse(quote);
+const heading = variant ? `${house}, ${variantLabel(quote)}` : house;
+const variants = latest.rates.filter((rate) => rate.id !== quote.id && rate.source === quote.source);
+
+const sides: { side: Side; title: string }[] = [
+  { side: "buy", title: "To buy dollars, you pay" },
+  { side: "sell", title: "To sell dollars, you get" },
+];
+
+function standing(one: Quote, side: Side): string {
+  const place = placeOf(latest.rates, one, side, latest.generated_at);
+  if (variant) {
+    return "A special rate, so it is not ranked against other houses";
+  }
+  if (place === null) {
+    return "Not ranked: this rate has not changed for over a day";
+  }
+  if (place.place === 1) {
+    return place.of === 1 ? "The only house with a current rate" : `Best of ${place.of} houses`;
+  }
+  return `No. ${place.place} of ${place.of}, S/ ${formatPrice(place.gap)} behind the best`;
+}
+
 const points = houseSeries(history.snapshots, quote.id);
 const series = [
   {
     id: "sell",
-    label: "You pay (sell price)",
+    label: "You pay to buy dollars",
     kind: "sell" as const,
     points: points.map((point) => ({ t: point.t, v: point.sell })),
   },
   {
     id: "buy",
-    label: "You get (buy price)",
+    label: "You get for selling dollars",
     kind: "buy" as const,
     points: points.map((point) => ({ t: point.t, v: point.buy })),
   },
 ];
-const gapToBest = market.cheapestToBuy ? quote.sell - market.cheapestToBuy.sell : null;
-const scope = rankingScope(latest.failures);
 ---
 
 <Base
-  title={`${quote.name}: PEN/USD rate history | perexchange`}
-  description={`Buy and sell price of US$1 at ${quote.name}, with its history.`}
+  title={`${heading}: dollar rate | perexchange`}
+  description={`What ${house} charges to buy US$1 and pays to sell it, with its recent history.`}
   section="rates"
 >
   <p class="breadcrumb">
-    <a href="/">All rates</a>
+    <a href="/">All houses</a>
   </p>
-  <h1 class="mono">{quote.name}</h1>
-  <p class="lede">
-    Source <span class="mono">{quote.source}</span>.
-    {stale ? `Stale: quoted ${formatAge(age)} ago.` : age < 1 ? "Quoted now." : `Quoted ${formatAge(age)} ago.`}
+  <h1>{heading}</h1>
+  <p class="where">
+    Rate from <Age at={quote.timestamp} now={now} />
   </p>
-  <Freshness generatedAt={latest.generated_at} />
 
-  <div class="cards">
-    <section class="card" aria-labelledby="h-get">
-      <h2 id="h-get">You get for US$1</h2>
-      <p class="figure">S/ {formatPrice(quote.buy)}</p>
-      <p class="where">What it pays when you sell a dollar</p>
-    </section>
-    <section class="card" aria-labelledby="h-pay">
-      <h2 id="h-pay">You pay for US$1</h2>
-      <p class="figure">S/ {formatPrice(quote.sell)}</p>
-      <p class="where">
-        {gapToBest === null || stale
-          ? "What it charges when you buy a dollar"
-          : gapToBest <= 0
-            ? `The lowest current price${scope}`
-            : `S/ ${formatPrice(gapToBest)} above the lowest current price${scope}`}
-      </p>
-    </section>
-    <section class="card" aria-labelledby="h-spread">
-      <h2 id="h-spread">Spread</h2>
-      <p class="figure">S/ {formatSpread(quote.buy, quote.sell)}</p>
-      <p class="where">The house's margin on a round trip</p>
-    </section>
+  <div class="figures">
+    {sides.map(({ side, title }) => (
+      <section aria-labelledby={`figure-${side}`}>
+        <h2 id={`figure-${side}`}>{title}</h2>
+        <p class="best-rate num">S/ {formatPrice(rateFor(quote, side))}</p>
+        <p class="standing">{standing(quote, side)}</p>
+      </section>
+    ))}
   </div>
 
-  <h2>Price history</h2>
-  <ChartBlock
-    series={series}
-    end={Date.parse(latest.generated_at)}
-    subject={`${quote.name} prices in soles per US$1`}
-  />
+  {variants.length > 0 && (
+    <section class="variants">
+      <h2>Other rates from {house}</h2>
+      <ul>
+        {variants.map((other) => (
+          <li>
+            <a href={`/house/${other.id}/`}>{isVariant(other) ? variantLabel(other) : "Standard rate"}</a>
+            <span class="num">
+              pay {formatPrice(other.sell)}, get {formatPrice(other.buy)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <h2>Recent rates</h2>
+  <ChartBlock series={series} end={Date.parse(latest.generated_at)} subject={`${heading} in soles per US$1`} />
 </Base>

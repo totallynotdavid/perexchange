@@ -52,7 +52,7 @@ function describe(label: string, summary: (typeof charts)[number]["summaries"][n
     return (
       <figure id={`chart-${range}`}>
         {wide.series.length === 0 ? (
-          <p class="empty">No snapshots in this range yet.</p>
+          <p class="empty">No readings in this range yet.</p>
         ) : (
           <>
             <ChartSvg chart={wide} size="wide" titleId={`title-${range}-wide`} title={title} kinds={kinds} />
@@ -75,8 +75,7 @@ function describe(label: string, summary: (typeof charts)[number]["summaries"][n
             </div>
           ))}
           <div>
-            {snapshots === 1 ? "One snapshot so far, so there is no line yet. " : ""}
-            {snapshots} snapshots in this range.
+            {snapshots === 1 ? "One reading so far, so there is no line yet." : `${snapshots} readings in this range.`}
           </div>
         </figcaption>
       </figure>

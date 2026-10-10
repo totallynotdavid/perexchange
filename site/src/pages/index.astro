@@ -1,99 +1,199 @@
 ---
-import ChartBlock from "../components/ChartBlock.astro";
-import Converter from "../components/Converter.astro";
-import Freshness from "../components/Freshness.astro";
+import Age from "../components/Age.astro";
 import RateTable from "../components/RateTable.astro";
 import Base from "../layouts/Base.astro";
 import { formatPrice } from "../lib/format.ts";
 import { loadHistory, loadLatest } from "../lib/load.ts";
-import { marketSeries, missingSourcesNotice, rankingScope, summarize } from "../lib/market.ts";
+import { quoteHouse } from "../lib/houses.ts";
+import { isOld, minutesSince, missingHouses, rank, rateFor } from "../lib/market.ts";
+import type { Side } from "../lib/market.ts";
 
 export const prerender = false;
 
-const latest = await loadLatest();
-const history = await loadHistory();
-const market = summarize(latest.rates, latest.generated_at);
-const missing = missingSourcesNotice(latest.failures);
-const scope = rankingScope(latest.failures);
-const points = marketSeries(history.snapshots);
-const end = Date.parse(latest.generated_at);
-const sourceCount = new Set(latest.rates.map((rate) => rate.source)).size;
+const SHOWN = 10;
 
-const series = [
-  {
-    id: "sell",
-    label: "Lowest price to buy a dollar",
-    kind: "sell" as const,
-    points: points.map((point) => ({ t: point.t, v: point.lowestSell })),
-  },
-  {
-    id: "buy",
-    label: "Highest price to sell a dollar",
-    kind: "buy" as const,
-    points: points.map((point) => ({ t: point.t, v: point.highestBuy })),
-  },
+const latest = await loadLatest().catch((error: unknown) => {
+  console.error(error);
+  return null;
+});
+if (latest === null) {
+  Astro.response.status = 503;
+}
+const snapshots = latest
+  ? await loadHistory().then(
+      (history) => history.snapshots,
+      () => [],
+    )
+  : [];
+const now = Date.now();
+
+const sides: { side: Side; title: string; field: string; unit: string }[] = [
+  { side: "buy", title: "Cheapest place to buy dollars", field: "Soles to spend", unit: "US$" },
+  { side: "sell", title: "Best place to sell dollars", field: "Dollars to sell", unit: "S/" },
 ];
+const panels = latest
+  ? sides.map((one) => {
+      const ranked = rank(latest.rates, one.side, latest.generated_at);
+      return { ...one, ranked, best: ranked[0] };
+    })
+  : [];
+const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots, latest.generated_at) : [];
 ---
 
 <Base
-  title="perexchange: PEN/USD rates from Peruvian exchange houses"
-  description={`Live dollar to sol rates from Peruvian exchange houses: the cheapest place to buy and the best place to sell${scope}. A converter and price history.`}
+  title="Dollar rates in Peru: who pays the most, who charges the least | perexchange"
+  description="The best current rate to buy or sell US dollars with Peruvian exchange houses, and how recent it is."
   section="rates"
 >
   <h1>Dollar rates in Peru</h1>
-  <p class="lede">
-    {latest.rates.length} quotes from {sourceCount} exchange houses, side by side. Prices are soles per US$1 and come
-    straight from each house's public page.
-  </p>
-  <Freshness generatedAt={latest.generated_at} />
-  {missing && <p class="notice">{missing}</p>}
 
-  <div class="cards">
-    <section class="card" aria-labelledby="card-buy">
-      <h2 id="card-buy">Cheapest place to buy US$1{scope}</h2>
-      <p class="figure">S/ {market.cheapestToBuy ? formatPrice(market.cheapestToBuy.sell) : "none"}</p>
-      <p class="where">{market.cheapestToBuy?.name ?? "No current quote"}</p>
+  {latest === null && (
+    <section class="state" role="alert">
+      <h2>Rates are not available right now</h2>
+      <p>We could not read the latest rates. Nothing is wrong with your connection. Try again in a few minutes.</p>
     </section>
-    <section class="card" aria-labelledby="card-sell">
-      <h2 id="card-sell">Best place to sell US$1{scope}</h2>
-      <p class="figure">S/ {market.bestToSell ? formatPrice(market.bestToSell.buy) : "none"}</p>
-      <p class="where">{market.bestToSell?.name ?? "No current quote"}</p>
-    </section>
-    <section class="card" aria-labelledby="card-median">
-      <h2 id="card-median">Median price to buy US$1</h2>
-      <p class="figure">S/ {market.medianSell ? formatPrice(market.medianSell) : "none"}</p>
-      <p class="where">Across {market.fresh.length} current quotes</p>
-    </section>
-  </div>
-
-  <Converter quotes={latest.rates} staleIds={market.stale.map((quote) => quote.id)} scope={scope} />
-
-  <h2>All rates</h2>
-  <RateTable quotes={latest.rates} market={market} generatedAt={latest.generated_at} scope={scope} />
-
-  {latest.failures.length > 0 && (
-    <details class="failures">
-      <summary>
-        {latest.failures.length} {latest.failures.length === 1 ? "source" : "sources"} did not answer in this snapshot
-      </summary>
-      <ul>
-        {latest.failures.map((failure) => (
-          <li>
-            <span class="mono">{failure.source}</span>: {failure.message}
-          </li>
-        ))}
-      </ul>
-    </details>
   )}
 
-  <h2>Best prices over time</h2>
-  <p class="table-note">Each point is the best price among the houses that answered in that snapshot.</p>
-  <ChartBlock series={series} end={end} subject="Best prices among the houses that answered, in soles per US$1" />
+  {latest !== null && (
+    <div class="board">
+      <p
+        class="notice"
+        role="status"
+        data-since={latest.generated_at}
+        hidden={!isOld(minutesSince(latest.generated_at, now))}
+      >
+        These rates were fetched <Age at={latest.generated_at} now={now} />. The refresh is running late, so check the
+        rate with the house before you go.
+      </p>
 
-  <Fragment slot="footer">
-    <p>
-      Snapshot of <span class="mono">{latest.generated_at}</span> from perexchange
-      <span class="mono">{latest.library_version}</span>. <a href="/data/latest.json">Raw data</a>
-    </p>
-  </Fragment>
+      <div class="segmented" role="radiogroup" aria-label="I want to">
+        <input type="radio" name="side" id="side-buy" value="buy" checked />
+        <label for="side-buy">Buy dollars</label>
+        <input type="radio" name="side" id="side-sell" value="sell" />
+        <label for="side-sell">Sell dollars</label>
+      </div>
+
+      {panels.map(({ side, title, field, unit, ranked, best }) => (
+        <section class="panel" data-side={side} aria-labelledby={`title-${side}`}>
+          <h2 id={`title-${side}`}>{title}</h2>
+          {best === undefined ? (
+            <p class="empty">No house has a current rate. See the houses we could not read below.</p>
+          ) : (
+            <>
+              <p class="best-rate num">S/ {formatPrice(rateFor(best, side))}</p>
+              <p class="best-house">
+                <a href={`/house/${best.id}/`}>{quoteHouse(best)}</a>, <Age at={best.timestamp} now={now} />
+              </p>
+
+              <div class="amount" hidden>
+                <label for={`amount-${side}`}>{field}</label>
+                <input
+                  type="text"
+                  id={`amount-${side}`}
+                  inputmode="decimal"
+                  autocomplete="off"
+                  placeholder="1,000"
+                  data-side={side}
+                />
+                <output for={`amount-${side}`} data-side={side} data-unit={unit} data-rate={rateFor(best, side)} />
+              </div>
+
+              <RateTable
+                quotes={ranked.slice(0, SHOWN)}
+                best={best}
+                side={side}
+                now={now}
+                caption={`Houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
+              />
+              {ranked.length > SHOWN && (
+                <details>
+                  <summary>Show the other {ranked.length - SHOWN} houses</summary>
+                  <RateTable
+                    quotes={ranked.slice(SHOWN)}
+                    best={best}
+                    side={side}
+                    now={now}
+                    caption={`The other houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
+                  />
+                </details>
+              )}
+            </>
+          )}
+        </section>
+      ))}
+
+      {missing.length > 0 && (
+        <details class="missing">
+          <summary>
+            {missing.length} {missing.length === 1 ? "house is" : "houses are"} not compared
+          </summary>
+          <ul>
+            {missing.map((house) => (
+              <li>
+                <strong>{house.name}</strong>: {house.why}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  )}
+
+  <script>
+    import { formatMoney } from "../lib/format.ts";
+    import { parseAmount, proceeds } from "../lib/market.ts";
+    import type { Side } from "../lib/market.ts";
+
+    const SIDE_KEY = "perexchange:side";
+
+    // The page works without storage, as when a browser blocks it.
+    function recall(key: string): string | null {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    }
+
+    function remember(key: string, value: string): void {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // Nothing to do: the choice lasts until the page closes.
+      }
+    }
+
+    const sideInputs = document.querySelectorAll<HTMLInputElement>("input[name='side']");
+    const saved = recall(SIDE_KEY);
+    for (const input of sideInputs) {
+      input.checked = input.value === (saved ?? "buy");
+      input.addEventListener("change", () => remember(SIDE_KEY, input.value));
+    }
+
+    for (const output of document.querySelectorAll<HTMLOutputElement>("output[data-side]")) {
+      const field = output.parentElement;
+      const input = field?.querySelector<HTMLInputElement>("input");
+      const side: Side = output.dataset.side === "sell" ? "sell" : "buy";
+      if (!field || !input) {
+        continue;
+      }
+      const key = `perexchange:amount:${side}`;
+
+      const update = () => {
+        const amount = parseAmount(input.value);
+        output.value =
+          amount === null
+            ? ""
+            : `You get ${output.dataset.unit} ${formatMoney(proceeds(amount, side, Number(output.dataset.rate)))}`;
+      };
+
+      input.value = recall(key) ?? "";
+      input.addEventListener("input", () => {
+        remember(key, input.value);
+        update();
+      });
+      field.hidden = false;
+      update();
+    }
+  </script>
 </Base>

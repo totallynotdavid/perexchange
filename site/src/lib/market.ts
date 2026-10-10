@@ -1,122 +1,179 @@
+import { formatDay } from "./format.ts";
 import type { Failure, Quote, Snapshot } from "./data.ts";
+import { houseKey, houseName, isVariant } from "./houses.ts";
 
 /**
- * A quote older than this is listed but never ranked, because its house has stopped
- * updating it. A quote carries its source's time when the source gives one and the
- * fetch time otherwise, so only the first kind can go stale.
+ * A quote older than this is not ranked. A house that has not changed its rate in a day
+ * is closed or has stopped publishing, and a closed house cannot be used now. A quote
+ * carries its source's time when the source gives one and the fetch time otherwise.
  */
-export const STALE_AFTER_MINUTES = 180;
+export const DEAD_AFTER_MINUTES = 24 * 60;
+
+/** Past this age a rate is shown as old, though it is still ranked. */
+export const OLD_AFTER_MINUTES = 3 * 60;
 
 const MINUTE = 60_000;
 
-export function ageMinutes(quote: Quote, generatedAt: string): number {
-  const age = (Date.parse(generatedAt) - Date.parse(quote.timestamp)) / MINUTE;
+/** The transaction direction used to select a rate. */
+export type Side = "buy" | "sell";
+
+/** Whole minutes from an ISO time to now. A time in the future counts as now. */
+export function minutesSince(at: string, now: string | number): number {
+  const age =
+    ((typeof now === "string" ? Date.parse(now) : now) - Date.parse(at)) / MINUTE;
   return Math.max(0, Math.round(age));
 }
 
-export function isStale(ageInMinutes: number): boolean {
-  return ageInMinutes > STALE_AFTER_MINUTES;
+export function isOld(minutes: number): boolean {
+  return minutes >= OLD_AFTER_MINUTES;
 }
 
-export interface Market {
-  fresh: Quote[];
-  stale: Quote[];
-  cheapestToBuy: Quote | null;
-  bestToSell: Quote | null;
-  medianSell: number | null;
+export function ageMinutes(quote: Quote, now: string | number): number {
+  return minutesSince(quote.timestamp, now);
 }
 
-function median(values: number[]): number | null {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  const upper = sorted[middle];
-  const lower = sorted[middle - 1];
-  if (upper === undefined) {
+/** Selects the rate relevant to a transaction direction. */
+export function rateFor(quote: Quote, side: Side): number {
+  return side === "buy" ? quote.sell : quote.buy;
+}
+
+/** Measures a quote's gap from the best rate for a transaction direction. */
+export function gapToBest(quote: Quote, best: Quote, side: Side): number {
+  const gap = side === "buy" ? quote.sell - best.sell : best.buy - quote.buy;
+  return Math.max(0, Math.round(gap * 10_000) / 10_000);
+}
+
+/** Returns each house's current base rate. */
+export function current(quotes: Quote[], now: string | number): Quote[] {
+  return quotes.filter(
+    (quote) => !isVariant(quote) && ageMinutes(quote, now) <= DEAD_AFTER_MINUTES,
+  );
+}
+
+/** Ranks current base rates, preferring newer quotes when rates tie. */
+export function rank(quotes: Quote[], side: Side, now: string | number): Quote[] {
+  const sign = side === "buy" ? 1 : -1;
+  return current(quotes, now).sort(
+    (a, b) =>
+      sign * (rateFor(a, side) - rateFor(b, side)) ||
+      Date.parse(b.timestamp) - Date.parse(a.timestamp),
+  );
+}
+
+export interface Place {
+  place: number;
+  of: number;
+  /** Soles per US$1 worse than the best. Zero for the best, and for a tie with it. */
+  gap: number;
+}
+
+/** Finds a quote's place among current base rates, or null when it is not ranked. */
+export function placeOf(
+  quotes: Quote[],
+  quote: Quote,
+  side: Side,
+  now: string | number,
+): Place | null {
+  const ranked = rank(quotes, side, now);
+  const best = ranked[0];
+  if (best === undefined || !ranked.some((one) => one.id === quote.id)) {
     return null;
   }
-  return sorted.length % 2 === 1 || lower === undefined ? upper : (lower + upper) / 2;
+  const better = ranked.filter((one) => gapToBest(quote, one, side) > 0).length;
+  return { place: better + 1, of: ranked.length, gap: gapToBest(quote, best, side) };
 }
 
 /**
- * Where to buy a dollar cheapest is the lowest `sell`, and where to sell one for the
- * most is the highest `buy`. Ties go to the quote listed first.
+ * Calculates the proceeds of a transaction and rounds them to cents.
  */
-export function summarize(quotes: Quote[], generatedAt: string): Market {
-  const fresh: Quote[] = [];
-  const stale: Quote[] = [];
+export function proceeds(amount: number, side: Side, rate: number): number {
+  const raw = side === "buy" ? amount / rate : amount * rate;
+  return Math.round(raw * 100) / 100;
+}
+
+/** Parses a positive amount with optional grouping separators. */
+export function parseAmount(text: string): number | null {
+  const cleaned = text.replace(/[,\s_]/g, "");
+  if (!/^\d*\.?\d+$|^\d+\.$/.test(cleaned)) {
+    return null;
+  }
+  const amount = Number(cleaned);
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
+export interface MissingSince {
+  at: number;
+  atLeast: boolean;
+}
+
+/** Finds when a source's current run of missing fetches began. */
+export function missingSince(snapshots: Snapshot[], source: string): MissingSince | null {
+  let at: number | null = null;
+  for (const snapshot of [...snapshots].reverse()) {
+    if (snapshot.missing === null) {
+      return at === null ? null : { at, atLeast: true };
+    }
+    if (!snapshot.missing.includes(source)) {
+      return at === null ? null : { at, atLeast: false };
+    }
+    at = snapshot.t;
+  }
+  return at === null ? null : { at, atLeast: true };
+}
+
+const REASONS: Record<Failure["reason"], string> = {
+  blocked: "Blocks requests from our server",
+  changed: "Changed its page, so we cannot read it",
+  timeout: "Did not answer in time",
+  error: "Its website returned an error",
+  invalid: "Published a rate that pays more than it charges",
+  unreachable: "Did not answer",
+};
+
+export interface MissingHouse {
+  name: string;
+  why: string;
+}
+
+function since(found: MissingSince | null): string {
+  return found === null
+    ? ""
+    : ` since ${found.atLeast ? "at least " : ""}${formatDay(found.at)}`;
+}
+
+/**
+ * The houses a person might look for and cannot find: those that returned nothing, and
+ * those whose only rate is too old to rank. A house another listing still covers is not
+ * missing.
+ */
+export function missingHouses(
+  quotes: Quote[],
+  failures: Failure[],
+  snapshots: Snapshot[],
+  now: string | number,
+): MissingHouse[] {
+  const covered = new Set(current(quotes, now).map((quote) => houseKey(quote.name)));
+  const missing = new Map<string, MissingHouse>();
+
+  for (const failure of failures) {
+    const key = houseKey(failure.source);
+    if (!covered.has(key)) {
+      missing.set(key, {
+        name: houseName(failure.source),
+        why: `${REASONS[failure.reason]}${since(missingSince(snapshots, failure.source))}.`,
+      });
+    }
+  }
   for (const quote of quotes) {
-    (isStale(ageMinutes(quote, generatedAt)) ? stale : fresh).push(quote);
-  }
-
-  let cheapestToBuy: Quote | null = null;
-  let bestToSell: Quote | null = null;
-  for (const quote of fresh) {
-    if (cheapestToBuy === null || quote.sell < cheapestToBuy.sell) {
-      cheapestToBuy = quote;
-    }
-    if (bestToSell === null || quote.buy > bestToSell.buy) {
-      bestToSell = quote;
+    const key = houseKey(quote.name);
+    if (!isVariant(quote) && !covered.has(key) && !missing.has(key)) {
+      missing.set(key, {
+        name: houseName(quote.name),
+        why: `Has not changed its rate since ${formatDay(Date.parse(quote.timestamp))}.`,
+      });
     }
   }
-
-  return {
-    fresh,
-    stale,
-    cheapestToBuy,
-    bestToSell,
-    medianSell: median(fresh.map((quote) => quote.sell)),
-  };
-}
-
-/**
- * What to append to a claim that one price is the cheapest or the best. A source that
- * returned nothing is missing from the ranking, so the claim holds only for the houses
- * that answered.
- */
-export function rankingScope(failures: Failure[]): string {
-  return failures.length === 0 ? "" : " among the houses that answered";
-}
-
-/**
- * What to say beside the best prices when a source returned nothing. Its prices are
- * missing from the ranking, so the best price shown may not be the best price there is.
- */
-export function missingSourcesNotice(failures: Failure[]): string | null {
-  if (failures.length === 0) {
-    return null;
-  }
-  const names = failures.map((failure) => failure.source).join(", ");
-  const subject = failures.length === 1 ? "1 source" : `${failures.length} sources`;
-  return `${subject} did not answer in this snapshot (${names}). Their prices are not counted, so a better price may exist.`;
-}
-
-export interface MarketPoint {
-  t: number;
-  lowestSell: number;
-  highestBuy: number;
-  houses: number;
-}
-
-/** The best price on each side at every snapshot, counting current quotes only. */
-export function marketSeries(snapshots: Snapshot[]): MarketPoint[] {
-  const points: MarketPoint[] = [];
-  for (const snapshot of snapshots) {
-    let lowestSell = Infinity;
-    let highestBuy = -Infinity;
-    let houses = 0;
-    for (const price of Object.values(snapshot.prices)) {
-      if (isStale(price.ageMinutes)) {
-        continue;
-      }
-      lowestSell = Math.min(lowestSell, price.sell);
-      highestBuy = Math.max(highestBuy, price.buy);
-      houses += 1;
-    }
-    if (houses > 0) {
-      points.push({ t: snapshot.t, lowestSell, highestBuy, houses });
-    }
-  }
-  return points;
+  return [...missing.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export interface HousePoint {
@@ -125,12 +182,12 @@ export interface HousePoint {
   sell: number;
 }
 
-/** One quote's prices over time, leaving out the snapshots where it was missing or stale. */
+/** Returns a house's current rates over time. */
 export function houseSeries(snapshots: Snapshot[], id: string): HousePoint[] {
   const points: HousePoint[] = [];
   for (const snapshot of snapshots) {
     const price = snapshot.prices[id];
-    if (price !== undefined && !isStale(price.ageMinutes)) {
+    if (price !== undefined && price.ageMinutes <= DEAD_AFTER_MINUTES) {
       points.push({ t: snapshot.t, buy: price.buy, sell: price.sell });
     }
   }

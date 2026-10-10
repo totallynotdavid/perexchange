@@ -11,9 +11,7 @@ interface Props {
 
 const { title, description, section } = Astro.props;
 const nav = [
-  { href: "/", label: "Rates", section: "rates" },
   { href: "/docs/", label: "Docs", section: "docs" },
-  { href: "/docs/data/", label: "Open data", section: "data" },
   { href: "https://github.com/totallynotdavid/perexchange", label: "GitHub" },
 ];
 ---
@@ -52,13 +50,15 @@ const nav = [
     </main>
     <footer class="site-footer">
       <div class="container">
-        <slot name="footer" />
         <p>
-          Built from the open-source
-          <a href="https://github.com/totallynotdavid/perexchange">perexchange</a> library. Apache-2.0. Rates are what
-          each house publishes and are not offers.
+          Rates are what each house publishes, not offers. <a href="/docs/data/">Open data</a>
         </p>
       </div>
     </footer>
+    <script>
+      import { keepAgesFresh } from "../lib/live.ts";
+
+      keepAgesFresh();
+    </script>
   </body>
 </html>

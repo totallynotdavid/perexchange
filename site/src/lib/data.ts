@@ -7,9 +7,19 @@ export interface Quote {
   timestamp: string;
 }
 
+export const FAILURE_REASONS = [
+  "blocked",
+  "changed",
+  "timeout",
+  "error",
+  "invalid",
+  "unreachable",
+] as const;
+export type FailureReason = (typeof FAILURE_REASONS)[number];
+
 export interface Failure {
   source: string;
-  error_type: string;
+  reason: FailureReason;
   message: string;
 }
 
@@ -29,6 +39,8 @@ export interface HistoricalPrice {
 export interface Snapshot {
   t: number;
   prices: Record<string, HistoricalPrice>;
+  /** Null means this history line predates the missing-source list. */
+  missing: string[] | null;
 }
 
 export interface History {
@@ -67,16 +79,24 @@ function parseQuote(value: unknown): Quote {
   };
 }
 
+function isFailureReason(value: unknown): value is FailureReason {
+  return FAILURE_REASONS.some((reason) => reason === value);
+}
+
+/**
+ * A failure only explains why a house is missing, so a reason this reader does not know,
+ * such as one from a snapshot written before reasons existed, reads as a plain error
+ * and never makes the rates unreadable.
+ */
 function parseFailure(value: unknown): Failure {
-  if (
-    !isRecord(value) ||
-    typeof value.source !== "string" ||
-    typeof value.error_type !== "string" ||
-    typeof value.message !== "string"
-  ) {
+  if (!isRecord(value) || typeof value.source !== "string") {
     throw new Error(`latest.json has a malformed failure: ${JSON.stringify(value)}`);
   }
-  return { source: value.source, error_type: value.error_type, message: value.message };
+  return {
+    source: value.source,
+    reason: isFailureReason(value.reason) ? value.reason : "error",
+    message: typeof value.message === "string" ? value.message : "",
+  };
 }
 
 export function parseLatest(text: string): Latest {
@@ -126,7 +146,11 @@ function parseSnapshot(line: string): Snapshot | null {
       ageMinutes: typeof age === "number" && age >= 0 ? age : 0,
     };
   }
-  return { t, prices };
+  const missing =
+    Array.isArray(value.f) && value.f.every((source) => typeof source === "string")
+      ? (value.f as string[])
+      : null;
+  return { t, prices, missing };
 }
 
 /**
