@@ -21,7 +21,8 @@ it. A small script keeps the ages true while the page is open, and another remem
 side and the amount a visitor chose. Without scripts the page still shows every rate and
 chart.
 
-The charts cover the last 30 days. The page reads at most that many history files.
+The charts cover the last 30 days. The page reads at most that many history files. The
+look, from colour tokens to the error states, is in [Site design](../docs/design.md).
 
 The file formats are in [Open data](src/docs/data.md). Who may write the data branch, and
 what a reader sees while a run is in progress, are in
@@ -49,7 +50,8 @@ The site reads the published `data` branch. `bun run dev` and `bun run preview` 
 The tests cover the data path. `tests/contract.test.ts` runs the real Python tool on a few
 made-up quotes and reads its output with the loaders the site uses, so a change to the
 format on either side fails a test. `tests/build.test.ts` builds the site from that
-output, starts the server and requests the pages. The tool's own tests run it against the
+output, starts the server and requests the pages. `tests/contrast.test.ts` checks the
+contrast of the colour tokens in both schemes. The tool's own tests run it against the
 captured source responses. The tests build into `site/.scratch`, because Astro cannot move
 files across filesystems.
 
