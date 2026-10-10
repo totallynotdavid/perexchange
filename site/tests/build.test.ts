@@ -10,7 +10,6 @@ import { recordCompleteSnapshot, recordSnapshots } from "./record.ts";
 import { scratchDir } from "./scratch.ts";
 
 const SITE = path.resolve(import.meta.dirname, "..");
-const SCOPE = " among the houses that answered";
 
 interface Running {
   origin: string;
@@ -116,51 +115,73 @@ describe("the site built from a recorded snapshot", () => {
     expect(await page("index.html")).toMatch(/^<!DOCTYPE html>/i);
   });
 
-  it("lists the recorded house with its prices on the rates page", async () => {
+  it("leads with the best rate on each side, the house, and how old the rate is", async () => {
     const home = text(await page("index.html"));
 
-    expect(home).toContain("cambiafx");
-    expect(home).toContain("3.4360");
-    expect(home).toContain("3.4500");
+    expect(home).toMatch(
+      /Cheapest place to buy dollars S\/ 3\.4500 CambiaFX, \d+ (min|h|d) ago/,
+    );
+    expect(home).toMatch(
+      /Best place to sell dollars S\/ 3\.4360 CambiaFX, \d+ (min|h|d) ago/,
+    );
   });
 
-  it("says beside the best prices which source did not answer", async () => {
+  it("warns that old data is old, naming how old", async () => {
+    const html = await page("index.html");
+    const notice = html.match(/<p class="notice"[^>]*>/)?.[0] ?? "";
+
+    expect(notice).toContain("data-since");
+    expect(notice).not.toContain("hidden");
+    expect(text(html)).toMatch(
+      /These rates were fetched \d+ (h|d) ago\. The refresh is running late/,
+    );
+  });
+
+  it("says which house is missing, why, and since when", async () => {
     const home = text(await page("index.html"));
 
+    expect(home).toContain("1 house is not compared");
     expect(home).toContain(
-      "1 source did not answer in this snapshot (cambiomundial). " +
-        "Their prices are not counted, so a better price may exist.",
+      "Cambio Mundial: Blocks requests from our server since 8 Oct.",
     );
   });
 
-  it("claims a best price only among the houses that answered", async () => {
-    const claim =
-      /(Cheapest place to buy US\$1|Best place to sell US\$1|best current price|Best rate|best to buy|best to sell|lowest current price)(?! among the houses that answered)/;
-    const pages = ["index.html", "house/cambiafx/index.html"];
-
-    for (const file of pages) {
-      const html = await page(file);
-
-      expect(text(html), file).not.toMatch(claim);
-      expect(text(html), file).toContain(SCOPE);
-    }
-    const home = await page("index.html");
-    expect(home).toContain(`the best place to sell${SCOPE}. A converter`);
-    expect(text(await page("house/cambiafx/index.html"))).toContain(
-      `The lowest current price${SCOPE}`,
-    );
-  });
-
-  it("claims the cheapest and the best without a qualifier when every source answered", async () => {
+  it("shows no count of failures to a visitor when every source answered", async () => {
     const home = text(await page("index.html", complete));
 
-    expect(home).toContain("Cheapest place to buy US$1 S/");
-    expect(home).toContain("Best place to sell US$1 S/");
-    expect(home).toContain("Best rate");
-    expect(home).not.toMatch(
-      /(Cheapest place to buy US\$1|Best place to sell US\$1|best current price|Best rate)( among)/,
+    expect(home).not.toContain("not compared");
+    expect(home).toMatch(/Cheapest place to buy dollars S\/ 3\.4550 Gordito digital/);
+    expect(home).toMatch(/Best place to sell dollars S\/ 3\.4410 Western Union/);
+  });
+
+  it("lists ten houses and keeps the rest behind a disclosure", async () => {
+    const html = await page("index.html", complete);
+    const buy = html
+      .slice(html.indexOf('class="panel" data-side="buy"'))
+      .split("</section>")[0];
+    const [shown, rest] = buy.split("<details");
+
+    expect(shown.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr>/g)).toHaveLength(10);
+    expect(text(rest)).toContain("Show the other 3 houses");
+    expect(rest.match(/<tr>/g)).toHaveLength(3 + 1);
+  });
+
+  it("ranks a house's own rate and keeps its special rates on its own page", async () => {
+    const home = text(await page("index.html", complete));
+    const house = text(await page("house/tkambio/index.html", complete));
+
+    expect(home).not.toContain("5,000");
+    expect(house).toContain("Other rates from TKambio");
+    expect(house).toContain("from US$5,000");
+  });
+
+  it("shows two numbers and the place on a house page", async () => {
+    const html = text(await page("house/cambiafx/index.html", complete));
+
+    expect(html).toContain(
+      "To buy dollars, you pay S/ 3.4580 No. 2 of 13, S/ 0.0030 behind the best",
     );
-    expect(home).not.toContain("did not answer");
+    expect(html).toContain("To sell dollars, you get S/ 3.4300");
   });
 
   it("has a page and a chart for each recorded house", async () => {
@@ -168,15 +189,14 @@ describe("the site built from a recorded snapshot", () => {
 
     expect(html).toContain('id="chart-24h"');
     expect(html).toContain("<svg");
-    expect(text(html)).toContain("2 snapshots in this range");
+    expect(text(html)).toContain("2 readings in this range");
   });
 
   it("keeps a space wherever a line break meets a tag", async () => {
     const home = text(await page("index.html"));
 
-    expect(home).toContain("open-source perexchange library");
-    expect(home).toMatch(/from perexchange \d/);
-    expect(home).toMatch(/\d\. Raw data/);
+    expect(home).toMatch(/fetched \d+ \w+ ago\. The refresh/);
+    expect(home).toContain("not offers. Open data");
   });
 
   it("renders the library docs from the repository's own Markdown", async () => {

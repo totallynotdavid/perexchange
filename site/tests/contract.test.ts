@@ -7,10 +7,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { loadHistory, loadLatest } from "../src/lib/load.ts";
 import {
-  STALE_AFTER_MINUTES,
+  DEAD_AFTER_MINUTES,
   houseSeries,
-  marketSeries,
-  summarize,
+  missingSince,
+  rank,
 } from "../src/lib/market.ts";
 import { recordSnapshots } from "./record.ts";
 import { scratchDir } from "./scratch.ts";
@@ -35,7 +35,7 @@ describe("data written by tools/snapshot.py", () => {
     expect(latest.failures).toEqual([
       {
         source: "cambiomundial",
-        error_type: "HTTPStatusError",
+        reason: "blocked",
         message: "403 Forbidden",
       },
     ]);
@@ -53,16 +53,27 @@ describe("data written by tools/snapshot.py", () => {
     ]);
   });
 
-  it("gives the market a best price that ignores a house gone stale", async () => {
+  it("records a house gone stale with its age, which the series leaves out", async () => {
     const { snapshots } = await loadHistory(dir);
-    const [first, second] = marketSeries(snapshots);
 
     expect(snapshots[0].prices.chapacambio.ageMinutes).toBeGreaterThan(
-      STALE_AFTER_MINUTES,
+      DEAD_AFTER_MINUTES,
     );
-    expect(first.lowestSell).toBe(3.455);
-    expect(first.houses).toBe(2);
-    expect(second.lowestSell).toBe(3.45);
+    expect(houseSeries(snapshots, "chapacambio")).toEqual([]);
+  });
+
+  it("dates when a source began to return nothing", async () => {
+    const { snapshots } = await loadHistory(dir);
+
+    expect(snapshots.map((snapshot) => snapshot.missing)).toEqual([
+      ["mercadocambiario"],
+      ["cambiomundial"],
+    ]);
+    expect(missingSince(snapshots, "cambiomundial")).toEqual({
+      at: Date.parse("2026-10-08T12:15:00Z"),
+      atLeast: false,
+    });
+    expect(missingSince(snapshots, "mercadocambiario")).toBeNull();
   });
 
   it("follows one house across fetches", async () => {
@@ -73,10 +84,10 @@ describe("data written by tools/snapshot.py", () => {
     ]);
   });
 
-  it("summarizes the newest fetch", async () => {
+  it("ranks the newest fetch", async () => {
     const latest = await loadLatest(dir);
 
-    expect(summarize(latest.rates, latest.generated_at).cheapestToBuy?.sell).toBe(3.45);
+    expect(rank(latest.rates, "buy", latest.generated_at)[0].sell).toBe(3.45);
   });
 });
 

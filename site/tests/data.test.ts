@@ -15,7 +15,14 @@ const LATEST = {
       timestamp: "2026-10-08T14:30:00Z",
     },
   ],
-  failures: [{ source: "b", error_type: "HTTPStatusError", message: "403 Forbidden" }],
+  failures: [
+    {
+      source: "b",
+      reason: "blocked",
+      error_type: "HTTPStatusError",
+      message: "Client error '403 Forbidden'",
+    },
+  ],
 };
 
 describe("parseLatest", () => {
@@ -24,7 +31,35 @@ describe("parseLatest", () => {
 
     expect(latest.rates).toHaveLength(1);
     expect(latest.rates[0].sell).toBe(3.45);
-    expect(latest.failures[0].message).toBe("403 Forbidden");
+    expect(latest.failures).toEqual([
+      { source: "b", reason: "blocked", message: "Client error '403 Forbidden'" },
+    ]);
+  });
+
+  it("reads a snapshot published before failures had a reason, keeping its rates", () => {
+    const published = {
+      ...LATEST,
+      failures: [
+        {
+          source: "b",
+          error_type: "HTTPStatusError",
+          message:
+            "Client error '403 Forbidden'\nFor more information check: https://example.test",
+        },
+        { ...LATEST.failures[0], reason: "sulking" },
+      ],
+    };
+
+    const latest = parseLatest(JSON.stringify(published));
+
+    expect(latest.rates).toHaveLength(1);
+    expect(latest.failures.map((failure) => failure.reason)).toEqual(["error", "error"]);
+  });
+
+  it("rejects a failure that names no source", () => {
+    const broken = { ...LATEST, failures: [{ reason: "blocked", message: "x" }] };
+
+    expect(() => parseLatest(JSON.stringify(broken))).toThrow(/malformed failure/);
   });
 
   it("rejects a rate whose price is not a positive number", () => {
@@ -40,8 +75,8 @@ describe("parseLatest", () => {
 });
 
 describe("parseHistory", () => {
-  const line = (t: string, prices: Record<string, number[]>) =>
-    JSON.stringify({ t, r: prices });
+  const line = (t: string, prices: Record<string, number[]>, f?: string[]) =>
+    JSON.stringify({ t, r: prices, f });
 
   it("returns snapshots in time order across day files", () => {
     const later = line("2026-10-09T00:10:00Z", { a: [3.4, 3.45, 0] });
@@ -72,6 +107,15 @@ describe("parseHistory", () => {
     const text = line("2026-10-08T00:00:00Z", { a: [0, 3.45, 0] });
 
     expect(parseHistory([text]).skippedLines).toBe(1);
+  });
+
+  it("reads the sources a fetch returned nothing from, and null where it was not recorded", () => {
+    const withList = line("2026-10-08T00:00:00Z", { a: [3.4, 3.45, 0] }, ["b"]);
+    const without = line("2026-10-08T00:15:00Z", { a: [3.4, 3.45, 0] });
+
+    const { snapshots } = parseHistory([withList, without]);
+
+    expect(snapshots.map((s) => s.missing)).toEqual([["b"], null]);
   });
 
   it("treats a missing age as a current quote", () => {

@@ -1,94 +1,93 @@
 import { describe, expect, it } from "vitest";
 
+import type { Failure } from "../src/lib/data.ts";
 import {
-  STALE_AFTER_MINUTES,
+  DEAD_AFTER_MINUTES,
   ageMinutes,
+  gapToBest,
   houseSeries,
-  marketSeries,
-  missingSourcesNotice,
-  rankingScope,
-  summarize,
+  missingHouses,
+  missingSince,
+  parseAmount,
+  placeOf,
+  proceeds,
+  rank,
 } from "../src/lib/market.ts";
 import { GENERATED_AT, quote, snapshot } from "./fixtures.ts";
 
 const minutesBefore = (minutes: number) =>
   new Date(Date.parse(GENERATED_AT) - minutes * 60_000).toISOString();
 
-describe("rankingScope", () => {
-  it("adds nothing when every source answered", () => {
-    expect(rankingScope([])).toBe("");
+const failure = (source: string, reason: Failure["reason"] = "blocked"): Failure => ({
+  source,
+  reason,
+  message: "",
+});
+
+describe("rank", () => {
+  const quotes = [quote("a", 3.3, 3.5), quote("b", 3.4, 3.45), quote("c", 3.2, 3.6)];
+
+  it("puts the lowest price first for someone buying dollars", () => {
+    expect(rank(quotes, "buy", GENERATED_AT).map((q) => q.id)).toEqual(["b", "a", "c"]);
   });
 
-  it("limits a claim to the houses that answered when any source did not", () => {
-    const failure = {
-      source: "a",
-      error_type: "HTTPStatusError",
-      message: "403 Forbidden",
-    };
+  it("puts the highest price first for someone selling dollars", () => {
+    expect(rank(quotes, "sell", GENERATED_AT).map((q) => q.id)).toEqual(["b", "a", "c"]);
+  });
 
-    expect(rankingScope([failure])).toBe(" among the houses that answered");
+  it("puts the newer of two equal rates first", () => {
+    const older = quote("older", 3.3, 3.4, minutesBefore(40));
+    const newer = quote("newer", 3.3, 3.4, minutesBefore(5));
+
+    expect(rank([older, newer], "buy", GENERATED_AT).map((q) => q.id)).toEqual([
+      "newer",
+      "older",
+    ]);
+  });
+
+  it("leaves out a rate its house has not changed in a day", () => {
+    const closed = quote("closed", 3.9, 3.0, minutesBefore(DEAD_AFTER_MINUTES + 1));
+    const edge = quote("edge", 3.3, 3.4, minutesBefore(DEAD_AFTER_MINUTES));
+
+    expect(rank([closed, edge], "buy", GENERATED_AT).map((q) => q.id)).toEqual(["edge"]);
+  });
+
+  it("ranks a house's own rate and not its special rates", () => {
+    const own = quote("tkambio", 3.4, 3.46);
+    const large = { ...quote("tkambio-5000", 3.43, 3.44), source: "tkambio" };
+
+    expect(rank([own, large], "buy", GENERATED_AT).map((q) => q.id)).toEqual(["tkambio"]);
+  });
+
+  it("has nothing to rank without current quotes", () => {
+    expect(rank([], "buy", GENERATED_AT)).toEqual([]);
   });
 });
 
-describe("missingSourcesNotice", () => {
-  const failure = (source: string) => ({
-    source,
-    error_type: "HTTPStatusError",
-    message: "403 Forbidden",
+describe("gapToBest and placeOf", () => {
+  const quotes = [quote("a", 3.3, 3.5), quote("b", 3.4, 3.45), quote("c", 3.4, 3.45)];
+  const [a, b, c] = quotes;
+
+  it("measures how far a rate is from the best on the side that matters", () => {
+    expect(gapToBest(a, b, "buy")).toBe(0.05);
+    expect(gapToBest(a, b, "sell")).toBe(0.1);
+    expect(gapToBest(b, b, "buy")).toBe(0);
   });
 
-  it("says nothing when every source answered", () => {
-    expect(missingSourcesNotice([])).toBeNull();
+  it("gives houses that tie for the best the same place", () => {
+    expect(placeOf(quotes, b, "buy", GENERATED_AT)).toEqual({ place: 1, of: 3, gap: 0 });
+    expect(placeOf(quotes, c, "buy", GENERATED_AT)).toEqual({ place: 1, of: 3, gap: 0 });
+    expect(placeOf(quotes, a, "buy", GENERATED_AT)).toEqual({
+      place: 3,
+      of: 3,
+      gap: 0.05,
+    });
   });
 
-  it("names each source that did not answer and warns the best price may be missing", () => {
-    expect(missingSourcesNotice([failure("a")])).toBe(
-      "1 source did not answer in this snapshot (a). Their prices are not counted, so a better price may exist.",
-    );
-    expect(missingSourcesNotice([failure("a"), failure("b")])).toContain(
-      "2 sources did not answer in this snapshot (a, b).",
-    );
-  });
-});
+  it("does not place a rate that is not ranked", () => {
+    const old = quote("old", 3.4, 3.4, minutesBefore(DEAD_AFTER_MINUTES + 1));
 
-describe("summarize", () => {
-  it("picks the lowest sell price to buy and the highest buy price to sell", () => {
-    const market = summarize(
-      [quote("a", 3.3, 3.5), quote("b", 3.4, 3.45), quote("c", 3.2, 3.6)],
-      GENERATED_AT,
-    );
-
-    expect(market.cheapestToBuy?.id).toBe("b");
-    expect(market.bestToSell?.id).toBe("b");
-    expect(market.medianSell).toBe(3.5);
-  });
-
-  it("never ranks a quote its house stopped updating", () => {
-    const old = quote("old", 3.5, 3.3, minutesBefore(STALE_AFTER_MINUTES + 1));
-    const market = summarize([old, quote("b", 3.4, 3.45)], GENERATED_AT);
-
-    expect(market.cheapestToBuy?.id).toBe("b");
-    expect(market.bestToSell?.id).toBe("b");
-    expect(market.stale.map((q) => q.id)).toEqual(["old"]);
-  });
-
-  it("ranks a quote exactly at the limit", () => {
-    const edge = quote("edge", 3.4, 3.3, minutesBefore(STALE_AFTER_MINUTES));
-
-    expect(summarize([edge], GENERATED_AT).cheapestToBuy?.id).toBe("edge");
-  });
-
-  it("has nothing to rank when every quote is stale or none exist", () => {
-    const old = quote("old", 3.4, 3.45, minutesBefore(600));
-
-    expect(summarize([old], GENERATED_AT).cheapestToBuy).toBeNull();
-    expect(summarize([], GENERATED_AT).medianSell).toBeNull();
-  });
-
-  it("averages the middle two sell prices of an even count", () => {
-    const market = summarize([quote("a", 3.3, 3.4), quote("b", 3.3, 3.5)], GENERATED_AT);
-
-    expect(market.medianSell).toBeCloseTo(3.45, 10);
+    expect(placeOf([a, old], old, "buy", GENERATED_AT)).toBeNull();
   });
 });
 
@@ -99,31 +98,107 @@ describe("ageMinutes", () => {
   });
 });
 
-describe("marketSeries", () => {
-  it("follows the best price on each side over time", () => {
-    const points = marketSeries([
-      snapshot(0, { a: [3.4, 3.46], b: [3.42, 3.47] }),
-      snapshot(15, { a: [3.41, 3.44], b: [3.39, 3.47] }),
-    ]);
+describe("proceeds", () => {
+  it("gives dollars for the soles spent when buying, at the sell rate", () => {
+    expect(proceeds(3450, "buy", 3.45)).toBe(1000);
+    expect(proceeds(100, "buy", 3.45)).toBe(28.99);
+  });
 
-    expect(points.map((p) => [p.lowestSell, p.highestBuy, p.houses])).toEqual([
-      [3.46, 3.42, 2],
-      [3.44, 3.41, 2],
+  it("gives soles for the dollars handed over when selling, at the buy rate", () => {
+    expect(proceeds(1000, "sell", 3.4)).toBe(3400);
+    expect(proceeds(0.01, "sell", 3.4333)).toBe(0.03);
+  });
+});
+
+describe("parseAmount", () => {
+  it("reads plain and grouped numbers", () => {
+    expect(parseAmount("250")).toBe(250);
+    expect(parseAmount("1,250.50")).toBe(1250.5);
+    expect(parseAmount(" 1 250 ")).toBe(1250);
+    expect(parseAmount("5.")).toBe(5);
+  });
+
+  it("refuses what is not a positive number", () => {
+    for (const text of ["", "0", "-5", "abc", "1e3", "1.2.3", "Infinity"]) {
+      expect(parseAmount(text), text).toBeNull();
+    }
+  });
+});
+
+describe("missingSince", () => {
+  const down = (minutes: number) => snapshot(minutes, { a: [3.4, 3.45] }, ["x"]);
+  const up = (minutes: number) => snapshot(minutes, { a: [3.4, 3.45] }, []);
+
+  it("dates the start of the run of fetches the source has been missing from", () => {
+    const found = missingSince([up(0), down(15), down(30)], "x");
+
+    expect(found).toEqual({ at: down(15).t, atLeast: false });
+  });
+
+  it("says at least when the history ends before the source last answered", () => {
+    expect(missingSince([down(0), down(15)], "x")).toEqual({
+      at: down(0).t,
+      atLeast: true,
+    });
+  });
+
+  it("does not guess from fetches recorded without the list", () => {
+    const unknown = snapshot(0, { a: [3.4, 3.45] });
+
+    expect(missingSince([unknown, down(15)], "x")).toEqual({
+      at: down(15).t,
+      atLeast: true,
+    });
+    expect(missingSince([unknown], "x")).toBeNull();
+  });
+
+  it("is null for a source that answered in the newest fetch", () => {
+    expect(missingSince([down(0), up(15)], "x")).toBeNull();
+  });
+});
+
+describe("missingHouses", () => {
+  const history = [
+    snapshot(0, { a: [3.4, 3.45] }, []),
+    snapshot(15, { a: [3.4, 3.45] }, ["blocked"]),
+  ];
+
+  it("names a house that returned nothing, why, and since when", () => {
+    const [house] = missingHouses(
+      [quote("a", 3.4, 3.45)],
+      [failure("blocked")],
+      history,
+      GENERATED_AT,
+    );
+
+    expect(house.name).toBe("blocked");
+    expect(house.why).toBe("Blocks requests from our server since 7 Oct.");
+  });
+
+  it("does not list a house another listing still covers", () => {
+    const aggregator = {
+      ...quote("cuantoestaeldolar", 3.4, 3.45),
+      name: "Cambio Mundial",
+    };
+
+    expect(
+      missingHouses([aggregator], [failure("cambiomundial")], history, GENERATED_AT),
+    ).toEqual([]);
+  });
+
+  it("lists a house whose only rate is too old, with the day it last changed", () => {
+    const old = {
+      ...quote("mercadocambiario", 3.4, 3.45, "2025-06-10T12:00:00Z"),
+      name: "Mercado Cambiario",
+    };
+
+    expect(missingHouses([old], [], [], GENERATED_AT)).toEqual([
+      { name: "Mercado Cambiario", why: "Has not changed its rate since 10 Jun." },
     ]);
   });
 
-  it("leaves a stale quote out of the best price", () => {
-    const [point] = marketSeries([
-      snapshot(0, { a: [3.4, 3.46], old: [3.6, 3.3, STALE_AFTER_MINUTES + 1] }),
-    ]);
-
-    expect(point.lowestSell).toBe(3.46);
-    expect(point.highestBuy).toBe(3.4);
-    expect(point.houses).toBe(1);
-  });
-
-  it("skips a snapshot where nothing was current", () => {
-    expect(marketSeries([snapshot(0, { old: [3.4, 3.46, 999] })])).toEqual([]);
+  it("lists nothing when every house has a current rate", () => {
+    expect(missingHouses([quote("a", 3.4, 3.45)], [], history, GENERATED_AT)).toEqual([]);
   });
 });
 
@@ -133,7 +208,7 @@ describe("houseSeries", () => {
       [
         snapshot(0, { a: [3.4, 3.46] }),
         snapshot(15, { b: [3.4, 3.46] }),
-        snapshot(30, { a: [3.41, 3.47, 400] }),
+        snapshot(30, { a: [3.41, 3.47, DEAD_AFTER_MINUTES + 1] }),
         snapshot(45, { a: [3.42, 3.48] }),
       ],
       "a",
