@@ -122,15 +122,20 @@ describe("the site built from a recorded snapshot", () => {
     expect(await page("index.html")).toMatch(/^<!DOCTYPE html>/i);
   });
 
-  it("leads with the best rate on each side, the house, and how old the rate is", async () => {
+  it("shows the best rate and its house before anyone types, and how old the rates are once", async () => {
     const home = text(await page("index.html"));
 
-    expect(home).toMatch(
-      /Cheapest place to buy dollars S\/ 3\.4500 CambiaFX, \d+ (min|h|d) ago/,
-    );
-    expect(home).toMatch(
-      /Best place to sell dollars S\/ 3\.4360 CambiaFX, \d+ (min|h|d) ago/,
-    );
+    expect(home).toMatch(/1 house compared, updated \d+ (min|h|d) ago/);
+    expect(home).toContain("Best rate per US$1 S/ 3.4500 at CambiaFX");
+    expect(home).toContain("Best rate per US$1 S/ 3.4360 at CambiaFX");
+  });
+
+  it("hides the amount field from a browser without scripts, which has the rate to read", async () => {
+    const html = await page("index.html", complete);
+
+    expect(html).toMatch(/<div class="amount" hidden/);
+    expect(text(html)).toContain("Best rate per US$1 S/ 3.4550 at Gordito digital");
+    expect(text(html)).toContain("Best rate per US$1 S/ 3.4410 at Western Union");
   });
 
   it("warns that old data is old, naming how old", async () => {
@@ -157,22 +162,18 @@ describe("the site built from a recorded snapshot", () => {
     const home = text(await page("index.html", complete));
 
     expect(home).not.toContain("not compared");
-    expect(home).toMatch(/Cheapest place to buy dollars S\/ 3\.4550 Gordito digital/);
-    expect(home).toMatch(/Best place to sell dollars S\/ 3\.4410 Western Union/);
   });
 
-  it("lists ten houses and keeps the rest behind a disclosure", async () => {
+  it("lists five houses and keeps the rest behind a disclosure", async () => {
     const html = await page("index.html", complete);
     const buy = html
-      .slice(html.indexOf('class="panel" data-side="buy"'))
+      .slice(html.indexOf('class="results" data-side="buy"'))
       .split("</section>")[0];
     const [shown, rest] = buy.split("<details");
 
-    expect(shown.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr[ >]/g)).toHaveLength(
-      10,
-    );
-    expect(text(rest)).toContain("Show the other 3 houses");
-    expect(rest.match(/<tr[ >]/g)).toHaveLength(3 + 1);
+    expect(shown.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr[ >]/g)).toHaveLength(5);
+    expect(text(rest)).toContain("Show the other 8 houses");
+    expect(rest.match(/<tr[ >]/g)).toHaveLength(8 + 1);
   });
 
   it("ranks a house's own rate and keeps its special rates on its own page", async () => {
@@ -198,7 +199,16 @@ describe("the site built from a recorded snapshot", () => {
 
     expect(html).toContain('id="chart-house-24h"');
     expect(html).toContain("<svg");
-    expect(text(html)).toContain("2 readings in this range");
+    expect(text(html)).toMatch(
+      /(Up|Down) S\/ 0\.\d{4} \(.*\) in 24 hours, from S\/ 3\.\d{4} to S\/ 3\.\d{4}\./,
+    );
+  });
+
+  it("leads from a house page to the house's own site", async () => {
+    const html = await page("house/cambiafx/index.html");
+    const link = html.match(/<a href="([^"]+)" target="_blank"[^>]*>\s*Go to CambiaFX/);
+
+    expect(link?.[1]).toBe("https://cambiafx.pe/");
   });
 
   it("keeps a space wherever a line break meets a tag", async () => {
@@ -249,8 +259,12 @@ describe("the site built from a recorded snapshot", () => {
 
 type Storage = "open" | "blocked" | "full";
 
-async function openHome(stored: Record<string, string> = {}, storage: Storage = "open") {
-  const win = new Window({ url: `${complete.origin}/` });
+async function openHome(
+  stored: Record<string, string> = {},
+  storage: Storage = "open",
+  width = 1280,
+) {
+  const win = new Window({ url: `${complete.origin}/`, width, height: 800 });
   for (const [key, value] of Object.entries(stored)) {
     win.localStorage.setItem(key, value);
   }
@@ -275,121 +289,136 @@ async function openHome(stored: Record<string, string> = {}, storage: Storage = 
   win.document.write(await page("index.html", complete));
   bindBoard(win.document as unknown as Document);
 
-  const panel = (side: string) =>
-    win.document.querySelector(`.panel[data-side="${side}"]`)!;
-  const field = (side: string) => panel(side).querySelector("input[type='text']")!;
-  const type = (side: string, value: string) => {
-    const input = field(side);
-    input.value = value;
-    input.dispatchEvent(new win.Event("input", { bubbles: true }));
-  };
+  const doc = win.document;
+  const input = doc.getElementById("amount") as unknown as HTMLInputElement;
+  const hero = (side: string) => doc.querySelector(`.hero[data-side="${side}"]`)!;
+  const part = (side: string, name: string) =>
+    hero(side).querySelector(`[data-part="${name}"]`)!.textContent!;
+  const results = (side: string) => doc.querySelector(`.results[data-side="${side}"]`)!;
   return {
     win,
-    field,
-    type,
-    summary: (side = "buy") => panel(side).querySelector("output")!.value,
-    rows: () =>
-      [...panel("buy").querySelectorAll("tr[data-rate]")].map((row) => ({
+    input,
+    hero,
+    results,
+    type: (value: string) => {
+      input.value = value;
+      input.dispatchEvent(new win.Event("input", { bubbles: true }));
+    },
+    chooseSide: (side: "buy" | "sell") =>
+      (doc.getElementById(`side-${side}`) as unknown as HTMLInputElement).click(),
+    flip: () =>
+      (doc.querySelector("[data-unit]") as unknown as HTMLButtonElement).click(),
+    unit: () => doc.querySelector("[data-unit-text]")!.textContent,
+    fieldLabel: () => doc.querySelector("[data-label]")!.textContent,
+    reading: () => doc.querySelector<HTMLElement>(".board")!.dataset.reading,
+    /** What the hero says, as a reader gets it. */
+    summary: (side = "buy") =>
+      hero(side).querySelector("output")!.textContent!.replace(/\s+/g, " ").trim(),
+    figure: (side = "buy") => part(side, "figure"),
+    note: (side = "buy") => part(side, "note"),
+    cta: (side = "buy") => hero(side).querySelector<HTMLAnchorElement>("a.cta")!,
+    rows: (side = "buy") =>
+      [...results(side).querySelectorAll("tr[data-rate]")].map((row) => ({
         house: row.getAttribute("data-house"),
         rate: row.querySelector(".price")!.textContent,
         total: row.querySelector("[data-total]")!.textContent,
-        edge: row.querySelector("[data-edge]")!.textContent,
+        link: row.querySelector<HTMLAnchorElement>("th a")!,
+        late:
+          row.querySelector(".late")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
       })),
-    heads: () =>
-      [...panel("buy").querySelectorAll("thead")].map((head) =>
-        text(head.innerHTML).trim(),
-      ),
-    chooseMode: (mode: "usd" | "pen") =>
-      (
-        win.document.getElementById(`mode-${mode}`) as unknown as HTMLInputElement
-      ).click(),
+    head: (side = "buy") =>
+      text(results(side).querySelector("thead .total-col")!.innerHTML).trim(),
   };
 }
 
-describe("the buy calculator on the served home page", () => {
-  it("prices US$200 at every house before anyone types, cheapest first", async () => {
+describe("the amount field and the answer on the served home page", () => {
+  it("starts with an empty field in focus and the best rate, not an invented amount", async () => {
     const home = await openHome();
+
+    expect(home.input.value).toBe("");
+    expect(home.win.document.activeElement).toBe(home.input);
+    expect(home.reading()).toBe("empty");
+    expect(home.summary()).toBe(
+      "Best rate per US$1 S/ 3.4550 at Gordito digital Type an amount to see the total at each house.",
+    );
+    expect(home.rows().map((row) => row.total)).toEqual(Array(13).fill(""));
+  });
+
+  it("answers an amount with the sum at the best house and the gap to the dearest", async () => {
+    const home = await openHome();
+    home.type("200");
+
+    expect(home.reading()).toBe("ok");
+    expect(home.summary()).toBe(
+      "You pay S/ 691.00 at Gordito digital S/ 5.00 less than at Western Union, which charges the most.",
+    );
+    expect(home.head()).toBe("You pay for US$200.00");
+  });
+
+  it("lists every house cheapest first with its rate and total", async () => {
+    const home = await openHome();
+    home.type("200");
     const rows = home.rows();
 
     expect(rows).toHaveLength(13);
-    expect(rows[0]).toEqual({
+    expect(rows[0]).toMatchObject({
       house: "Gordito digital",
       rate: "3.4550",
       total: "691.00",
-      edge: "5.00",
     });
     expect(rows[12]).toMatchObject({
       house: "Western Union",
       rate: "3.4800",
       total: "696.00",
-      edge: "–",
     });
-    expect((home.field("buy") as unknown as HTMLInputElement).value).toBe("200");
-    expect(home.summary()).toBe(
-      "US$200.00 costs S/ 691.00 at Gordito digital. That is S/ 5.00 less than at Western Union, the dearest.",
-    );
   });
 
-  it("shows the default amounts in the page itself, for a browser without scripts", async () => {
-    const html = text(await page("index.html", complete));
-
-    expect(html).toContain("You pay S/ for US$200.00");
-    expect(html).toContain("US$200.00 costs S/ 691.00 at Gordito digital");
-  });
-
-  it("says which side of the spread each rate is", async () => {
+  it("follows the amount typed, with grouping and cents, in the header too", async () => {
     const home = await openHome();
-
-    expect(home.heads().join(" ")).toContain("Sell rate you pay per US$1");
-    expect(text(await page("index.html", complete))).toContain(
-      "Buy rate you get per US$1",
-    );
-  });
-
-  it("follows the amount typed, with grouping and cents", async () => {
-    const home = await openHome();
-    home.type("buy", "1,250.50");
+    home.type("1,250.50");
     const rows = home.rows();
 
     expect(rows[0]?.total).toBe("4,320.48");
     expect(rows[12]?.total).toBe("4,351.74");
-    expect(rows[0]?.edge).toBe("31.26");
-    expect(home.summary()).toContain("US$1,250.50 costs S/ 4,320.48");
+    expect(home.note()).toBe(
+      "S/ 31.26 less than at Western Union, which charges the most.",
+    );
+    expect(home.head()).toBe("You pay for US$1,250.50");
   });
 
-  it("updates the houses behind the disclosure as well", async () => {
+  it("prices the houses behind the disclosure as well", async () => {
     const home = await openHome();
-    home.type("buy", "10");
+    home.type("10");
 
-    expect(home.rows().every((row) => row.total !== "–")).toBe(true);
+    expect(home.rows().every((row) => row.total !== "")).toBe(true);
     expect(home.rows()[11]?.total).toBe("34.78");
   });
 
   it.each([
-    ["200.005", "US$200.01 costs S/ 691.03"],
-    ["200.004", "US$200.00 costs S/ 691.00"],
-    [".5", "US$0.50 costs S/ 1.73"],
-    ["5.", "US$5.00 costs S/ 17.28"],
-    ["0.01", "US$0.01 costs S/ 0.03"],
-    ["1,000,000,000", "US$1,000,000,000.00 costs S/ 3,455,000,000.00"],
+    ["200.005", "691.03"],
+    ["200.004", "691.00"],
+    [".5", "1.73"],
+    ["5.", "17.28"],
+    ["0.01", "0.03"],
+    ["1,000,000,000", "3,455,000,000.00"],
   ])("rounds %s to the cent and prices it", async (typed, expected) => {
     const home = await openHome();
-    home.type("buy", typed);
+    home.type(typed);
 
-    expect(home.summary()).toContain(expected);
+    expect(home.figure()).toBe(expected);
   });
 
   it("gives every house the same figure when the amount is too small to tell them apart", async () => {
     const home = await openHome();
-    home.type("buy", "0.01");
+    home.type("0.01");
 
     expect(home.rows().map((row) => row.total)).toEqual(Array(13).fill("0.03"));
-    expect(home.summary()).toContain("Every house gives the same at this amount.");
+    expect(home.note()).toBe("Every house gives the same at this amount.");
   });
 
   it.each([
-    ["", "Type an amount to see what each house charges."],
-    ["   ", "Type an amount to see what each house charges."],
+    ["", "Type an amount to see the total at each house."],
+    ["   ", "Type an amount to see the total at each house."],
     ["0", "Type an amount above zero."],
     ["0.00", "Type an amount above zero."],
     ["0.004", "Type an amount above zero."],
@@ -399,131 +428,250 @@ describe("the buy calculator on the served home page", () => {
     ["-5", "Use digits only, for example 200 or 1,250.50."],
     ["abc", "Use digits only, for example 200 or 1,250.50."],
     ["1.2.3", "Use digits only, for example 200 or 1,250.50."],
-  ])("shows no figure for %j and says why", async (typed, hint) => {
+  ])("shows no total for %j and says why", async (typed, hint) => {
     const home = await openHome();
-    home.type("buy", typed);
+    home.type(typed);
 
-    expect(home.summary()).toBe(hint);
-    expect(home.rows().every((row) => row.total === "–" && row.edge === "–")).toBe(true);
+    expect(home.note()).toBe(hint);
+    expect(home.summary()).toContain("Best rate per US$1 S/ 3.4550 at Gordito digital");
+    expect(home.rows().every((row) => row.total === "")).toBe(true);
   });
 
   it("marks the field invalid for a mistake and not for an empty field", async () => {
     const home = await openHome();
-    const invalid = () => home.field("buy").getAttribute("aria-invalid");
 
-    home.type("buy", "abc");
-    expect(invalid()).toBe("true");
-    home.type("buy", "");
-    expect(invalid()).toBe("false");
+    home.type("abc");
+    expect(home.input.getAttribute("aria-invalid")).toBe("true");
+    home.type("");
+    expect(home.input.getAttribute("aria-invalid")).toBe("false");
   });
 
-  it("turns the field into soles to spend, priced in dollars rounded down", async () => {
+  it("names the field for what the person wants to do", async () => {
     const home = await openHome();
-    home.chooseMode("pen");
-    const rows = home.rows();
 
-    expect((home.field("buy") as unknown as HTMLInputElement).value).toBe("1000");
-    expect(rows[0]).toMatchObject({
-      house: "Gordito digital",
-      total: "289.43",
-      edge: "2.08",
+    expect(home.fieldLabel()).toBe("Amount to buy");
+    home.chooseSide("sell");
+    expect(home.fieldLabel()).toBe("Amount to sell");
+  });
+});
+
+describe("the unit button on the served home page", () => {
+  it("turns the amount into soles at the best rate and prices the soles in dollars", async () => {
+    const home = await openHome();
+    home.type("200");
+    home.flip();
+
+    expect(home.unit()).toBe("S/");
+    expect(home.input.value).toBe("691.00");
+    expect(home.summary()).toContain("You get US$ 200.00 at Gordito digital");
+    expect(home.head()).toBe("You get for S/ 691.00");
+    expect(home.rows()[12]?.total).toBe("198.56");
+  });
+
+  it("returns the same amount when flipped back", async () => {
+    const home = await openHome();
+    home.type("200");
+    home.flip();
+    home.flip();
+
+    expect(home.unit()).toBe("US$");
+    expect(home.input.value).toBe("200.00");
+  });
+
+  it("leaves an empty or invalid field as it is", async () => {
+    const home = await openHome();
+    home.flip();
+    expect(home.input.value).toBe("");
+
+    home.type("abc");
+    home.flip();
+    expect(home.input.value).toBe("abc");
+    expect(home.input.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("rounds the dollars received down, so the figure is never more than the soles buy", async () => {
+    const home = await openHome({
+      "perexchange:unit": "pen",
+      "perexchange:amount": "2500",
     });
-    expect(rows[12]).toMatchObject({ total: "287.35", edge: "–" });
-    expect(home.summary()).toBe(
-      "S/ 1,000.00 buys US$289.43 at Gordito digital. That is US$2.08 more than at Western Union, the dearest.",
-    );
-    expect(home.heads().join(" ")).toContain("You get US$ for S/ 1,000.00 Extra");
+
+    expect(home.summary()).toContain("You get US$ 723.58 at Gordito digital");
   });
 
   it("gives exactly 200.00 dollars for the soles that 200 dollars cost", async () => {
-    const home = await openHome();
-    home.chooseMode("pen");
-    home.type("buy", "691");
+    const home = await openHome({ "perexchange:unit": "pen" });
+    home.type("691");
 
     expect(home.rows()[0]?.total).toBe("200.00");
   });
+});
 
-  it("keeps a separate amount for each mode and remembers both", async () => {
+describe("selling dollars on the served home page", () => {
+  it("prices the same amount at the best buying rate and says who pays the least", async () => {
     const home = await openHome();
-    home.type("buy", "350");
-    home.chooseMode("pen");
-    home.type("buy", "5,000");
-    home.chooseMode("usd");
+    home.chooseSide("sell");
+    home.type("1,000");
 
-    expect((home.field("buy") as unknown as HTMLInputElement).value).toBe("350");
-    expect(home.win.localStorage.getItem("perexchange:amount:pen")).toBe("5,000");
-    expect(home.win.localStorage.getItem("perexchange:mode")).toBe("usd");
-  });
-
-  it("opens in the mode and with the amount the visitor left", async () => {
-    const home = await openHome({
-      "perexchange:mode": "pen",
-      "perexchange:amount:pen": "2500",
+    expect(home.summary("sell")).toBe(
+      "You get S/ 3,441.00 at Western Union S/ 11.00 more than at CambiaFX, which pays the least.",
+    );
+    expect(home.rows("sell")[0]).toMatchObject({
+      house: "Western Union",
+      total: "3,441.00",
     });
-
-    expect(home.summary()).toContain("S/ 2,500.00 buys US$723.58 at Gordito digital");
+    expect(home.head("sell")).toBe("You get for US$1,000.00");
   });
 
-  it("falls back to the default when the saved amount is empty", async () => {
-    const home = await openHome({ "perexchange:amount:usd": "" });
-
-    expect((home.field("buy") as unknown as HTMLInputElement).value).toBe("200");
-  });
-
-  it("still works when the browser refuses storage", async () => {
-    const home = await openHome({}, "blocked");
-    home.type("buy", "300");
-
-    expect(home.summary()).toContain("US$300.00 costs S/ 1,036.50");
-    home.chooseMode("pen");
-    expect(home.summary()).toContain("S/ 1,000.00 buys");
-  });
-
-  it("still calculates when the browser reads storage but refuses to write", async () => {
-    const home = await openHome({}, "full");
-    home.type("buy", "300");
-
-    expect(home.summary()).toContain("US$300.00 costs S/ 1,036.50");
-    home.chooseMode("pen");
-    expect(home.summary()).toContain("S/ 1,000.00 buys");
-    home.chooseMode("usd");
-    expect((home.field("buy") as unknown as HTMLInputElement).value).toBe("300");
-    home.type("sell", "1,000");
-    expect(home.summary("sell")).toBe("You get S/ 3,441.00");
-  });
-
-  it("still sells dollars at the best buy rate", async () => {
+  it("asks for soles to get when the amount is in soles", async () => {
     const home = await openHome();
-    home.type("sell", "1,000");
+    home.chooseSide("sell");
+    home.type("1000");
+    home.flip();
 
-    expect(home.summary("sell")).toBe("You get S/ 3,441.00");
+    expect(home.head("sell")).toContain("to get S/");
+    expect(home.summary("sell")).toMatch(/^You sell US\$ [\d.,]+ at Western Union/);
+  });
+
+  it("keeps the amount when the side changes", async () => {
+    const home = await openHome();
+    home.type("350");
+    home.chooseSide("sell");
+
+    expect(home.input.value).toBe("350");
+    expect(home.figure("sell")).toBe("1,204.35");
   });
 
   it("tells the seller what is wrong with an amount, as the buyer is told", async () => {
     const home = await openHome();
-    const flagged = () => home.field("sell").getAttribute("aria-invalid");
+    home.chooseSide("sell");
     const cases: [string, string, string][] = [
-      ["", "", "false"],
+      ["", "Type an amount to see the total at each house.", "false"],
       ["0", "Type an amount above zero.", "true"],
       ["12a", "Use digits only, for example 200 or 1,250.50.", "true"],
       ["2000000000", "Type 1,000,000,000 or less.", "true"],
-      ["12.5", "You get S/ 43.01", "false"],
+      ["12.5", "S/ 0.14 more than at CambiaFX, which pays the least.", "false"],
     ];
 
     for (const [typed, said, invalid] of cases) {
-      home.type("sell", typed);
-      expect(home.summary("sell"), typed).toBe(said);
-      expect(flagged(), typed).toBe(invalid);
+      home.type(typed);
+      expect(home.note("sell"), typed).toBe(said);
+      expect(home.input.getAttribute("aria-invalid"), typed).toBe(invalid);
     }
   });
 });
 
-describe("the best-rate chart on the served home page", () => {
-  it("draws one line per side, ranged 7 days, 30 days and all, from the recorded runs", async () => {
+describe("remembering the visitor's choices", () => {
+  it("keeps the amount, the unit and the side for the next visit", async () => {
+    const home = await openHome();
+    home.type("350");
+    home.flip();
+    home.chooseSide("sell");
+
+    expect(home.win.localStorage.getItem("perexchange:amount")).toBe(home.input.value);
+    expect(home.win.localStorage.getItem("perexchange:unit")).toBe("pen");
+    expect(home.win.localStorage.getItem("perexchange:side")).toBe("sell");
+  });
+
+  it("opens with the amount and the side the visitor left", async () => {
+    const home = await openHome({
+      "perexchange:amount": "1,000",
+      "perexchange:side": "sell",
+    });
+
+    expect(home.input.value).toBe("1,000");
+    expect(home.summary("sell")).toContain("You get S/ 3,441.00 at Western Union");
+    expect(
+      (home.win.document.getElementById("side-sell") as unknown as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(home.fieldLabel()).toBe("Amount to sell");
+  });
+
+  it("starts without an amount when the saved one is empty", async () => {
+    const home = await openHome({ "perexchange:amount": "" });
+
+    expect(home.reading()).toBe("empty");
+    expect(home.summary()).toContain("Best rate per US$1");
+  });
+
+  it("still works when the browser refuses storage", async () => {
+    const home = await openHome({}, "blocked");
+    home.type("300");
+
+    expect(home.figure()).toBe("1,036.50");
+    home.flip();
+    expect(home.summary()).toContain("You get US$ 300.00");
+  });
+
+  it("still calculates when the browser reads storage but refuses to write", async () => {
+    const home = await openHome({}, "full");
+    home.type("300");
+
+    expect(home.figure()).toBe("1,036.50");
+    home.flip();
+    expect(home.summary()).toContain("You get US$ 300.00");
+    home.flip();
+    expect(home.input.value).toBe("300.00");
+    home.chooseSide("sell");
+    home.type("1,000");
+    expect(home.figure("sell")).toBe("3,441.00");
+  });
+});
+
+describe("the next step from the served home page", () => {
+  it("makes the one button lead to the best house's own site", async () => {
+    const home = await openHome();
+    home.type("200");
+    const cta = home.cta();
+
+    expect(cta.getAttribute("href")).toBe("https://cambioselgordito.com/");
+    expect(cta.getAttribute("target")).toBe("_blank");
+    expect(cta.getAttribute("rel")).toContain("noopener");
+    expect(cta.textContent).toContain("Go to Gordito digital");
+    expect(home.cta("sell").getAttribute("href")).toBe(
+      "https://www.westernunionperu.pe/cambiodemoneda",
+    );
+  });
+
+  it("makes each row a link to its house, and the rate history a second link", async () => {
+    const home = await openHome();
+    const rows = home.rows();
+
+    expect(rows[1]?.link.getAttribute("href")).toBe("https://cambiafx.pe/");
+    expect(rows[1]?.link.getAttribute("target")).toBe("_blank");
+    expect(
+      home
+        .results("buy")
+        .querySelector('tr[data-house="CambiaFX"] .history-col a')
+        ?.getAttribute("href"),
+    ).toBe("/house/cambiafx/");
+  });
+
+  it("marks only the house whose rate is older than the rest", async () => {
+    const home = await openHome();
+    const late = home.rows().filter((row) => row.late !== null);
+
+    expect(late.map((row) => row.house)).toEqual(["Okane"]);
+    expect(late[0]?.late).toMatch(/^Rate from \d+ (h|d) ago$/);
+  });
+});
+
+describe("the rate history on the served home page", () => {
+  it("is open on a wide screen and closed on a phone, below the table", async () => {
+    const wide = await openHome({}, "open", 1280);
+    const narrow = await openHome({}, "open", 390);
+    const open = (home: Awaited<ReturnType<typeof openHome>>) =>
+      home.results("buy").querySelector<HTMLDetailsElement>("details.history")!.open;
+
+    expect(open(wide)).toBe(true);
+    expect(open(narrow)).toBe(false);
+  });
+
+  it("says how far the best rate moved in words, for each range", async () => {
     const html = await page("index.html", complete);
     const buy = html
-      .slice(html.indexOf('class="panel" data-side="buy"'))
-      .split("</section>")[0];
+      .slice(html.indexOf('class="results" data-side="buy"'))
+      .split('class="results" data-side="sell"')[0];
     const figure = (range: string) =>
       text(
         buy.match(
@@ -532,29 +680,39 @@ describe("the best-rate chart on the served home page", () => {
       );
 
     expect(text(buy)).toContain("7 days 30 days All");
-    expect(figure("7d")).toContain("3 readings in this range");
-    expect(figure("30d")).toContain("4 readings in this range");
-    expect(figure("all")).toContain("5 readings in this range");
+    expect(figure("7d")).toContain(
+      "Up S/ 0.0050 (0.1%) in 7 days, from S/ 3.4500 to S/ 3.4550.",
+    );
+    expect(figure("30d")).toContain(
+      "Down S/ 0.0100 (0.3%) in 30 days, from S/ 3.4650 to S/ 3.4550.",
+    );
+    expect(figure("all")).toMatch(
+      /Down S\/ 0\.0200 \(0\.6%\) since \d+ \w{3}, from S\/ 3\.4750 to S\/ 3\.4550\./,
+    );
   });
 
   it("charts the cheapest base rate and never a special rate", async () => {
     const html = await page("index.html", complete);
-    const buy = html
-      .slice(html.indexOf('class="panel" data-side="buy"'))
-      .split("</section>")[0];
-    const seven = text(
-      buy.match(/<figure id="chart-buy-7d"[\s\S]*?<\/figure>/)?.[0] ?? "",
-    );
 
-    expect(seven).toContain("now 3.4550, range 3.4500 to 3.4550");
-    expect(text(html)).toContain("now 3.4550, range 3.4500 to 3.4750");
     expect(html).not.toContain("3.4000");
+    expect(text(html)).toContain("now 3.4550, from 3.4500 to 3.4750");
   });
 
-  it("draws a line for the dearest side too", async () => {
+  it("labels the axis in days and never in minutes", async () => {
+    const html = await page("index.html", complete);
+    const seven = html.match(/<figure id="chart-buy-7d"[\s\S]*?<\/figure>/)?.[0] ?? "";
+    const axis = [...seven.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((one) =>
+      one[1]!.trim(),
+    );
+
+    expect(axis.some((label) => /^\d{1,2} [A-Z][a-z]{2}$/.test(label))).toBe(true);
+    expect(axis.some((label) => /\d:\d\d/.test(label))).toBe(false);
+  });
+
+  it("repeats nothing under the chart", async () => {
     const html = await page("index.html", complete);
 
-    expect(text(html)).toContain("Best price for US$1: now 3.4410");
+    expect(text(html)).not.toContain("readings in this range");
   });
 
   it("has a wide and a narrow drawing of each range", async () => {

@@ -75,11 +75,12 @@ const TEXT: [string, string][] = [
   ["fg-muted", "bg-muted"],
   ["accent", "bg"],
   ["accent", "bg-subtle"],
+  // The button that leads to a house is the page background on the accent.
+  ["bg", "accent"],
   ["warn", "bg"],
   ["warn", "bg-muted"],
   ["warn", "warn-bg"],
   ["danger", "danger-bg"],
-  ["positive", "positive-bg"],
   ["positive", "bg"],
   ["positive", "bg-muted"],
 ];

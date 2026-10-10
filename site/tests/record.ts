@@ -57,8 +57,10 @@ houses = ["cambiafx", "tkambio", "tucambista", "okane", "dolarex", "inkamoney", 
 moments = [(40, 0.02), (20, 0.01), (3, -0.005), (1, 0.0), (0, 0.0)]
 for days_back, shift in moments:
     at = newest - timedelta(days=days_back)
+    # One house last read five hours before the rest, which the page marks as late.
     rates = [
-        ExchangeRate(house, house, 3.43 + i * 0.001 + shift, 3.458 + i * 0.002 + shift, at)
+        ExchangeRate(house, house, 3.43 + i * 0.001 + shift, 3.458 + i * 0.002 + shift,
+                     at - timedelta(hours=5) if house == "okane" else at)
         for i, house in enumerate(houses)
     ]
     rates.append(ExchangeRate("cuantoestaeldolar", "Gordito digital", 3.435 + shift, 3.455 + shift, at))
