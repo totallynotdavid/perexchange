@@ -36,8 +36,8 @@ source distribution.
 3. Run the selected adapters concurrently.
 4. Apply the request timeout, the retry policy, and the per-source total timeout.
 5. Record expected failures in the report and let programming errors propagate.
-6. Remove repeated `(source, name)` pairs, and aggregator rows for a house whose own
-   source was selected and returned rates.
+6. Merge the results in selection order. The merge removes repeated `(source, name)` pairs
+   and the aggregator rows that the [API reference](api.md#aggregators) describes.
 
 `fetch_rates()` calls `fetch_rates_report()` and returns only `report.rates`.
 
@@ -48,14 +48,15 @@ built-in sources. A `Source` holds its stable ID, its fetcher, its aliases, and 
 is an aggregator.
 
 The registry resolves IDs and aliases before any network request. It keeps the order of
-the caller's selection and rejects unknown or repeated sources. Names compare after
-lowercasing and removing accents and every character that is not a letter or digit.
+the caller's selection and rejects unknown or repeated sources. The fetch layer also uses
+the registry to match an aggregator row to a house. The
+[API reference](api.md#fetch-rates) describes how names match.
 
 ## Adapter boundary
 
 An adapter takes a shared client and the fetch settings and returns a list of
-`ExchangeRate` objects. Every object carries the adapter's source ID. Both the factory and
-the fetch layer check this.
+`ExchangeRate` objects. Every object carries the adapter's source ID. The fetch layer
+validates each adapter's source ID, and factory-generated adapters validate parser output.
 
 Most adapters use a factory from
 [`scrapers/factories.py`](../packages/core/perexchange/scrapers/factories.py):
@@ -85,8 +86,8 @@ valid row in the response. The fetch layer applies the rules that span sources.
 not derive from `httpx.HTTPError`, such as the protocol error of an HTTP/2 client, and
 `send()` makes them retryable and reportable like any other transport error.
 
-`fetch_with_retry()` retries transport errors and `408`, `429` and `5xx` responses. A
-parse error stops the source at once and becomes a `SourceParseError`.
+`fetch_with_retry()` applies the [retry policy](api.md#retries). A parse error stops the
+source at once and becomes a `SourceParseError`.
 
 The fetch layer catches `httpx.HTTPError`, `SourceError` and timeouts for each source,
 records them as `SourceFailure` values, and continues with the other sources. It does not
@@ -99,11 +100,11 @@ stays open, so a polling application can reuse its connections.
 
 The [site](../site/README.md) renders snapshots of `fetch_rates_report()`. The only writer
 of the state below is the `snapshot` job of
-[`.github/workflows/site.yml`](../.github/workflows/site.yml), which is scheduled every 15
-minutes, though GitHub often runs it hours apart, and also runs on a push to `master` that
-changes the site, the snapshot tool, the library or the docs the site renders. Pull
-requests, the `check` job and runs of other branches never write it. The site reads the
-data branch when a page renders.
+[`.github/workflows/site.yml`](../.github/workflows/site.yml). It runs
+[`tools/snapshot.py`](../tools/snapshot.py) on a 15-minute schedule, on a manual dispatch,
+and on a push to `master` that matches the workflow's `paths` filter. Pull requests, the
+`check` job and runs of other branches never write it. The site reads the data branch when
+a page renders.
 
 ### The state
 
@@ -113,9 +114,6 @@ data branch when a page renders.
 | The live site        | Vercel project `perexchange`   | The docs pages, and a function that renders the rates pages from the data branch       |
 | The publication lock | concurrency group `site-<ref>` | At most one running `snapshot` run, and at most one waiting                            |
 | The job's worktree   | `site/data` on the runner      | A private checkout of the data branch. No other run reads or writes it                 |
-
-The build cache of `setup-uv` is keyed by the lockfile. A miss costs time and nothing
-else.
 
 ### Transitions
 
@@ -141,18 +139,21 @@ A run takes these steps in order, and each depends on the one before:
 The lock lets one run hold these steps at a time. A running run is never cancelled,
 because that could stop it between the record and the push. A newer waiting run replaces
 an older waiting one, so a busy period costs snapshots, not consistency. Only `master`
-records, whether the run was scheduled or started by hand.
+records, whether the run was scheduled, started by hand or caused by a push.
 
 ### What a reader sees
 
 - A reader of the data branch sees the old commit or the new one, whole. One commit holds
   both files, and a ref update is atomic. A cached copy, such as a raw file URL, may lag
   by a short time.
-- A rates page and `/data/latest.json` are cached for 15 minutes, and the function keeps
-  the files it read for 5 minutes, and GitHub caches a raw file for 5. A visitor sees data
-  up to about 25 minutes older than the data branch. Two pages from different times can
-  appear in one visit, one after the other.
+- Vercel caches a rates page for 15 minutes
+  ([`astro.config.mjs`](../site/astro.config.mjs)). The function keeps each file it read
+  for 5 minutes ([`load.ts`](../site/src/lib/load.ts)), and GitHub caches a raw file
+  for 5. A visitor sees data up to about 25 minutes older than the data branch. Two pages
+  from different times can appear in one visit, one after the other.
+- `/data/latest.json` tells clients to reuse it for 60 seconds
+  ([`vercel.json`](../site/vercel.json)).
 - The live site is never newer than the data branch. A run that fails leaves the branch
   where it was, and the pages keep showing it until the next run succeeds.
-- The page shows the age of its snapshot and warns when it is three hours old or more, so
-  a stopped schedule is visible.
+- The rules for old and unranked rates, and the warning on a stale snapshot, are in
+  [Open data](../site/src/docs/data.md#how-fresh-it-is).

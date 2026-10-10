@@ -7,23 +7,19 @@ docs. It is an [Astro](https://astro.build) site, live at
 
 ## How it works
 
-A scheduled workflow runs [`tools/snapshot.py`](../tools/snapshot.py), which is meant to
-be every 15 minutes. GitHub runs scheduled jobs when it has capacity, so the gap between
-runs is often several hours. The site counts every age from the moment of the request.
-
-The tool calls `perexchange.fetch_rates_report()` once and writes two files:
+A workflow runs [`tools/snapshot.py`](../tools/snapshot.py). The tool calls
+`perexchange.fetch_rates_report()` once and writes two files:
 
 - `latest.json`, the newest fetch.
 - `history/YYYY-MM-DD.jsonl`, one more line per fetch, in the file for that UTC day.
 
 The workflow commits both to the orphan `data` branch. The rates pages render on request
-from that branch and Vercel caches each for 15 minutes. The docs pages are built once per
-deploy. Each page is plain HTML with the figures and the SVG charts already in it. A small
-script keeps the ages true while the page is open, and another remembers the side and the
-amount a visitor chose. Without scripts the page still shows every rate and chart.
-
-A live API would fetch about 28 sites for each visitor and take around 8 seconds. A
-snapshot is fetched once for everyone, and the pages are served from the cache.
+from that branch and Vercel caches them
+([Architecture](../docs/architecture.md#what-a-reader-sees)). The docs pages are built
+once per deploy. Each page is plain HTML with the figures and the SVG charts already in
+it. A small script keeps the ages true while the page is open, and another remembers the
+side and the amount a visitor chose. Without scripts the page still shows every rate and
+chart.
 
 The charts cover the last 30 days. The page reads at most that many history files.
 
@@ -59,24 +55,21 @@ files across filesystems.
 
 ## Deploy
 
-The site is the Vercel project `perexchange` in the `empiricalhq` team, connected to this
-repository. A push to `master` deploys it, with no token or workflow. The project's root
-directory is `site/`. [`vercel.json`](vercel.json) holds an `ignoreCommand` that skips the
-deploy when the push changed nothing in `site/`, the READMEs or `docs/`, which the docs
-pages render. A push to the `data` branch never deploys.
+The site is the Vercel project `perexchange`, connected to this repository. A push to
+`master` deploys it, with no token or workflow. The project's root directory is `site/`.
+[`vercel.json`](vercel.json) holds an `ignoreCommand` that skips the deploy when the push
+changed nothing in `site/`, the root `README.md`, `docs/` or `packages/cli/README.md`,
+which the docs pages render. A push to the `data` branch never deploys.
 
 The workflow [`.github/workflows/site.yml`](../.github/workflows/site.yml) only records
-snapshots. Only `master` records, whether the run is scheduled, started by hand or caused
-by a push. A push records one when it changes the site, the snapshot tool, the library or
-the docs the site renders, so a new shape of data is on the `data` branch as soon as the
-site that reads it deploys.
+snapshots. [Architecture](../docs/architecture.md#site-data) lists what starts a run.
 
-Some exchange houses block the address ranges of GitHub-hosted runners. A snapshot then
-lists them under `failures` with the reason `blocked`. The site leaves their prices out
-and lists them under "not compared", with the reason and the day they went missing, which
-it reads from the history. The run prints a warning that names them. To fetch from a
-machine they accept, register a self-hosted runner and set the repository variable
-`REFRESH_RUNNER` to its labels as JSON, for example `["self-hosted","peru"]`.
+Some exchange houses block the address ranges of GitHub-hosted runners, and a snapshot
+lists them as `blocked` [failures](src/docs/data.md#latest-snapshot). The site lists them
+under "not compared", with the reason and the day they went missing, which it reads from
+the history. The run prints a warning that names them. To fetch from a machine they
+accept, register a self-hosted runner and set the repository variable `REFRESH_RUNNER` to
+its labels as JSON, for example `["self-hosted","peru"]`.
 
 [`vercel.json`](vercel.json) sets the response headers, including the content security
 policy. The policy allows no inline script, so every script must be an external file.
