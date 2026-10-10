@@ -101,11 +101,14 @@ stays open, so a polling application can reuse its connections.
 The [site](../site/README.md) renders snapshots of `fetch_rates_report()`. The only writer
 of the state below is the `snapshot` job of
 [`.github/workflows/site.yml`](../.github/workflows/site.yml). It runs
-[`tools/snapshot.py`](../tools/snapshot.py) on a schedule that asks for a run every 15
-minutes, on a manual dispatch, and on a push to `master` that matches the workflow's
-`paths` filter. [Opening hours](#opening-hours) thin the scheduled runs. Pull requests,
-the `check` job and runs of other branches never write it. The site reads the data branch
-when a page renders.
+[`tools/snapshot.py`](../tools/snapshot.py) on a schedule that asks for a run at minutes
+7, 22, 37 and 52 of every hour, on a manual dispatch, and on a push to `master` that
+matches the workflow's `paths` filter. GitHub starts scheduled runs on a best-effort
+basis. It delays them under load and may drop some, so the gap between runs can exceed 15
+minutes. [`tools/schedule_report.py`](../tools/schedule_report.py) prints the scheduled
+runs per day and the median and maximum gap in minutes. [Opening hours](#opening-hours)
+thin the scheduled runs. Pull requests, the `check` job and runs of other branches never
+write it. The site reads the data branch when a page renders.
 
 ### The state
 
