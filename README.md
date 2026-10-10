@@ -9,7 +9,7 @@ from Peruvian exchange houses. It queries every house at once, needs no API key,
 returns the rates that arrived. A house that fails is left out and reported.
 
 It reads the public pages and endpoints of each house, so it returns what they publish and
-nothing else: PEN/USD only, with no history. Requires Python 3.10 or later.
+nothing else: PEN/USD only, with no history. Requires Python 3.12 or later.
 
 ## Get started
 

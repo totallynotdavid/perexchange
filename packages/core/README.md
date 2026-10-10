@@ -2,7 +2,7 @@
 
 perexchange is an asynchronous Python library that fetches live PEN/USD exchange rates
 from Peruvian exchange houses. It queries the houses concurrently and returns the rates
-that arrived. It needs no API key and requires Python 3.10 or later.
+that arrived. It needs no API key and requires Python 3.12 or later.
 
 ## Install
 

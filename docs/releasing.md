@@ -35,7 +35,7 @@ mise run release 2.1.0 --dry-run
 Pushing a tag that matches `v*.*.*` starts
 [`.github/workflows/publish.yml`](../.github/workflows/publish.yml), which:
 
-1. Runs the tests, formatting check, lint and type check on Python 3.10 and 3.14.
+1. Runs the tests, formatting check, lint and type check on Python 3.12 and 3.14.
 2. Builds one wheel and one source distribution, and checks both.
 3. Installs the wheel and checks that its version matches the tag.
 4. Publishes both to PyPI.
