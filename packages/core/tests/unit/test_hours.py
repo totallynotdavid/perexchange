@@ -66,8 +66,8 @@ def test_saturday_closes_at_one_in_lima_whatever_zone_the_runner_reports():
     assert hours.closed_reason(after) == "Saturday after 13:00"
 
 
-def test_a_holiday_names_itself_and_a_sunday_names_the_day():
-    assert hours.closed_reason(lima(8, 10)) == "a public holiday (Combate de Angamos)"
+def test_a_holiday_and_a_sunday_name_their_reason():
+    assert hours.closed_reason(lima(8, 10)) == "a public holiday"
     assert hours.closed_reason(lima(11, 10)) == "Sunday"
 
 
