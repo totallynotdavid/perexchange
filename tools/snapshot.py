@@ -17,7 +17,7 @@ import json
 import re
 import sys
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -67,7 +67,7 @@ def failure_reason(failure: SourceFailure) -> str:
 
 
 def utc_iso(moment: datetime) -> str:
-    return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return moment.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def unique_rates(rates: tuple[ExchangeRate, ...]) -> list[ExchangeRate]:
@@ -158,7 +158,7 @@ def write_snapshot(
         msg = f"no source returned a rate (failed: {failed})"
         raise SnapshotError(msg)
 
-    fetched_at = fetched_at.astimezone(timezone.utc)
+    fetched_at = fetched_at.astimezone(UTC)
     history_dir = data_dir / "history"
     history_dir.mkdir(parents=True, exist_ok=True)
 
@@ -177,7 +177,7 @@ def write_snapshot(
 
 async def run(data_dir: Path, client: httpx.AsyncClient | None = None) -> FetchReport:
     report = await perexchange.fetch_rates_report(client=client)
-    return write_snapshot(report, data_dir, datetime.now(timezone.utc))
+    return write_snapshot(report, data_dir, datetime.now(UTC))
 
 
 def main() -> None:

@@ -13,7 +13,7 @@ import sys
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, time, timedelta, timezone
+from datetime import UTC, datetime, time, timedelta, timezone
 from pathlib import Path
 
 import holidays
@@ -56,9 +56,7 @@ def last_fetch(data_dir: Path) -> datetime | None:
     try:
         text = (data_dir / "latest.json").read_text(encoding="utf-8")
         stamp = json.loads(text)["generated_at"]
-        return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(
-            tzinfo=timezone.utc
-        )
+        return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
     except (FileNotFoundError, ValueError, KeyError, TypeError):
         return None
 
@@ -91,7 +89,7 @@ def main(argv: Sequence[str] | None = None, now: datetime | None = None) -> None
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     args = parser.parse_args(argv)
 
-    decision = decide(args.data_dir, now or datetime.now(timezone.utc))
+    decision = decide(args.data_dir, now or datetime.now(UTC))
     print(
         f"{'fetching' if decision.fetch else 'skipping'}: {decision.reason}",
         file=sys.stderr,

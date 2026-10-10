@@ -18,7 +18,7 @@ import sys
 
 from collections import defaultdict
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -42,9 +42,7 @@ def fetch_runs(workflow: str, limit: int) -> str:
 def run_times(text: str) -> list[datetime]:
     """When each scheduled run was created, oldest first."""
     times = [
-        datetime.strptime(run["createdAt"], "%Y-%m-%dT%H:%M:%SZ").replace(
-            tzinfo=timezone.utc
-        )
+        datetime.strptime(run["createdAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
         for run in json.loads(text)
         if run.get("event", "schedule") == "schedule"
     ]
