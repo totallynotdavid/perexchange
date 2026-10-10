@@ -6,7 +6,10 @@ on:
     paths: &paths
       - "site/**"
       - "tools/snapshot.py"
-      - "packages/core/src/**"
+      - "packages/core/perexchange/**"
+      - "packages/core/pyproject.toml"
+      - "pyproject.toml"
+      - "uv.lock"
       - "README.md"
       - "docs/**"
       - "packages/cli/README.md"
@@ -61,10 +64,11 @@ jobs:
     runs-on:
       ${{ vars.REFRESH_RUNNER && fromJSON(vars.REFRESH_RUNNER) || 'ubuntu-latest' }}
     # Only master records snapshots. A manual run of another branch would otherwise push its
-    # snapshot to the data branch.
+    # snapshot to the data branch. A push records one too, so a site that reads a new shape
+    # of data does not wait for the next scheduled run to find it.
     if: >-
       github.ref == 'refs/heads/master' && (github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch')
+      github.event_name == 'workflow_dispatch' || github.event_name == 'push')
     timeout-minutes: 10
 
     permissions:
