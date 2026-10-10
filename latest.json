@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T00:47:15Z",
+ "generated_at": "2026-10-10T01:23:35Z",
  "library_version": "2.0.0",
  "rates": [
   {
@@ -7,24 +7,24 @@
    "source": "cambioseguro",
    "name": "cambioseguro",
    "buy": 3.413,
-   "sell": 3.457,
-   "timestamp": "2026-10-10T00:47:09Z"
+   "sell": 3.466,
+   "timestamp": "2026-10-10T01:23:29Z"
   },
   {
    "id": "cambioseguro-comparative",
    "source": "cambioseguro",
    "name": "cambioseguro_comparative",
-   "buy": 3.4023,
-   "sell": 3.4766,
-   "timestamp": "2026-10-10T00:47:09Z"
+   "buy": 3.3903,
+   "sell": 3.4838,
+   "timestamp": "2026-10-10T01:23:29Z"
   },
   {
    "id": "cambioseguro-paralelo",
    "source": "cambioseguro",
    "name": "cambioseguro_paralelo",
-   "buy": 3.4024,
-   "sell": 3.4791,
-   "timestamp": "2026-10-10T00:47:09Z"
+   "buy": 3.3908,
+   "sell": 3.4772,
+   "timestamp": "2026-10-10T01:23:29Z"
   },
   {
    "id": "cambiafx",
@@ -32,7 +32,7 @@
    "name": "cambiafx",
    "buy": 3.433,
    "sell": 3.458,
-   "timestamp": "2026-10-10T00:47:09Z"
+   "timestamp": "2026-10-10T01:23:29Z"
   },
   {
    "id": "cambiosol",
@@ -40,7 +40,7 @@
    "name": "cambiosol",
    "buy": 3.4,
    "sell": 3.6,
-   "timestamp": "2026-10-10T00:47:11Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "chapacambio",
@@ -56,7 +56,7 @@
    "name": "chaskidolar",
    "buy": 3.4280000000000004,
    "sell": 3.456,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "cambio-mundial",
@@ -88,7 +88,7 @@
    "name": "Gordito digital",
    "buy": 3.44,
    "sell": 3.455,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "defiperu",
@@ -96,7 +96,7 @@
    "name": "defiperu",
    "buy": 3.438,
    "sell": 3.457,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "dichikash",
@@ -104,7 +104,7 @@
    "name": "dichikash",
    "buy": 3.431,
    "sell": 3.453,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "dinekash",
@@ -112,7 +112,7 @@
    "name": "dinekash",
    "buy": 3.427,
    "sell": 3.455,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "dolarex",
@@ -120,7 +120,7 @@
    "name": "dolarex",
    "buy": 3.3,
    "sell": 3.5,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "dollarhouse",
@@ -128,7 +128,7 @@
    "name": "dollarhouse",
    "buy": 3.439,
    "sell": 3.447,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "inkamoney",
@@ -136,7 +136,7 @@
    "name": "inkamoney",
    "buy": 3.43,
    "sell": 3.455,
-   "timestamp": "2026-10-10T00:47:15Z"
+   "timestamp": "2026-10-10T01:23:35Z"
   },
   {
    "id": "inticambio",
@@ -144,7 +144,7 @@
    "name": "inticambio",
    "buy": 3.438,
    "sell": 3.446,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "kambioonline",
@@ -152,15 +152,15 @@
    "name": "kambioonline",
    "buy": 3.43,
    "sell": 3.46,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-09T23:00:07Z"
   },
   {
    "id": "marketdollar",
    "source": "marketdollar",
    "name": "marketdollar",
-   "buy": 3.435,
+   "buy": 3.43,
    "sell": 3.455,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "masscambio",
@@ -168,7 +168,7 @@
    "name": "masscambio",
    "buy": 3.42,
    "sell": 3.46,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "metafx",
@@ -176,7 +176,7 @@
    "name": "metafx",
    "buy": 3.438,
    "sell": 3.447,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "moneyhouse",
@@ -184,7 +184,7 @@
    "name": "moneyhouse",
    "buy": 3.441,
    "sell": 3.448,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "moneyplus",
@@ -192,7 +192,7 @@
    "name": "moneyplus",
    "buy": 3.445,
    "sell": 3.455,
-   "timestamp": "2026-10-10T00:47:08Z"
+   "timestamp": "2026-10-10T01:23:28Z"
   },
   {
    "id": "okane",
@@ -200,7 +200,7 @@
    "name": "okane",
    "buy": 3.41,
    "sell": 3.465,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-09T23:07:05Z"
   },
   {
    "id": "srcambio",
@@ -208,7 +208,7 @@
    "name": "srcambio",
    "buy": 3.43,
    "sell": 3.45,
-   "timestamp": "2026-10-10T00:47:08Z"
+   "timestamp": "2026-10-10T01:23:28Z"
   },
   {
    "id": "tkambio",
@@ -216,7 +216,7 @@
    "name": "tkambio",
    "buy": 3.427,
    "sell": 3.458,
-   "timestamp": "2026-10-10T00:47:13Z"
+   "timestamp": "2026-10-10T01:23:31Z"
   },
   {
    "id": "tkambio-5000",
@@ -224,7 +224,7 @@
    "name": "tkambio_5000",
    "buy": 3.43,
    "sell": 3.455,
-   "timestamp": "2026-10-10T00:47:13Z"
+   "timestamp": "2026-10-10T01:23:31Z"
   },
   {
    "id": "tkambio-10000",
@@ -232,7 +232,7 @@
    "name": "tkambio_10000",
    "buy": 3.431,
    "sell": 3.454,
-   "timestamp": "2026-10-10T00:47:13Z"
+   "timestamp": "2026-10-10T01:23:31Z"
   },
   {
    "id": "tucambista",
@@ -240,7 +240,7 @@
    "name": "tucambista",
    "buy": 3.427,
    "sell": 3.4595,
-   "timestamp": "2026-10-10T00:47:10Z"
+   "timestamp": "2026-10-10T01:23:30Z"
   },
   {
    "id": "westernunion",
@@ -248,19 +248,21 @@
    "name": "westernunion",
    "buy": 3.43,
    "sell": 3.46,
-   "timestamp": "2026-10-10T00:47:11Z"
+   "timestamp": "2026-10-10T01:23:32Z"
   }
  ],
  "failures": [
   {
    "source": "cambiomundial",
+   "reason": "blocked",
    "error_type": "HTTPStatusError",
-   "message": "Client error '403 Forbidden' for url 'https://www.cambiomundial.com/backend/tasaCambio/daily'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+   "message": "Client error '403 Forbidden' for url 'https://www.cambiomundial.com/backend/tasaCambio/daily'"
   },
   {
    "source": "mercadocambiario",
+   "reason": "blocked",
    "error_type": "HTTPStatusError",
-   "message": "Client error '403 Forbidden' for url 'https://www.mercadocambiario.pe/api/mercado/get/admin-data'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+   "message": "Client error '403 Forbidden' for url 'https://www.mercadocambiario.pe/api/mercado/get/admin-data'"
   }
  ]
 }
