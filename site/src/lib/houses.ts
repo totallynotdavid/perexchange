@@ -5,37 +5,51 @@ export function houseKey(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-const NAMES: Record<string, string> = {
-  cambiafx: "CambiaFX",
-  cambiomundial: "Cambio Mundial",
-  cambioseguro: "Cambio Seguro",
-  cambiosol: "Cambiosol",
-  chapacambio: "Chapa Cambio",
-  chaskidolar: "Chaski Dólar",
-  defiperu: "Defi Perú",
-  dichikash: "Dichikash",
-  dinekash: "Dinekash",
-  dolarex: "Dolarex",
-  dollarhouse: "Dollar House",
-  inkamoney: "Inka Money",
-  inticambio: "Inticambio",
-  kambioonline: "Kambio Online",
-  marketdollar: "Market Dollar",
-  masscambio: "Mass Cambio",
-  mercadocambiario: "Mercado Cambiario",
-  metafx: "MetaFX",
-  moneyhouse: "Money House",
-  moneyplus: "Money Plus",
-  okane: "Okane",
-  srcambio: "SR Cambio",
-  tkambio: "TKambio",
-  tucambista: "Tu Cambista",
-  westernunion: "Western Union",
+interface House {
+  name: string;
+  /** The house's own page, where it publishes the rate. */
+  site: string;
+}
+
+const HOUSES: Record<string, House> = {
+  cambiafx: { name: "CambiaFX", site: "https://cambiafx.pe/" },
+  cambiodigital: { name: "Cambio Digital", site: "https://cambiodigitalperu.com/" },
+  cambiomundial: { name: "Cambio Mundial", site: "https://www.cambiomundial.com/" },
+  cambioseguro: { name: "Cambio Seguro", site: "https://cambioseguro.com/" },
+  cambiosol: { name: "Cambiosol", site: "https://cambiosol.pe/" },
+  chapacambio: { name: "Chapa Cambio", site: "https://chapacambio.com/" },
+  chaskidolar: { name: "Chaski Dólar", site: "https://chaskidolar.com/" },
+  defiperu: { name: "Defi Perú", site: "https://www.defiperu.pe/" },
+  dichikash: { name: "Dichikash", site: "https://dichikash.com/" },
+  dinekash: { name: "Dinekash", site: "https://dinekash.pe/" },
+  dolarex: { name: "Dolarex", site: "https://dolarex.pe/" },
+  dollarhouse: { name: "Dollar House", site: "https://dollarhouse.pe/" },
+  gorditodigital: { name: "Gordito digital", site: "https://cambioselgordito.com/" },
+  inkamoney: { name: "Inka Money", site: "https://inkamoney.com/" },
+  inticambio: { name: "Inticambio", site: "https://inticambio.pe/" },
+  kambioonline: { name: "Kambio Online", site: "https://kambio.com.pe/" },
+  marketdollar: { name: "Market Dollar", site: "https://market-dollar.com/" },
+  masscambio: { name: "Mass Cambio", site: "https://cambiosmass.com/" },
+  mercadocambiario: {
+    name: "Mercado Cambiario",
+    site: "https://www.mercadocambiario.pe/",
+  },
+  metafx: { name: "MetaFX", site: "https://metafxperu.com/" },
+  moneyhouse: { name: "Money House", site: "https://moneyhouse.pe/" },
+  moneyplus: { name: "Money Plus", site: "https://moneyplus.com.pe/" },
+  okane: { name: "Okane", site: "https://okanecambiodigital.com/" },
+  srcambio: { name: "SR Cambio", site: "https://srcambio.pe/" },
+  tkambio: { name: "TKambio", site: "https://tkambio.com/" },
+  tucambista: { name: "Tu Cambista", site: "https://tucambista.pe/" },
+  westernunion: {
+    name: "Western Union",
+    site: "https://www.westernunionperu.pe/cambiodemoneda",
+  },
 };
 
 /** The name a person knows a house by, from a source id or the name an aggregator lists. */
 export function houseName(text: string): string {
-  return NAMES[houseKey(text)] ?? text;
+  return HOUSES[houseKey(text)]?.name ?? text;
 }
 
 /**
@@ -59,4 +73,20 @@ export function variantLabel(quote: Quote): string {
 /** The house a quote belongs to: the one a variant is a variant of, or the quote's own. */
 export function quoteHouse(quote: Quote): string {
   return houseName(isVariant(quote) ? quote.source : quote.name);
+}
+
+/** The house's own page, or null for a house this site has no address for. */
+export function houseSite(quote: Quote): string | null {
+  return HOUSES[houseKey(isVariant(quote) ? quote.source : quote.name)]?.site ?? null;
+}
+
+/**
+ * Where a row or button for a house leads: its own page when this site knows the address,
+ * and otherwise the house's page on this site.
+ */
+export function houseLink(quote: Quote): { href: string; external: boolean } {
+  const site = houseSite(quote);
+  return site === null
+    ? { href: `/house/${quote.id}/`, external: false }
+    : { href: site, external: true };
 }

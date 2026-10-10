@@ -4,7 +4,7 @@ import ChartBlock from "./ChartBlock.astro";
 import { formatPrice } from "../lib/format.ts";
 import { HOUSE_RANGES } from "../lib/range.ts";
 import type { History, Latest, Quote } from "../lib/data.ts";
-import { isVariant, quoteHouse, variantLabel } from "../lib/houses.ts";
+import { houseSite, isVariant, quoteHouse, variantLabel } from "../lib/houses.ts";
 import { houseSeries, placeOf, rateFor } from "../lib/market.ts";
 import type { Side } from "../lib/market.ts";
 
@@ -20,6 +20,7 @@ const now = Date.now();
 const variant = isVariant(quote);
 const house = quoteHouse(quote);
 const heading = variant ? `${house}, ${variantLabel(quote)}` : house;
+const site = houseSite(quote);
 const variants = latest.rates.filter((rate) => rate.id !== quote.id && rate.source === quote.source);
 
 const sides: { side: Side; title: string }[] = [
@@ -64,6 +65,15 @@ const series = [
 <h1>{heading}</h1>
 <p class="where">
   Rate from <Age at={quote.timestamp} now={now} />
+  {site !== null && (
+    <>
+      {" · "}
+      <a href={site} target="_blank" rel="noopener noreferrer">
+        Go to {house}
+        <span class="visually-hidden">, opens its website</span>
+      </a>
+    </>
+  )}
 </p>
 
 <div class="figures">
