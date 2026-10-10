@@ -69,6 +69,7 @@ closed or has stopped publishing. It shows an age of three hours or more as old,
 warns when the whole snapshot is three hours old.
 
 A job fetches every source and publishes the result. The
-[architecture](../../../docs/architecture.md#site-data) lists what starts it. GitHub runs
-scheduled jobs when it has capacity, so the gap between runs is often several hours. The
-page therefore counts each age from now, not from the time of the fetch.
+[architecture](../../../docs/architecture.md#site-data) lists what starts it, and
+[when it fetches less](../../../docs/architecture.md#opening-hours). GitHub runs scheduled
+jobs when it has capacity, so the gap between runs is often several hours. The page
+therefore counts each age from now, not from the time of the fetch.

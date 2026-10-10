@@ -101,10 +101,11 @@ stays open, so a polling application can reuse its connections.
 The [site](../site/README.md) renders snapshots of `fetch_rates_report()`. The only writer
 of the state below is the `snapshot` job of
 [`.github/workflows/site.yml`](../.github/workflows/site.yml). It runs
-[`tools/snapshot.py`](../tools/snapshot.py) on a 15-minute schedule, on a manual dispatch,
-and on a push to `master` that matches the workflow's `paths` filter. Pull requests, the
-`check` job and runs of other branches never write it. The site reads the data branch when
-a page renders.
+[`tools/snapshot.py`](../tools/snapshot.py) on a schedule that asks for a run every 15
+minutes, on a manual dispatch, and on a push to `master` that matches the workflow's
+`paths` filter. [Opening hours](#opening-hours) thin the scheduled runs. Pull requests,
+the `check` job and runs of other branches never write it. The site reads the data branch
+when a page renders.
 
 ### The state
 
@@ -140,6 +141,25 @@ The lock lets one run hold these steps at a time. A running run is never cancell
 because that could stop it between the record and the push. A newer waiting run replaces
 an older waiting one, so a busy period costs snapshots, not consistency. Only `master`
 records, whether the run was scheduled, started by hand or caused by a push.
+
+### Opening hours
+
+The exchange houses close from 13:00 on Saturday, all day Sunday and on Peruvian public
+holidays, all in Lima time (UTC-5, with no daylight saving time). The holidays come from
+the PE calendar of the [`holidays`](https://pypi.org/project/holidays/) package.
+[`tools/hours.py`](../tools/hours.py) holds this rule and is its only copy.
+
+After a scheduled run checks out the data branch, a step runs `tools/hours.py`, which
+answers `fetch=true` or `fetch=false`:
+
+- Outside the closed window the answer is always `true`.
+- Inside it the answer is `true` only when the newest snapshot, the `generated_at` of
+  `latest.json`, is 50 minutes old or older. A snapshot that is missing or unreadable
+  counts as due.
+
+On `false` the run fetches and records nothing. Pushes and manual runs skip this step and
+always fetch. The interval stays below the three hours after which the site calls a
+snapshot [old](../site/src/docs/data.md#how-fresh-it-is).
 
 ### What a reader sees
 
