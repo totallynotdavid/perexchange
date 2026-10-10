@@ -83,8 +83,10 @@ for failure in report.failures:
 ```
 
 `report.rates` is a tuple of `ExchangeRate`. `report.failures` is a tuple of
-`SourceFailure`, each with `source`, `error_type` and `message`. Each failure is also
-logged at `WARNING` on the `perexchange` logger.
+`SourceFailure`, each with `source`, `error_type`, `message` and `status_code`. The status
+code is the HTTP status of an error response, such as `403` from a house that blocks your
+address, and `None` when the source did not answer or sent an unreadable response. Each
+failure is also logged at `WARNING` on the `perexchange` logger.
 
 A transport failure, a timeout and an unparseable response are recorded as failures and
 never fail the whole call. Any exception raised while a request is sent counts as a

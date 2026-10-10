@@ -1,12 +1,16 @@
 # perexchange site
 
-The site shows the current PEN/USD rates, a converter, history charts and the library
+The site shows who gives the best PEN/USD rate right now and how old that rate is, with
+every house ranked below it, a page and history chart for each house, and the library
 docs. It is an [Astro](https://astro.build) site, live at
 <https://perexchange.vercel.app>.
 
 ## How it works
 
-A scheduled workflow runs [`tools/snapshot.py`](../tools/snapshot.py) every 15 minutes.
+A scheduled workflow runs [`tools/snapshot.py`](../tools/snapshot.py), which is meant to
+be every 15 minutes. GitHub runs scheduled jobs when it has capacity, so the gap between
+runs is often several hours. The site counts every age from the moment of the request.
+
 The tool calls `perexchange.fetch_rates_report()` once and writes two files:
 
 - `latest.json`, the newest fetch.
@@ -15,8 +19,8 @@ The tool calls `perexchange.fetch_rates_report()` once and writes two files:
 The workflow commits both to the orphan `data` branch. The rates pages render on request
 from that branch and Vercel caches each for 15 minutes. The docs pages are built once per
 deploy. Each page is plain HTML with the figures and the SVG charts already in it. A small
-script sorts the table, runs the converter and updates the "quoted N minutes ago" text.
-Without scripts the page still shows every rate and chart.
+script keeps the ages true while the page is open, and another remembers the side and the
+amount a visitor chose. Without scripts the page still shows every rate and chart.
 
 A live API would fetch about 28 sites for each visitor and take around 8 seconds. A
 snapshot is fetched once for everyone, and the pages are served from the cache.
@@ -62,14 +66,17 @@ deploy when the push changed nothing in `site/`, the READMEs or `docs/`, which t
 pages render. A push to the `data` branch never deploys.
 
 The workflow [`.github/workflows/site.yml`](../.github/workflows/site.yml) only records
-snapshots. Only `master` records, whether the run is scheduled or started by hand.
+snapshots. Only `master` records, whether the run is scheduled, started by hand or caused
+by a push. A push records one when it changes the site, the snapshot tool, the library or
+the docs the site renders, so a new shape of data is on the `data` branch as soon as the
+site that reads it deploys.
 
 Some exchange houses block the address ranges of GitHub-hosted runners. A snapshot then
-lists them under `failures`. The site leaves their prices out, so it calls a price the
-cheapest or the best only "among the houses that answered" and says which houses are
-missing. The run prints a warning that names them. To fetch from a machine they accept,
-register a self-hosted runner and set the repository variable `REFRESH_RUNNER` to its
-labels as JSON, for example `["self-hosted","peru"]`.
+lists them under `failures` with the reason `blocked`. The site leaves their prices out
+and lists them under "not compared", with the reason and the day they went missing, which
+it reads from the history. The run prints a warning that names them. To fetch from a
+machine they accept, register a self-hosted runner and set the repository variable
+`REFRESH_RUNNER` to its labels as JSON, for example `["self-hosted","peru"]`.
 
 [`vercel.json`](vercel.json) sets the response headers, including the content security
 policy. The policy allows no inline script, so every script must be an external file.

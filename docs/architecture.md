@@ -99,9 +99,11 @@ stays open, so a polling application can reuse its connections.
 
 The [site](../site/README.md) renders snapshots of `fetch_rates_report()`. The only writer
 of the state below is the `snapshot` job of
-[`.github/workflows/site.yml`](../.github/workflows/site.yml), which runs every 15
-minutes. Pull requests, the `check` job and manual runs of other branches never write it.
-The site reads the data branch when a page renders. A deploy does not record a snapshot.
+[`.github/workflows/site.yml`](../.github/workflows/site.yml), which is scheduled every 15
+minutes, though GitHub often runs it hours apart, and also runs on a push to `master` that
+changes the site, the snapshot tool, the library or the docs the site renders. Pull
+requests, the `check` job and runs of other branches never write it. The site reads the
+data branch when a page renders.
 
 ### The state
 
@@ -152,5 +154,5 @@ records, whether the run was scheduled or started by hand.
   appear in one visit, one after the other.
 - The live site is never newer than the data branch. A run that fails leaves the branch
   where it was, and the pages keep showing it until the next run succeeds.
-- The page shows the time of its snapshot and warns when it is more than an hour old, so a
-  stopped schedule is visible.
+- The page shows the age of its snapshot and warns when it is three hours old or more, so
+  a stopped schedule is visible.
