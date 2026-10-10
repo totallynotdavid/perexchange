@@ -11,7 +11,7 @@ maintainers = [
     { name = "David Duran", email = "dadch1404@gmail.com" },
 ]
 
-dependencies = []
+dependencies = ["holidays>=0.100"]
 
 [project.optional-dependencies]
 dev = [
@@ -116,7 +116,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-files = ["packages/core/perexchange", "packages/cli/perexchange_cli", "examples"]
+files = ["packages/core/perexchange", "packages/cli/perexchange_cli", "examples", "tools/hours.py"]
 strict = true
 enable_error_code = [
     "ignore-without-code",

@@ -6,6 +6,7 @@ on:
     paths: &paths
       - "site/**"
       - "tools/snapshot.py"
+      - "tools/hours.py"
       - "packages/core/perexchange/**"
       - "packages/core/pyproject.toml"
       - "pyproject.toml"
@@ -54,7 +55,9 @@ jobs:
       - run: bun install --frozen-lockfile
         working-directory: site
 
-      - run: uv run pytest packages/core/tests/unit/test_snapshot.py
+      - run:
+          uv run pytest packages/core/tests/unit/test_snapshot.py
+          packages/core/tests/unit/test_hours.py
       - run: bun run check
         working-directory: site
 
@@ -103,12 +106,20 @@ jobs:
             git worktree add --orphan -b data site/data
           fi
 
+      # Only a scheduled run waits. A push or a manual run always records a snapshot.
+      - name: Check whether a fetch is due
+        id: due
+        if: github.event_name == 'schedule'
+        run: uv run python tools/hours.py --data-dir site/data >> "$GITHUB_OUTPUT"
+
       - run: bun run data
+        if: steps.due.outputs.fetch != 'false'
         working-directory: site
 
       # The site says which sources are missing beside its best prices. This makes the
       # run say so too, because a blocked runner address is fixed outside the code.
       - name: Report sources that did not answer
+        if: steps.due.outputs.fetch != 'false'
         working-directory: site
         run: |
           # shellcheck disable=SC2016
@@ -121,6 +132,7 @@ jobs:
           '
 
       - name: Publish the snapshot
+        if: steps.due.outputs.fetch != 'false'
         working-directory: site/data
         run: |
           git config user.name "github-actions[bot]"
