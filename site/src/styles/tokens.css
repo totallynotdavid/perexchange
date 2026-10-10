@@ -1,0 +1,89 @@
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
+
+@font-face {
+  font-family: "Geist Mono Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../../node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
+
+/* Match fallback metrics to the web font so swapping fonts does not move the page. */
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial"), local("Liberation Sans");
+  size-adjust: 102.36%;
+  ascent-override: 98.18%;
+  descent-override: 28.82%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Geist Mono Fallback";
+  src: local("Courier New"), local("Liberation Mono");
+  size-adjust: 99.98%;
+  ascent-override: 100.52%;
+  descent-override: 29.5%;
+  line-gap-override: 0%;
+}
+
+:root {
+  color-scheme: light dark;
+
+  --font-sans: "Geist Variable", "Geist Fallback", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono Fallback", ui-monospace, monospace;
+
+  --bg: light-dark(oklch(1 0 0), oklch(0.171 0 0));
+  --bg-subtle: light-dark(oklch(0.979 0.001 286.375), oklch(0.198 0 0));
+  --bg-muted: light-dark(oklch(0.955 0.001 286.76), oklch(0.236 0 0));
+
+  --fg: light-dark(#282a30, #f7f8f8);
+  --fg-secondary: light-dark(#3c4149, #d0d6e0);
+  --fg-muted: light-dark(#6c6b74, #8a8f98);
+
+  --border: light-dark(oklch(0.8514 0 0), oklch(0.269 0 0));
+  --border-subtle: light-dark(oklch(0.922 0 0), oklch(0.239 0 0));
+  --border-control: light-dark(oklch(0.62 0 0), oklch(0.52 0 0));
+
+  --accent: light-dark(oklch(0.5 0.16 247.27), oklch(0.787 0.128 230.318));
+
+  --positive: light-dark(oklch(0.5 0.14 146.7), oklch(0.76 0.17 147));
+  --positive-bg: light-dark(oklch(0.969 0.015 152.8), oklch(0.212 0.021 151.3));
+  --positive-border: light-dark(oklch(0.923 0.038 152.4), oklch(0.273 0.048 149.7));
+  --warn: light-dark(oklch(0.5 0.106 73.5), oklch(0.825 0.169 90));
+  --warn-bg: light-dark(oklch(0.984 0.02 95), oklch(0.233 0.027 95.4));
+  --warn-border: light-dark(oklch(0.96 0.051 95.3), oklch(0.322 0.056 94.5));
+  --danger: light-dark(oklch(0.52 0.17 23.7), oklch(0.75 0.15 23.7));
+  --danger-bg: light-dark(oklch(0.969 0.013 17.4), oklch(0.212 0.019 18.8));
+  --danger-border: light-dark(oklch(0.923 0.033 17.8), oklch(0.275 0.046 20.5));
+
+  /* The chart's "you get" line needs 3:1 contrast on both backgrounds. */
+  --chart-buy: #27a644;
+
+  --radius-sm: 5px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  --focus-width: 2px;
+  --focus-offset: 2px;
+
+  --progress-height: 2px;
+  --progress-delay: 200ms;
+
+  --duration-quick: 100ms;
+  --duration: 160ms;
+  --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  --container: 69.5rem;
+  --gutter: 1rem;
+  --header-height: 3.5rem;
+  --control-height: 2.75rem;
+}
