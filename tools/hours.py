@@ -42,9 +42,8 @@ class Decision:
 def closed_reason(moment: datetime) -> str | None:
     """Why the houses are closed at this moment, or None when they are open."""
     local = moment.astimezone(LIMA)
-    holiday = holidays.country_holidays("PE", years=local.year).get(local.date())
-    if holiday:
-        return f"a public holiday ({holiday})"
+    if local.date() in holidays.country_holidays("PE", years=local.year):
+        return "a public holiday"
     if local.weekday() == SUNDAY:
         return "Sunday"
     if local.weekday() == SATURDAY and local.time() >= SATURDAY_CLOSING:
