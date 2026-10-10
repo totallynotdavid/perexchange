@@ -8,8 +8,7 @@ import tempfile
 import zipfile
 
 from pathlib import Path
-
-from tomli import load
+from tomllib import load
 
 
 ROOT = Path(__file__).resolve().parents[1]

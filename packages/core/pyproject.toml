@@ -3,7 +3,7 @@ name = "perexchange"
 version = "2.0.0"
 description = "Library for fetching Peruvian exchange rates"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 
 authors = [
     { name = "David Duran", email = "dadch1404@gmail.com" }
@@ -17,8 +17,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",

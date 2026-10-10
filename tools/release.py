@@ -14,8 +14,7 @@ import sys
 
 from collections.abc import Callable
 from pathlib import Path
-
-from tomli import loads
+from tomllib import loads
 
 
 ROOT = Path(__file__).resolve().parents[1]
