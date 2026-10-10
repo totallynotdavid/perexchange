@@ -3,7 +3,7 @@
 import importlib.util
 import json
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -31,7 +31,7 @@ def lima(day: int, hour: int, minute: int = 0) -> datetime:
 
 
 def record_fetch(data_dir: Path, at: datetime) -> None:
-    stamp = at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    stamp = at.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     (data_dir / "latest.json").write_text(
         json.dumps({"generated_at": stamp}), encoding="utf-8"
     )
@@ -59,8 +59,8 @@ def test_the_houses_are_closed_from_saturday_afternoon_and_on_sundays_and_holida
 
 
 def test_saturday_closes_at_one_in_lima_whatever_zone_the_runner_reports():
-    before = lima(10, 12, 59).astimezone(timezone.utc)
-    after = lima(10, 13, 1).astimezone(timezone.utc)
+    before = lima(10, 12, 59).astimezone(UTC)
+    after = lima(10, 13, 1).astimezone(UTC)
 
     assert hours.closed_reason(before) is None
     assert hours.closed_reason(after) == "Saturday after 13:00"

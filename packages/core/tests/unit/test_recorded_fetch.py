@@ -1,6 +1,6 @@
 """Fetch sources through `fetch_rates_report()` against recorded responses."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 import perexchange
@@ -19,12 +19,12 @@ async def fetch(source: str, client: httpx.AsyncClient) -> perexchange.FetchRepo
     ("source", "recorded_time"),
     [
         # `fecha` has no offset and is Peru time.
-        ("cambiomundial", datetime(2026, 8, 29, 18, 16, 42, tzinfo=timezone.utc)),
-        ("kambioonline", datetime(2026, 8, 29, 18, 0, 15, 366000, tzinfo=timezone.utc)),
+        ("cambiomundial", datetime(2026, 8, 29, 18, 16, 42, tzinfo=UTC)),
+        ("kambioonline", datetime(2026, 8, 29, 18, 0, 15, 366000, tzinfo=UTC)),
         # The market was closed, and the rate dates from the day's start.
         (
             "mercadocambiario",
-            datetime(2026, 8, 29, 9, 0, 0, 949000, tzinfo=timezone.utc),
+            datetime(2026, 8, 29, 9, 0, 0, 949000, tzinfo=UTC),
         ),
     ],
 )
@@ -44,7 +44,7 @@ async def test_okane_rate_carries_the_time_its_source_published():
         report = await fetch("okane", client)
 
     [rate] = report.rates
-    assert rate.timestamp == datetime(2026, 8, 29, 19, 0, 52, tzinfo=timezone.utc)
+    assert rate.timestamp == datetime(2026, 8, 29, 19, 0, 52, tzinfo=UTC)
 
 
 async def test_a_source_that_blocks_this_address_is_reported_with_its_status_once():

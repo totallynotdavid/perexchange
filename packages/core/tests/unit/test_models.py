@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -11,7 +11,7 @@ def valid_rate(**overrides) -> ExchangeRate:
         "name": "CambiaFX",
         "buy_price": 3.3,
         "sell_price": 3.4,
-        "timestamp": datetime.now(timezone.utc),
+        "timestamp": datetime.now(UTC),
     }
     values.update(overrides)
     return ExchangeRate(**values)
@@ -39,9 +39,7 @@ def test_prices_must_be_positive_and_finite(field, value):
 
 def test_timestamp_must_be_timezone_aware():
     with pytest.raises(ValueError, match="timezone-aware"):
-        valid_rate(
-            timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc).replace(tzinfo=None)
-        )
+        valid_rate(timestamp=datetime(2026, 1, 1, tzinfo=UTC).replace(tzinfo=None))
 
 
 def test_timestamp_must_be_a_datetime():

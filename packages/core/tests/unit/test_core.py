@@ -1,6 +1,6 @@
 import asyncio
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import httpx
@@ -19,7 +19,7 @@ def rate(source: str, name: str = "house") -> ExchangeRate:
         name=name,
         buy_price=3.3,
         sell_price=3.4,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
 

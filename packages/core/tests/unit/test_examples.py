@@ -7,7 +7,7 @@ Each source that has a single `URL` answers with its fixture. Every other source
 import asyncio
 import importlib.util
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType
 
@@ -39,7 +39,7 @@ def quote(name: str, buy: float, sell: float) -> ExchangeRate:
         name=name,
         buy_price=buy,
         sell_price=sell,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
 
