@@ -26,8 +26,8 @@ is late. Every figure is written in one monospaced face with equal digit widths.
 
 A quiet, neutral surface with one accent. Colour carries status and nothing else: blue for
 links, the button that leads to a house and the "you pay" series, green for the best total
-and the "you get" series, amber for old data, red for a failed read. The only shadow is
-the 1 px one under a selected switch.
+and the "you get" series, amber for old data, red for a failed read. Panels have a light
+shadow and the selected switch has the stronger 1 px shadow.
 
 ## Tokens
 
@@ -50,7 +50,7 @@ metrics, so the swap to the web font moves nothing.
 | ---------------------- | ------------------------------ | ------ |
 | The answer             | 40/44, 56/64 from 40 to 62 rem | 500    |
 | Best rate, house page  | 44/48, from 40 rem 56/64       | 500    |
-| Page `h1`              | 22/26, from 62 rem 32/36       | 500    |
+| Page `h1`              | 28/32, 32/36 from 40 rem       | 500    |
 | Section `h2`           | 20/28, from 62 rem 24/32       | 500    |
 | Body                   | 16/24                          | 400    |
 | Secondary text, tables | 14 and 15, in a 20 or 24 line  | 400    |
@@ -68,6 +68,7 @@ Body text uses `-webkit-font-smoothing: antialiased` and
 | `--bg`             | `oklch(1 0 0)`      | `oklch(0.171 0 0)` | Page                     |
 | `--bg-subtle`      | `oklch(0.979 …)`    | `oklch(0.198 0 0)` | Cards                    |
 | `--bg-muted`       | `oklch(0.955 …)`    | `oklch(0.236 0 0)` | Row hover                |
+| `--bg-strong`      | `oklch(0.94 …)`     | `oklch(0.266 0 0)` | Strong control surfaces  |
 | `--border`         | `oklch(0.8514 0 0)` | `oklch(0.269 0 0)` | Cards, head rules        |
 | `--border-subtle`  | `oklch(0.922 0 0)`  | `oklch(0.239 0 0)` | Row rules                |
 | `--border-control` | `oklch(0.62 0 0)`   | `oklch(0.52 0 0)`  | A text field's edge, 3:1 |
@@ -87,6 +88,7 @@ Lines are solid greys, so they keep their colour over a tinted card.
 | Token                        | Light                    | Dark                         | Use                                                      |
 | ---------------------------- | ------------------------ | ---------------------------- | -------------------------------------------------------- |
 | `--accent`                   | `oklch(0.5 0.16 247.27)` | `oklch(0.787 0.128 230.318)` | Links, focus, the button that leads to a house           |
+| `--accent-soft`              | `oklch(0.96 0.025 247)`  | `oklch(0.246 0.025 247)`     | Quiet accent surfaces                                    |
 | `--positive`                 | green                    | green                        | The best total in the table                              |
 | `--warn`, `-bg`, `-border`   | amber                    | amber                        | Old data and the late-refresh notice                     |
 | `--danger`, `-bg`, `-border` | red                      | red                          | A failed read                                            |
@@ -97,20 +99,23 @@ hue: an 8% fill and a 20% border. The status colour reads on its fill at 4.5:1.
 
 ### Shape and motion
 
-| Token                                    | Value                                  | Use                                         |
-| ---------------------------------------- | -------------------------------------- | ------------------------------------------- |
-| `--radius-sm`, `--radius`, `--radius-lg` | 5, 8, 12 px                            | Badges, controls, cards                     |
-| `--duration-quick`, `--duration`         | 100 ms, 160 ms                         | Hover and state transitions                 |
-| `--ease`                                 | `cubic-bezier(0.25, 0.46, 0.45, 0.94)` | Every transition                            |
-| `--container`, `--gutter`                | 69.5 rem, 1 rem                        | Page width and its side margin              |
-| `--header-height`                        | 3.5 rem                                | The sticky header                           |
-| `--control-height`                       | 2.75 rem, 2.25 rem with a mouse        | Touch target 44 px; a fine pointer is 36    |
-| `--focus-width`, `--focus-offset`        | 2 px, 2 px                             | The focus ring, drawn in `--accent`         |
-| `--progress-height`, `--progress-delay`  | 2 px, 200 ms                           | The pending bar; the delay skips fast loads |
+| Token                                    | Value                                                        | Use                                         |
+| ---------------------------------------- | ------------------------------------------------------------ | ------------------------------------------- |
+| `--radius-sm`, `--radius`, `--radius-lg` | 5, 8, 12 px                                                  | Badges, controls, cards                     |
+| `--duration-quick`, `--duration`         | 100 ms, 160 ms                                               | Hover and state transitions                 |
+| `--ease`                                 | `cubic-bezier(0.25, 0.46, 0.45, 0.94)`                       | Every transition                            |
+| `--shadow-panel`, `--shadow-selected`    | `0 1px 2px rgb(0 0 0 / 0.04)`, `0 1px 2px rgb(0 0 0 / 0.08)` | Panels and selected controls                |
+| `--space-1` … `--space-12`               | 0.25, 0.5, 0.75, 1, 1.5, 2, 3 rem                            | Gaps and padding                            |
+| `--container`, `--gutter`                | 84 rem, 1 rem                                                | Page width and its side margin              |
+| `--header-height`                        | 3.5 rem                                                      | The sticky header                           |
+| `--control-height`                       | 2.75 rem, 2.25 rem with a mouse                              | Touch target 44 px; a fine pointer is 36    |
+| `--focus-width`, `--focus-offset`        | 2 px, 2 px                                                   | The focus ring, drawn in `--accent`         |
+| `--progress-height`, `--progress-delay`  | 2 px, 200 ms                                                 | The pending bar; the delay skips fast loads |
 
 The segmented control's track has a 2 px inset and a 10 px radius around 8 px items. The
-selected item takes the page background, a border and a 1 px shadow. Under
-`prefers-reduced-motion: reduce` every transition is cut to 0.01 ms.
+selected item takes the page background, a border and `--shadow-selected`. Panels use
+`--shadow-panel`. Under `prefers-reduced-motion: reduce` every transition is cut to 0.01
+ms.
 
 The switch's radios are invisible, so focus is drawn on the track: when a radio matches
 `:focus-visible`, the whole control gets the focus ring (`--focus-width` and
@@ -144,7 +149,7 @@ The two chart lines differ in dash as well as colour, so they stay apart without
 
 ## Layout
 
-The container is `min(100% - 2rem, 69.5rem)`. The page has three breakpoints, all
+The container is `min(100% - 2rem, 84rem)`. The page has three breakpoints, all
 `min-width`:
 
 | Breakpoint | What changes                                                                                                                                                                                         |
@@ -157,6 +162,10 @@ At 390 px nothing scrolls sideways, and the card with the field, the answer and 
 fits the first screen, so the answer is in view without scrolling. Below 40 rem a script
 closes the rate history, which stays one tap away under the table. Docs tables and code
 blocks scroll inside their own box. The charts switch to a narrow drawing below 40 rem.
+
+When one or more sources are missing, the home page adds a compact coverage strip above
+the freshness notice. It shows the number of houses not compared and does not repeat the
+compared count or fetch age, which remain in the page header.
 
 ## The calculator
 
