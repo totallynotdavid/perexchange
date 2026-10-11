@@ -16,6 +16,10 @@ export const prerender = false;
 
 const SHOWN = 5;
 
+function houseCount(count: number): string {
+  return `${count} ${count === 1 ? "house" : "houses"}`;
+}
+
 const latest = await loadLatest().catch((error: unknown) => {
   console.error(error);
   return null;
@@ -82,11 +86,18 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
   section="rates"
 >
   <div class="page-head">
-    <h1>Dollar rates in Peru</h1>
-    {compared > 0 && latest !== null && (
-      <p class="meta">
-        {compared} {compared === 1 ? "house" : "houses"} compared, updated <Age at={latest.generated_at} now={now} />
+    <div>
+      <p class="eyebrow">
+        Live market board <span aria-hidden="true">/</span> PEN · USD
       </p>
+      <h1>Dollar rates in Peru</h1>
+    </div>
+    {compared > 0 && latest !== null && (
+      <div class="meta-block">
+        <p class="meta">
+          {houseCount(compared)} compared, updated <Age at={latest.generated_at} now={now} />
+        </p>
+      </div>
     )}
   </div>
 
@@ -94,6 +105,14 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
 
   {latest !== null && (
     <div class="board" data-reading="empty">
+      {missing.length > 0 && (
+        <div class="coverage-strip" aria-label="Market coverage">
+          <span class="coverage-label">Coverage</span>
+          <span class="coverage-value coverage-value-muted num">{missing.length}</span>
+          <span class="coverage-copy">{missing.length === 1 ? "house" : "houses"} not compared</span>
+        </div>
+      )}
+
       <p
         class="notice"
         role="status"
@@ -192,9 +211,15 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
             {panels.map(({ side, ranked, best, points, end, series }) =>
               best === undefined ? null : (
                 <section class="results" data-side={side} aria-labelledby={`houses-${side}`}>
-                  <h2 id={`houses-${side}`} class="visually-hidden">
-                    Houses, best first
-                  </h2>
+                  <div class="results-heading">
+                    <div>
+                      <p class="eyebrow">{side === "buy" ? "Buying dollars" : "Selling dollars"}</p>
+                      <h2 id={`houses-${side}`}>{side === "buy" ? "Lowest cost first" : "Highest payout first"}</h2>
+                    </div>
+                    <p class="results-count">
+                      {houseCount(ranked.length)} · {Math.min(ranked.length, SHOWN)} shown
+                    </p>
+                  </div>
                   <RateTable
                     quotes={ranked.slice(0, SHOWN)}
                     best={best}
@@ -212,6 +237,7 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
                         side={side}
                         now={now}
                         fetchedAt={latest.generated_at}
+                        startRank={SHOWN}
                         caption={`The other houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
                       />
                     </details>

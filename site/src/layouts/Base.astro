@@ -12,7 +12,9 @@ interface Props {
 
 const { title, description, section } = Astro.props;
 const nav = [
+  { href: "/", label: "Rates", section: "rates" },
   { href: "/docs/", label: "Docs", section: "docs" },
+  { href: "/docs/data/", label: "Data", section: "data" },
   { href: "https://github.com/totallynotdavid/perexchange", label: "GitHub" },
 ];
 ---
@@ -56,9 +58,8 @@ const nav = [
     </main>
     <footer class="site-footer">
       <div class="container">
-        <p>
-          Rates are what each house publishes, not offers. <a href="/docs/data/">Open data</a>
-        </p>
+        <p>Rates are what each house publishes, not offers.</p>
+        <a href="/docs/data/">Open data</a>
       </div>
     </footer>
     <script>

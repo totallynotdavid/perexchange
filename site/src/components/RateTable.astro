@@ -14,9 +14,10 @@ interface Props {
   /** When the rates were fetched. A rate is late when it is old next to this. */
   fetchedAt: string;
   caption: string;
+  startRank?: number;
 }
 
-const { quotes, best, side, now, fetchedAt, caption } = Astro.props;
+const { quotes, best, side, now, fetchedAt, caption, startRank = 0 } = Astro.props;
 ---
 
 <table class="rates">
@@ -37,12 +38,19 @@ const { quotes, best, side, now, fetchedAt, caption } = Astro.props;
     </tr>
   </thead>
   <tbody>
-    {quotes.map((quote) => {
+    {quotes.map((quote, index) => {
       const link = houseLink(quote);
       const late = isOld(minutesSince(quote.timestamp, fetchedAt));
       return (
-        <tr data-rate={rateFor(quote, side)} data-house={quoteHouse(quote)}>
+        <tr
+          class:list={["rate-row", { best: quote.id === best.id }]}
+          data-rate={rateFor(quote, side)}
+          data-house={quoteHouse(quote)}
+        >
           <th scope="row">
+            <span class="rank" aria-hidden="true">
+              {String(startRank + index + 1).padStart(2, "0")}
+            </span>
             <a
               href={link.href}
               target={link.external ? "_blank" : undefined}
