@@ -132,8 +132,8 @@ jobs:
             }
           '
 
-      # The data branch holds JSON and no `site` directory, so Vercel fails every build of it.
-      # The [skip ci] marker makes Vercel skip the commit.
+      # The data branch carries site/vercel.json, which turns Vercel deployments off for it.
+      # Without that file Vercel fails on each push, since the project root is `site`.
       - name: Publish the snapshot
         if: steps.due.outputs.fetch != 'false'
         working-directory: site/data
@@ -141,5 +141,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
-          git commit --message "data: snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
+          git commit --message "data: snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push origin HEAD:data
