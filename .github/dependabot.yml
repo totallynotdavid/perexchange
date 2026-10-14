@@ -1,25 +1,39 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: bun
+    directories:
+      - /site
     schedule:
-      interval: "weekly"
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
 
-  - package-ecosystem: "bun"
-    directory: "/site"
+  - package-ecosystem: uv
+    directories:
+      - /
     schedule:
-      interval: "weekly"
-    ignore:
-      # `astro check` does not support TypeScript 7 yet, so `bun run check` fails on it.
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
 
-  - package-ecosystem: "pip"
-    directory: "/packages/core"
+  - package-ecosystem: github-actions
+    directories:
+      - /
     schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      all:
+        patterns:
+          - "*"
