@@ -172,8 +172,7 @@ compared count or fetch age, which remain in the page header.
 The home page is one card and one table. The card holds the direction switch, the amount
 field, the answer and the button that leads to the house. The table ranks every house for
 the same amount. The side's two rates are named in the reader's words: a house has a
-**sell rate**, what it charges for US$1, and a
-**buy rate**, what it pays for US$1. A
+**sell rate**, what it charges for US$1, and a **buy rate**, what it pays for US$1. A
 person who buys dollars pays the sell rate and a person who sells them gets the buy rate,
 and the page says "Rate per US$1" for whichever applies. The terms sell rate and buy rate
 appear only in the library's documents.
@@ -185,10 +184,9 @@ appear only in the library's documents.
 2. One amount field with focus. At its left edge a button shows the unit the amount is
    typed in, `US$` or `S/`, with a ⇄ mark. Pressing it flips the unit and rewrites the
    field to what the amount is worth in the other currency at the best house's rate, so
-   US$200 becomes S/ 691.00. An empty or invalid field
-   stays as it is. The field's label for assistive technology is "Amount to buy"
-   or "Amount to sell", and the button's name says what it will change to: "US$,
-   change to soles".
+   US$200 becomes S/ 691.00. An empty or invalid field stays as it is. The field's label
+   for assistive technology is "Amount to buy" or "Amount to sell", and the button's name
+   says what it will change to: "US$, change to soles".
 3. The answer, an `<output>` tied to the field, so a screen reader hears the total as it
    changes. Its parts are a label, the figure, the house, and a note.
 4. The button, "Go to X", the one filled element on the page. It opens the house's own
