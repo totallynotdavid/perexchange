@@ -2,9 +2,10 @@
 python.uv_venv_auto = "source"
 
 [tools]
-uv = "0.12.7"
-ruff = "0.16.5"
-bun = "1.4.0"
+python = "3.15.0"
+uv = "0.13.0"
+ruff = "0.17.0"
+bun = "1.4.3"
 
 [tasks.sync]
 description = "Sync dependencies for all packages and dev"
@@ -28,11 +29,11 @@ run = "ruff format --check . && ruff check --no-fix ."
 
 [tasks.format-docs]
 description = "Format all *.md and *.yml files"
-run = "bun x oxfmt@0.65.0 \"**/*.{md,yml}\" --write"
+run = "bun x oxfmt@0.73.0 \"**/*.{md,yml}\" --write"
 
 [tasks.format-docs-check]
 description = "Check Markdown and YAML formatting"
-run = "bun x oxfmt@0.65.0 \"**/*.{md,yml}\" --check"
+run = "bun x oxfmt@0.73.0 \"**/*.{md,yml}\" --check"
 
 [tasks.lint]
 description = "Run type checking"
