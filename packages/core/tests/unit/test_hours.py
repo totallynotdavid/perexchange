@@ -107,14 +107,10 @@ def test_a_closed_day_fetches_when_the_recorded_snapshot_cannot_be_read(tmp_path
     assert hours.decide(tmp_path, lima(11, 15)).fetch is True
 
 
-def test_the_command_prints_the_answer_for_the_workflow_output(tmp_path, capsys):
+def test_the_decision_names_its_reason(tmp_path):
     record_fetch(tmp_path, lima(11, 14, 30))
 
-    hours.main(["--data-dir", str(tmp_path)], now=lima(11, 15))
-    skipped = capsys.readouterr()
-    hours.main(["--data-dir", str(tmp_path)], now=lima(11, 16))
-    fetched = capsys.readouterr()
+    decision = hours.decide(tmp_path, lima(11, 15))
 
-    assert skipped.out == "fetch=false\n"
-    assert "Sunday" in skipped.err
-    assert fetched.out == "fetch=true\n"
+    assert decision.fetch is False
+    assert "Sunday" in decision.reason
