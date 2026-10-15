@@ -1,25 +1,18 @@
 # ruff: file-ignore[implicit-namespace-package]
-"""Decide whether a scheduled run should fetch the exchange houses now.
+"""Decide whether the collector should fetch the exchange houses now.
 
-Usage: `uv run python tools/hours.py [--data-dir site/data]`
-
-Prints `fetch=true` or `fetch=false` on stdout, for `$GITHUB_OUTPUT`, and the reason on
-stderr. The rule is in docs/architecture.md, under "Opening hours".
+The rule is in docs/architecture.md, under "Opening hours". `tools/collect.py` asks it
+before each fetch.
 """
 
-import argparse
 import json
-import sys
 
-from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta, timezone
 from pathlib import Path
 
 import holidays
 
-
-DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / "site" / "data"
 
 # Lima has no daylight saving time.
 LIMA = timezone(timedelta(hours=-5))
@@ -82,20 +75,3 @@ def decide(data_dir: Path, now: datetime) -> Decision:
     return Decision(
         fetch=False, reason=f"closed ({reason}), last fetch only {minutes} min ago"
     )
-
-
-def main(argv: Sequence[str] | None = None, now: datetime | None = None) -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
-    args = parser.parse_args(argv)
-
-    decision = decide(args.data_dir, now or datetime.now(UTC))
-    print(
-        f"{'fetching' if decision.fetch else 'skipping'}: {decision.reason}",
-        file=sys.stderr,
-    )
-    print(f"fetch={str(decision.fetch).lower()}")
-
-
-if __name__ == "__main__":
-    main()

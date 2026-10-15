@@ -1,0 +1,99 @@
+name: snapshot
+
+# GitHub starts a scheduled run when it can, and for this repository that was about once
+# in five hours. So one run records snapshots on its own beat for most of six hours, and
+# queues the run that follows it. The schedule only starts a chain that has broken.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+# One run records at a time, and a newer waiting run replaces an older one. Every run is
+# the same, so a run queued by the previous one, by the schedule or by hand takes over
+# when the recording run ends. A recording run is never cancelled.
+concurrency:
+  group: snapshot
+  cancel-in-progress: false
+
+env:
+  UV_PYTHON: "3.14.0"
+
+jobs:
+  snapshot:
+    # A variable holding a JSON runner label, such as '["self-hosted","pe"]', moves the
+    # fetch to a machine whose address the exchange houses do not block.
+    runs-on:
+      ${{ vars.REFRESH_RUNNER && fromJSON(vars.REFRESH_RUNNER) || 'ubuntu-latest' }}
+    # Only master records snapshots. A manual run of another branch would otherwise push its
+    # snapshot to the data branch.
+    if: github.ref == 'refs/heads/master'
+    # The job limit is six hours. The collector stops starting fetches after 330 minutes.
+    timeout-minutes: 350
+
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Queue the next run before recording, so the chain survives a failure below. It
+      # waits for this run to end because of the concurrency group.
+      - name: Queue the next run
+        run: gh workflow run snapshot.yml --ref "$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.3"
+
+      - run: uv python install
+
+      - run: uv sync --locked --all-packages
+
+      # The history lives on an orphan `data` branch, so snapshots never touch master.
+      # A self-hosted runner keeps its clone between runs. The checkout deletes the old
+      # worktree directory but not git's record of it, which would block the branch.
+      - name: Check out the data branch
+        run: |
+          git worktree prune
+          if git ls-remote --exit-code --heads origin data > /dev/null; then
+            git fetch --depth=1 origin data
+            git worktree add -B data site/data FETCH_HEAD
+          else
+            git worktree add --orphan -b data site/data
+          fi
+
+      # The data branch carries site/vercel.json, which turns Vercel deployments off for it.
+      # Without that file Vercel fails on each push, since the project root is `site`.
+      - name: Record snapshots
+        run:
+          uv run python tools/collect.py --data-dir site/data --minutes 330 --interval 15
+
+      # The site says which sources are missing beside its best prices. This makes the
+      # run say so too, because a blocked runner address is fixed outside the code.
+      - name: Report sources that did not answer
+        if: always()
+        run: |
+          # shellcheck disable=SC2016
+          bun -e '
+            const file = Bun.file("site/data/latest.json");
+            if (!(await file.exists())) process.exit(0);
+            const latest = await file.json();
+            const names = latest.failures.map((failure) => failure.source);
+            if (names.length > 0) {
+              console.log(`::warning title=Sources did not answer::${names.join(", ")}. If this runner address is blocked, set the REFRESH_RUNNER variable to a runner on another network.`);
+            }
+          '
+
+      # The next run is already queued and starts the moment this one ends. A run that
+      # keeps failing would otherwise restart every minute.
+      - name: Hold the group after a failure
+        if: failure()
+        run: sleep 600
