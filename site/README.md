@@ -7,14 +7,15 @@ docs. It is an [Astro](https://astro.build) site, live at
 
 ## How it works
 
-A workflow runs [`tools/snapshot.py`](../tools/snapshot.py). The tool calls
+A workflow runs [`tools/collect.py`](../tools/collect.py), which calls
+[`tools/snapshot.py`](../tools/snapshot.py) every 15 minutes. Each fetch calls
 `perexchange.fetch_rates_report()` once and writes two files:
 
 - `latest.json`, the newest fetch.
 - `history/YYYY-MM-DD.jsonl`, one more line per fetch, in the file for that UTC day.
 
-The workflow commits both to the orphan `data` branch. The rates pages render on request
-from that branch and Vercel caches them
+The collector commits both to the orphan `data` branch after each fetch. The rates pages
+render on request from that branch and Vercel caches them
 ([Architecture](../docs/architecture.md#what-a-reader-sees)). The docs pages are built
 once per deploy. Each page is plain HTML with the figures and the SVG charts already in
 it. A small script keeps the ages true while the page is open, and another remembers the
@@ -65,8 +66,10 @@ The site is the Vercel project `perexchange`, connected to this repository. A pu
 changed nothing in `site/`, the root `README.md`, `docs/` or `packages/cli/README.md`,
 which the docs pages render. A push to the `data` branch never deploys.
 
-The workflow [`.github/workflows/site.yml`](../.github/workflows/site.yml) only records
-snapshots. [Architecture](../docs/architecture.md#site-data) lists what starts a run.
+The workflow [`.github/workflows/snapshot.yml`](../.github/workflows/snapshot.yml) only
+records snapshots. [Architecture](../docs/architecture.md#site-data) says what starts a
+run. `uv run python tools/history_report.py --data-dir site/data` prints how many
+snapshots each day holds and the gaps between them, for a checkout of the `data` branch.
 
 Some exchange houses block the address ranges of GitHub-hosted runners, and a snapshot
 lists them as `blocked` [failures](src/docs/data.md#latest-snapshot). The site lists them

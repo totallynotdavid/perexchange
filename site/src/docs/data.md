@@ -68,9 +68,9 @@ an age of 24 hours or less, because a house that has not updated its quote in a 
 closed or has stopped publishing. It shows an age of three hours or more as old, and it
 warns when the whole snapshot is three hours old.
 
-A job fetches every source and publishes the result. The
-[architecture](../../../docs/architecture.md#site-data) lists what starts it, and
-[when it fetches less](../../../docs/architecture.md#opening-hours). GitHub starts
-scheduled jobs on a best-effort basis, so the gap between runs varies and can reach
-several hours. The page therefore counts each age from now, not from the time of the
-fetch.
+A job fetches every source about every 15 minutes and publishes the result. The
+[architecture](../../../docs/architecture.md#site-data) says how it keeps that beat, and
+[when it fetches less](../../../docs/architecture.md#opening-hours). A fetch can still be
+late or missing, and a chart lifts its line across a stretch with no snapshot instead of
+drawing a price that was never recorded. The page counts each age from now, not from the
+time of the fetch.

@@ -100,24 +100,27 @@ stays open, so a polling application can reuse its connections.
 
 The [site](../site/README.md) renders snapshots of `fetch_rates_report()`. The only writer
 of the state below is the `snapshot` job of
-[`.github/workflows/site.yml`](../.github/workflows/site.yml). It runs
-[`tools/snapshot.py`](../tools/snapshot.py) on a schedule that asks for a run at minutes
-7, 22, 37 and 52 of every hour, on a manual dispatch, and on a push to `master` that
-matches the workflow's `paths` filter. GitHub starts scheduled runs on a best-effort
-basis. It delays them under load and may drop some, so the gap between runs can exceed 15
-minutes. [`tools/schedule_report.py`](../tools/schedule_report.py) prints the scheduled
-runs per day and the median and maximum gap in minutes. [Opening hours](#opening-hours)
-thin the scheduled runs. Pull requests, the `check` job and runs of other branches never
-write it. The site reads the data branch when a page renders.
+[`.github/workflows/snapshot.yml`](../.github/workflows/snapshot.yml). A run of it
+executes [`tools/collect.py`](../tools/collect.py) for 330 minutes. The collector wakes
+every 15 minutes, fetches with [`tools/snapshot.py`](../tools/snapshot.py) and pushes the
+result as one commit. [Opening hours](#opening-hours) thin the fetches. Pull requests, the
+`check` job and runs of other branches never write the data. The site reads the data
+branch when a page renders.
+
+GitHub's scheduler cannot keep a 15 minute beat. Asked for a run every 15 minutes, it
+started one about every five hours. So a run queues its own successor, which starts when
+the run ends, and the schedule (hourly) and a manual dispatch only restart a chain that
+broke. [`tools/history_report.py`](../tools/history_report.py) prints the snapshots per
+day and the median and maximum gap in minutes from the data branch.
 
 ### The state
 
-| State                | Where                          | Holds                                                                                  |
-| -------------------- | ------------------------------ | -------------------------------------------------------------------------------------- |
-| The data branch      | the `data` branch, an orphan   | `latest.json`, and `history/YYYY-MM-DD.jsonl` with one line per snapshot for a UTC day |
-| The live site        | Vercel project `perexchange`   | The docs pages, and a function that renders the rates pages from the data branch       |
-| The publication lock | concurrency group `site-<ref>` | At most one running `snapshot` run, and at most one waiting                            |
-| The job's worktree   | `site/data` on the runner      | A private checkout of the data branch. No other run reads or writes it                 |
+| State                | Where                        | Holds                                                                                  |
+| -------------------- | ---------------------------- | -------------------------------------------------------------------------------------- |
+| The data branch      | the `data` branch, an orphan | `latest.json`, and `history/YYYY-MM-DD.jsonl` with one line per snapshot for a UTC day |
+| The live site        | Vercel project `perexchange` | The docs pages, and a function that renders the rates pages from the data branch       |
+| The publication lock | concurrency group `snapshot` | At most one running `snapshot` run, and at most one waiting                            |
+| The job's worktree   | `site/data` on the runner    | A private checkout of the data branch. No other run reads or writes it                 |
 
 ### Transitions
 
@@ -132,18 +135,20 @@ The data branch is either absent or at a head commit, and only `snapshot` moves 
 Nothing else is allowed. No run rewrites a history line, a commit, or the branch. A run
 where no source returned a rate exits before the commit, so the branch never gets an empty
 snapshot. A rejected push means the head moved, so the run fails and the next run starts
-from the new head.
+from the new head. A failed run holds the lock for ten more minutes, so a fault that
+repeats does not restart every minute.
 
 A run takes these steps in order, and each depends on the one before:
 
-1. Check out the head of the data branch.
-2. Record a snapshot.
-3. Push the commit.
+1. Queue the next run.
+2. Check out the head of the data branch.
+3. Record a snapshot and push the commit, every 15 minutes, until 330 minutes have passed.
 
 The lock lets one run hold these steps at a time. A running run is never cancelled,
 because that could stop it between the record and the push. A newer waiting run replaces
-an older waiting one, so a busy period costs snapshots, not consistency. Only `master`
-records, whether the run was scheduled, started by hand or caused by a push.
+an older waiting one. Every run does the same work, so the one that takes over is
+whichever was queued last: the successor, a scheduled run or a manual one. Only `master`
+records.
 
 ### Opening hours
 
@@ -152,17 +157,16 @@ holidays, all in Lima time (UTC-5, with no daylight saving time). The holidays c
 the PE calendar of the [`holidays`](https://pypi.org/project/holidays/) package.
 [`tools/hours.py`](../tools/hours.py) holds this rule and is its only copy.
 
-After a scheduled run checks out the data branch, a step runs `tools/hours.py`, which
-answers `fetch=true` or `fetch=false`:
+At each wake the collector asks `tools/hours.py` whether to fetch:
 
-- Outside the closed window the answer is always `true`.
-- Inside it the answer is `true` only when the newest snapshot, the `generated_at` of
-  `latest.json`, is 50 minutes old or older. A snapshot that is missing or unreadable
-  counts as due.
+- Outside the closed window the answer is always yes.
+- Inside it the answer is yes only when the newest snapshot, the `generated_at` of
+  `latest.json`, is 50 minutes old or older. With a 15 minute beat that is one fetch an
+  hour. A snapshot that is missing or unreadable counts as due.
 
-On `false` the run fetches and records nothing. Pushes and manual runs skip this step and
-always fetch. The interval stays below the three hours after which the site calls a
-snapshot [old](../site/src/docs/data.md#how-fresh-it-is).
+On no, the collector records nothing and waits for the next wake. The interval stays below
+the three hours after which the site calls a snapshot
+[old](../site/src/docs/data.md#how-fresh-it-is).
 
 ### What a reader sees
 
