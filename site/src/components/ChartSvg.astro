@@ -32,8 +32,9 @@ const { chart, titleId, title, kinds, size } = Astro.props;
   {chart.series.map((one) => (
     <>
       {one.dots.length > 1 && <path class={`line ${kinds[one.id]}`} d={one.path} />}
-      {one.dots.length <= 2 &&
-        one.dots.map((dot) => <circle class={`dot ${kinds[one.id]}`} cx={dot.x} cy={dot.y} r="3.5" />)}
+      {(one.dots.length <= 2 ? one.dots : one.alone).map((dot) => (
+        <circle class={`dot ${kinds[one.id]}`} cx={dot.x} cy={dot.y} r="3.5" />
+      ))}
       <circle class={`dot ${kinds[one.id]}`} cx={one.last.x} cy={one.last.y} r="3.5" />
     </>
   ))}

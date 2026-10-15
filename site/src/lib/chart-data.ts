@@ -7,6 +7,9 @@ import type { Range } from "./range.ts";
 /** Enough points for a 30 day line at the widest chart. */
 const MAX_POINTS = 240;
 
+/** Readings further apart than this are not joined by a line. */
+const MAX_GAP = 3 * 3_600_000;
+
 /**
  * Each chart is drawn at close to the size it is shown, so its text stays readable.
  * The narrow one is for a phone, and the page shows one of the two.
@@ -95,8 +98,14 @@ export function rangeCharts(
       ...one,
       points: downsample(one.points, MAX_POINTS),
     }));
+    // Downsampling spaces points up to two buckets apart, so a longer range tolerates more.
+    const span = Math.max(
+      0,
+      ...inRange.map((one) => (one.points.at(-1)?.t ?? 0) - (one.points[0]?.t ?? 0)),
+    );
+    const maxGap = Math.max(MAX_GAP, (2 * span) / MAX_POINTS);
     const draw = (size: (typeof SIZES)[keyof typeof SIZES]) =>
-      buildChart(drawn, size.width, size.height, size.xTicks);
+      buildChart(drawn, size.width, size.height, size.xTicks, maxGap);
     return {
       range,
       wide: draw(SIZES.wide),

@@ -15,6 +15,8 @@ export interface DrawnSeries {
   path: string;
   /** Every point as a dot, so a series of one or two points is still visible. */
   dots: { x: number; y: number }[];
+  /** Dots with no line segment on either side because a gap surrounds them. */
+  alone: { x: number; y: number }[];
   last: { x: number; y: number; value: number };
 }
 
@@ -111,11 +113,16 @@ function timeTicks(
   });
 }
 
+/**
+ * The path starts a new segment when neighbouring points are more than `maxGapMs` apart.
+ * This prevents a stretch with no reading from implying a price movement.
+ */
 export function buildChart(
   series: ChartSeries[],
   width: number,
   height: number,
   maxXTicks = 5,
+  maxGapMs = Infinity,
 ): Chart {
   const plot = {
     left: MARGIN.left,
@@ -153,11 +160,16 @@ export function buildChart(
         y: round(y(point.v)),
       }));
       const lastPoint = one.points.at(-1) as ChartPoint;
+      const joined = one.points.map((point, i) => {
+        const before = one.points[i - 1];
+        return before !== undefined && point.t - before.t <= maxGapMs;
+      });
       return {
         id: one.id,
         label: one.label,
-        path: dots.map((dot, i) => `${i === 0 ? "M" : "L"}${dot.x} ${dot.y}`).join(" "),
+        path: dots.map((dot, i) => `${joined[i] ? "L" : "M"}${dot.x} ${dot.y}`).join(" "),
         dots,
+        alone: dots.filter((_, i) => !joined[i] && !joined[i + 1]),
         last: { x: round(x(lastPoint.t)), y: round(y(lastPoint.v)), value: lastPoint.v },
       };
     });
