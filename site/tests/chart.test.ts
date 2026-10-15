@@ -145,6 +145,37 @@ describe("buildChart", () => {
     expect(chart.xTicks).toHaveLength(1);
   });
 
+  describe("a stretch with no readings", () => {
+    const hours = [0, 1, 2, 8, 9, 15];
+    const gappy = [
+      {
+        id: "s",
+        label: "s",
+        points: hours.map((h) => ({ t: START + h * HOUR, v: 3.44 + h * 0.001 })),
+      },
+    ];
+
+    it("lifts the line across a gap longer than the limit", () => {
+      const { path } = buildChart(gappy, 640, 240, 5, 3 * HOUR).series[0];
+
+      expect(path.match(/M/g)).toHaveLength(3);
+      expect(path.match(/L/g)).toHaveLength(3);
+    });
+
+    it("dots a reading that has a gap on both sides, and no other", () => {
+      const { alone, dots } = buildChart(gappy, 640, 240, 5, 3 * HOUR).series[0];
+
+      expect(alone).toEqual([dots[5]]);
+    });
+
+    it("joins every reading when no limit is given", () => {
+      const { path, alone } = buildChart(gappy, 640, 240).series[0];
+
+      expect(path.match(/M/g)).toHaveLength(1);
+      expect(alone).toEqual([]);
+    });
+  });
+
   it("returns an empty chart when no series has points", () => {
     expect(buildChart([{ id: "s", label: "s", points: [] }], 640, 240).series).toEqual(
       [],

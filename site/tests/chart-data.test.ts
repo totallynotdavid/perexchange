@@ -57,6 +57,19 @@ describe("rangeCharts", () => {
     expect(month?.summaries[0].high).toBe(9);
   });
 
+  it("lifts the line over a missing stretch but not over a downsampled one", () => {
+    const hole = series(100).map((one) => ({
+      ...one,
+      points: one.points.filter((_, i) => i < 40 || i >= 50),
+    }));
+    const [day, week] = rangeCharts(hole, END, ["7d", "30d"]);
+    const continuous = rangeCharts(series(1000), END, ["30d"])[0];
+
+    expect(day.wide.series[0].path.match(/M/g)).toHaveLength(2);
+    expect(week.wide.series[0].path.match(/M/g)).toHaveLength(2);
+    expect(continuous.wide.series[0].path.match(/M/g)).toHaveLength(1);
+  });
+
   it("leaves a range with no snapshots empty", () => {
     const [day] = rangeCharts(series(1), END - 40 * 24 * HOUR);
 
