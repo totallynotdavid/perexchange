@@ -40,7 +40,6 @@ def _is_retryable(error: httpx.HTTPError) -> bool:
 
 
 def _backoff(error: httpx.HTTPError, retry_delay: float, attempt: int) -> float:
-    """Return the delay before the next attempt."""
     delay = retry_delay * 2.0**attempt
     if not isinstance(error, httpx.HTTPStatusError):
         return delay
@@ -64,9 +63,8 @@ async def fetch_with_retry[T](
     retry_delay: float,
     error_context: str,
 ) -> T:
-    """Run one fetch operation with bounded retries and backoff."""
     max_attempts, retry_delay = _validate_retry_settings(max_attempts, retry_delay)
-    last_error: httpx.HTTPError | None = None
+    last_error: httpx.HTTPError
 
     for attempt in range(max_attempts):
         try:
@@ -83,7 +81,4 @@ async def fetch_with_retry[T](
             )
             raise SourceParseError(msg) from error
 
-    if last_error is None:
-        msg = "Fetch failed without an HTTP error"
-        raise SourceParseError(msg)
     raise last_error
