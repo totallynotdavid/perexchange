@@ -1,16 +1,13 @@
 ---
 import Age from "../components/Age.astro";
-import ChartBlock from "../components/ChartBlock.astro";
 import RateTable from "../components/RateTable.astro";
 import Unavailable from "../components/Unavailable.astro";
 import Base from "../layouts/Base.astro";
 import { answer } from "../lib/amount.ts";
-import { formatDay } from "../lib/format.ts";
-import { ALL_DAYS, loadHistory, loadLatest } from "../lib/load.ts";
+import { loadLatest } from "../lib/load.ts";
 import { houseLink, quoteHouse } from "../lib/houses.ts";
-import { MIN_CHART_MS, bestSeries, isOld, minutesSince, missingHouses, rank, rateFor } from "../lib/market.ts";
+import { isOld, minutesSince, missingHouses, rank, rateFor } from "../lib/market.ts";
 import type { Side } from "../lib/market.ts";
-import { BEST_RANGES } from "../lib/range.ts";
 
 export const prerender = false;
 
@@ -27,57 +24,27 @@ const latest = await loadLatest().catch((error: unknown) => {
 if (latest === null) {
   Astro.response.status = 503;
 }
-const snapshots = latest
-  ? await loadHistory(undefined, undefined, ALL_DAYS).then(
-      (history) => history.snapshots,
-      () => [],
-    )
-  : [];
 const now = Date.now();
-const sources = new Set((latest?.rates ?? []).map((quote) => quote.source));
 
-const sides: {
-  side: Side;
-  title: string;
-  series: { label: string; kind: "sell" | "buy" };
-}[] = [
-  {
-    side: "buy",
-    title: "Cheapest place to buy dollars",
-    series: { label: "Cheapest price for US$1", kind: "sell" },
-  },
-  {
-    side: "sell",
-    title: "Best place to sell dollars",
-    series: { label: "Best price for US$1", kind: "buy" },
-  },
+const sides: { side: Side; title: string; order: string }[] = [
+  { side: "buy", title: "Cheapest place to buy dollars", order: "cheapest first" },
+  { side: "sell", title: "Best place to sell dollars", order: "highest payout first" },
 ];
 const panels = latest
   ? sides.map((one) => {
       const ranked = rank(latest.rates, one.side, latest.generated_at);
-      const points = bestSeries(snapshots, one.side, sources);
       const view = answer(
         one.side,
         "usd",
         { kind: "empty" },
         ranked.map((quote) => ({ rate: rateFor(quote, one.side), house: quoteHouse(quote) })),
       );
-      const first = points[0];
-      const last = points.at(-1);
-      const end = first && last && last.t - first.t >= MIN_CHART_MS ? last.t : null;
-      return { ...one, ranked, best: ranked[0], points, end, view };
+      return { ...one, ranked, best: ranked[0], view };
     })
   : [];
 
-function waiting(points: { t: number }[]): string {
-  const first = points[0];
-  return first === undefined
-    ? "No readings are recorded yet."
-    : `The chart appears once two days of readings are recorded. The first is from ${formatDay(first.t)}.`;
-}
-const compared = panels[0]?.ranked.length ?? 0;
 const anyRate = panels.some((panel) => panel.best !== undefined);
-const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots, latest.generated_at) : [];
+const missing = latest ? missingHouses(latest.rates, latest.failures, latest.generated_at) : [];
 ---
 
 <Base
@@ -85,44 +52,12 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
   description="The best current rate to buy or sell US dollars with Peruvian exchange houses, and how recent it is."
   section="rates"
 >
-  <div class="page-head">
-    <div>
-      <p class="eyebrow">
-        Live market board <span aria-hidden="true">/</span> PEN · USD
-      </p>
-      <h1>Dollar rates in Peru</h1>
-    </div>
-    {compared > 0 && latest !== null && (
-      <div class="meta-block">
-        <p class="meta">
-          {houseCount(compared)} compared, updated <Age at={latest.generated_at} now={now} />
-        </p>
-      </div>
-    )}
-  </div>
+  <h1 class="page-title">Dollar rates in Peru</h1>
 
   {latest === null && <Unavailable />}
 
   {latest !== null && (
-    <div class="board" data-reading="empty">
-      {missing.length > 0 && (
-        <div class="coverage-strip" aria-label="Market coverage">
-          <span class="coverage-label">Coverage</span>
-          <span class="coverage-value coverage-value-muted num">{missing.length}</span>
-          <span class="coverage-copy">{missing.length === 1 ? "house" : "houses"} not compared</span>
-        </div>
-      )}
-
-      <p
-        class="notice"
-        role="status"
-        data-since={latest.generated_at}
-        hidden={!isOld(minutesSince(latest.generated_at, now))}
-      >
-        These rates were fetched <Age at={latest.generated_at} now={now} />. The refresh is running late, so check the
-        rate with the house before you go.
-      </p>
-
+    <div class="board sided" data-reading="empty">
       {!anyRate && <p class="empty">No house has a current rate. See the houses we could not read below.</p>}
 
       {anyRate && (
@@ -161,14 +96,7 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
             </div>
 
             {panels.map(({ side, title, best, view }) =>
-              best === undefined ? (
-                <section class="hero empty" data-side={side} aria-labelledby={`title-${side}`}>
-                  <h2 id={`title-${side}`} class="visually-hidden">
-                    {title}
-                  </h2>
-                  <p>No house has a current rate on this side. See the houses we could not read below.</p>
-                </section>
-              ) : (
+              best === undefined ? null : (
                 <section class="hero" data-side={side} aria-labelledby={`title-${side}`}>
                   <h2 id={`title-${side}`} class="visually-hidden">
                     {title}
@@ -197,29 +125,24 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
                     {houseLink(best).external ? "Go to" : "See"} {quoteHouse(best)}
                     {houseLink(best).external && <span class="visually-hidden">, opens its website</span>}
                   </a>
-                  {isOld(minutesSince(best.timestamp, latest.generated_at)) && (
-                    <p class="late">
-                      Rate from <Age at={best.timestamp} now={now} />
-                    </p>
-                  )}
+                  <p class="rate-age">
+                    Rate from <Age at={best.timestamp} now={now} />
+                  </p>
+                  <p class="rate-advice" data-since={best.timestamp} hidden={!isOld(minutesSince(best.timestamp, now))}>
+                    Check it with the house before you go.
+                  </p>
                 </section>
               ),
             )}
           </div>
 
           <div class="results-column">
-            {panels.map(({ side, ranked, best, points, end, series }) =>
+            {panels.map(({ side, order, ranked, best }) =>
               best === undefined ? null : (
                 <section class="results" data-side={side} aria-labelledby={`houses-${side}`}>
-                  <div class="results-heading">
-                    <div>
-                      <p class="eyebrow">{side === "buy" ? "Buying dollars" : "Selling dollars"}</p>
-                      <h2 id={`houses-${side}`}>{side === "buy" ? "Lowest cost first" : "Highest payout first"}</h2>
-                    </div>
-                    <p class="results-count">
-                      {houseCount(ranked.length)} · {Math.min(ranked.length, SHOWN)} shown
-                    </p>
-                  </div>
+                  <h2 id={`houses-${side}`}>
+                    {houseCount(ranked.length)}, {order}
+                  </h2>
                   <RateTable
                     quotes={ranked.slice(0, SHOWN)}
                     best={best}
@@ -242,22 +165,6 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, snapshots,
                       />
                     </details>
                   )}
-
-                  <details class="history" open>
-                    <summary>Rate history</summary>
-                    {end !== null ? (
-                      <ChartBlock
-                        series={[{ id: side, label: series.label, kind: series.kind, points }]}
-                        end={end}
-                        subject={`${series.label}, in soles`}
-                        name={side}
-                        ranges={BEST_RANGES}
-                        initial="7d"
-                      />
-                    ) : (
-                      <p class="empty">{waiting(points)}</p>
-                    )}
-                  </details>
                 </section>
               ),
             )}

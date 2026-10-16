@@ -59,8 +59,6 @@
 
   --positive: light-dark(oklch(0.5 0.14 146.7), oklch(0.76 0.17 147));
   --warn: light-dark(oklch(0.5 0.106 73.5), oklch(0.825 0.169 90));
-  --warn-bg: light-dark(oklch(0.984 0.02 95), oklch(0.233 0.027 95.4));
-  --warn-border: light-dark(oklch(0.96 0.051 95.3), oklch(0.322 0.056 94.5));
   --danger: light-dark(oklch(0.52 0.17 23.7), oklch(0.75 0.15 23.7));
   --danger-bg: light-dark(oklch(0.969 0.013 17.4), oklch(0.212 0.019 18.8));
   --danger-border: light-dark(oklch(0.923 0.033 17.8), oklch(0.275 0.046 20.5));

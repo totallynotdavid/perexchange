@@ -39,8 +39,6 @@ export interface HistoricalPrice {
 export interface Snapshot {
   t: number;
   prices: Record<string, HistoricalPrice>;
-  /** Null means this history line predates the missing-source list. */
-  missing: string[] | null;
 }
 
 export interface History {
@@ -146,11 +144,7 @@ function parseSnapshot(line: string): Snapshot | null {
       ageMinutes: typeof age === "number" && age >= 0 ? age : 0,
     };
   }
-  const missing =
-    Array.isArray(value.f) && value.f.every((source) => typeof source === "string")
-      ? (value.f as string[])
-      : null;
-  return { t, prices, missing };
+  return { t, prices };
 }
 
 /**

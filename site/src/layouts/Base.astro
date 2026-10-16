@@ -7,14 +7,14 @@ import "../styles/site.css";
 interface Props {
   title: string;
   description: string;
-  section?: "rates" | "docs" | "data";
+  section?: "rates" | "history" | "docs";
 }
 
 const { title, description, section } = Astro.props;
 const nav = [
   { href: "/", label: "Rates", section: "rates" },
+  { href: "/history/", label: "History", section: "history" },
   { href: "/docs/", label: "Docs", section: "docs" },
-  { href: "/docs/data/", label: "Data", section: "data" },
   { href: "https://github.com/totallynotdavid/perexchange", label: "GitHub" },
 ];
 ---
@@ -59,7 +59,6 @@ const nav = [
     <footer class="site-footer">
       <div class="container">
         <p>Rates are what each house publishes, not offers.</p>
-        <a href="/docs/data/">Open data</a>
       </div>
     </footer>
     <script>

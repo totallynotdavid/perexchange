@@ -1,47 +1,7 @@
 import { answer, flipped, readAmount } from "./amount.ts";
 import type { Row, Unit } from "./amount.ts";
+import { KEYS, bindSide, storageOf } from "./choices.ts";
 import type { Side } from "./market.ts";
-
-const KEYS = {
-  side: "perexchange:side",
-  unit: "perexchange:unit",
-  amount: "perexchange:amount",
-};
-
-type Store = Pick<Storage, "getItem" | "setItem">;
-
-/**
- * The page works without storage, as when a browser blocks it. A store that reads but
- * refuses to write keeps what it is given until the page closes, and a failure to read
- * or write never stops a calculation.
- */
-function storageOf(doc: Document): Store {
-  const kept = new Map<string, string>();
-  const storage = (() => {
-    try {
-      return doc.defaultView?.localStorage ?? null;
-    } catch {
-      return null;
-    }
-  })();
-  return {
-    getItem: (key) => {
-      try {
-        return kept.get(key) ?? storage?.getItem(key) ?? null;
-      } catch {
-        return null;
-      }
-    },
-    setItem: (key, value) => {
-      kept.set(key, value);
-      try {
-        storage?.setItem(key, value);
-      } catch {
-        // The value stays in `kept` for this page.
-      }
-    },
-  };
-}
 
 function query<T extends Element>(root: ParentNode, selector: string): T {
   const found = root.querySelector<T>(selector);
@@ -101,12 +61,9 @@ export function bindBoard(doc: Document): void {
   const input = query<HTMLInputElement>(calc, "input[type='text']");
   const label = query(calc, "[data-label]");
   const button = query<HTMLButtonElement>(calc, "[data-unit]");
-  const sides = [...board.querySelectorAll<HTMLInputElement>("input[name='side']")];
   const panels = panelsOf(board);
 
   let unit: Unit = store.getItem(KEYS.unit) === "pen" ? "pen" : "usd";
-  const side = (): Side =>
-    sides.find((radio) => radio.checked)?.value === "sell" ? "sell" : "buy";
 
   const render = () => {
     const reading = readAmount(input.value);
@@ -146,14 +103,7 @@ export function bindBoard(doc: Document): void {
     }
   };
 
-  const saved = store.getItem(KEYS.side);
-  for (const radio of sides) {
-    radio.checked = radio.value === (saved === "sell" ? "sell" : "buy");
-    radio.addEventListener("change", () => {
-      store.setItem(KEYS.side, side());
-      render();
-    });
-  }
+  const { current: side } = bindSide(doc, store, render);
 
   input.value = store.getItem(KEYS.amount) ?? "";
   input.addEventListener("input", () => {
@@ -168,13 +118,6 @@ export function bindBoard(doc: Document): void {
     store.setItem(KEYS.amount, input.value);
     render();
   });
-
-  // The history is below the answer, so a phone starts with it closed.
-  if (doc.defaultView?.matchMedia("(min-width: 40em)").matches === false) {
-    for (const history of board.querySelectorAll<HTMLDetailsElement>("details.history")) {
-      history.open = false;
-    }
-  }
 
   calc.hidden = false;
   render();

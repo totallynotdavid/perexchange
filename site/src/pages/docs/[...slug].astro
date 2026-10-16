@@ -17,13 +17,12 @@ const { entry } = Astro.props;
 const { Content, headings } = await render(entry);
 const heading = headings.find((one) => one.depth === 1)?.text ?? "Documentation";
 const current = Astro.params.slug;
-const isData = current === "data";
 ---
 
 <Base
   title={`${heading} | perexchange docs`}
   description="Documentation for perexchange, an asynchronous Python library that fetches PEN/USD rates from Peruvian exchange houses."
-  section={isData ? "data" : "docs"}
+  section="docs"
 >
   <div class="docs">
     <nav class="docs-nav" aria-label="Documentation">

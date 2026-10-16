@@ -68,8 +68,8 @@ export interface Answer {
   head: { label: string; for: string };
 }
 
-const HINTS: Record<Exclude<Reading["kind"], "ok">, string> = {
-  empty: "Type an amount to see the total at each house.",
+/** Empty input has no hint because it is not an error. */
+const HINTS: Record<Exclude<Reading["kind"], "ok" | "empty">, string> = {
   zero: "Type an amount above zero.",
   invalid: "Use digits only, for example 200 or 1,250.50.",
   huge: `Type ${MAX_AMOUNT.toLocaleString("en-US")} or less.`,
@@ -98,7 +98,7 @@ export function answer(side: Side, unit: Unit, reading: Reading, rows: Row[]): A
       label: "Best rate per US$1",
       currency: "S/",
       figure: best === undefined ? "" : formatPrice(best.rate),
-      note: HINTS[reading.kind === "ok" ? "empty" : reading.kind],
+      note: reading.kind === "ok" || reading.kind === "empty" ? "" : HINTS[reading.kind],
       totals: rows.map(() => ""),
       head,
     };

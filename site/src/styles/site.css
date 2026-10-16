@@ -228,6 +228,10 @@ h1 {
   line-height: 2.25rem;
 }
 
+h1.page-title {
+  margin-bottom: var(--space-6);
+}
+
 h2 {
   margin: 2.5rem 0 1rem;
   font-size: 1.25rem;
@@ -347,55 +351,6 @@ input::placeholder {
   color: var(--fg);
 }
 
-.page-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4) var(--space-8);
-  margin-bottom: var(--space-6);
-}
-
-.page-head h1 {
-  margin: 0;
-}
-
-.meta {
-  margin: 0;
-  color: var(--fg-muted);
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.eyebrow {
-  margin: 0 0 0.25rem;
-  color: var(--accent);
-  font: 500 0.75rem/1rem var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.meta-block {
-  display: grid;
-  gap: 0.125rem;
-  text-align: right;
-}
-
-.notice {
-  margin: 0 0 1.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--warn-border);
-  border-radius: var(--radius);
-  background: var(--warn-bg);
-  color: var(--warn);
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.notice time {
-  font-weight: 600;
-}
-
 .layout {
   display: grid;
   gap: var(--space-8);
@@ -410,14 +365,17 @@ input::placeholder {
   }
 }
 
-.board .hero,
-.board .results {
+.sided [data-side] {
   display: none;
 }
 
-.board:has(#side-buy:checked) [data-side="buy"],
-.board:has(#side-sell:checked) [data-side="sell"] {
+.sided:has(#side-buy:checked) [data-side="buy"],
+.sided:has(#side-sell:checked) [data-side="sell"] {
   display: block;
+}
+
+.sided > .segmented {
+  margin-bottom: var(--space-6);
 }
 
 .composer,
@@ -444,40 +402,6 @@ input::placeholder {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: minmax(0, 1fr);
-}
-
-.coverage-strip {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-  margin: 0 0 var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius);
-  background: var(--bg-subtle);
-  color: var(--fg-muted);
-  font-size: 0.8125rem;
-}
-
-.coverage-label {
-  margin-right: var(--space-2);
-  color: var(--fg);
-  font-weight: 500;
-}
-
-.coverage-value {
-  color: var(--positive);
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.coverage-value-muted {
-  color: var(--warn);
-}
-
-.coverage-copy {
-  color: var(--fg-secondary);
 }
 
 @media (min-width: 62rem) {
@@ -674,52 +598,36 @@ input::placeholder {
   background: color-mix(in oklch, var(--accent) 85%, var(--fg));
 }
 
-.late {
+.late,
+.rate-age {
   margin: 0.5rem 0 0;
   color: var(--warn);
   font-size: 0.8125rem;
   line-height: 1.25rem;
 }
 
-.hero.empty {
-  color: var(--fg-secondary);
+/* The age is always shown, so it stays quiet until the rate is old. */
+.rate-age {
+  color: var(--fg-muted);
+  text-align: center;
 }
 
-.hero.empty p {
+.rate-advice {
   margin: 0;
+  color: var(--warn);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  text-align: center;
 }
 
-.results-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: var(--space-4);
+.results h2 {
   margin: 0 0 var(--space-3);
-}
-
-.results-heading .eyebrow {
-  margin-bottom: 0.125rem;
-}
-
-.results-heading h2 {
-  margin: 0;
   font-size: 1.25rem;
   line-height: 1.75rem;
 }
 
-.results-count {
-  flex: none;
-  margin: 0 0 0.125rem;
-  color: var(--fg-muted);
-  font: 400 0.75rem/1rem var(--font-mono);
-}
-
-.results details.history {
-  margin-top: 1.5rem;
-}
-
-.results details.history > .empty {
-  margin: 0.25rem 0 0;
+.sided section > .empty {
+  margin: 0;
   padding: 1rem;
   border: 1px dashed var(--border);
   border-radius: var(--radius);
@@ -852,15 +760,15 @@ table.rates td.total.best {
   display: none;
 }
 
-/* The row link covers the row. The history link sits above it. */
-table.rates td.history-col a {
+/* The row link covers the row. The details link sits above it. */
+table.rates td.details-col a {
   position: relative;
   z-index: 1;
   color: var(--fg-muted);
   font-size: 0.8125rem;
 }
 
-table.rates td.history-col a:hover {
+table.rates td.details-col a:hover {
   color: var(--fg);
 }
 
@@ -987,25 +895,14 @@ details > table.rates {
   color: var(--danger);
 }
 
-.breadcrumb {
-  margin: 0 0 0.25rem;
-  font-size: 0.875rem;
-}
-
-.breadcrumb a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  color: var(--fg-muted);
-}
-
-.breadcrumb a:hover {
-  color: var(--fg);
-}
-
 .where {
-  margin: 0 0 1.5rem;
+  margin: 0 0 1rem;
   color: var(--fg-muted);
+}
+
+main > .cta {
+  width: min(100%, 22rem);
+  margin: 0 0 1.5rem;
 }
 
 .figures {

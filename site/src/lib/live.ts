@@ -12,8 +12,8 @@ export function refreshAges(root: ParentNode, now = Date.now()): void {
     time.classList.toggle("old", isOld(minutes));
   }
 
-  for (const notice of root.querySelectorAll<HTMLElement>("[data-since]")) {
-    notice.hidden = !isOld(minutesSince(notice.dataset.since ?? "", now));
+  for (const advice of root.querySelectorAll<HTMLElement>("[data-since]")) {
+    advice.hidden = !isOld(minutesSince(advice.dataset.since ?? "", now));
   }
 }
 

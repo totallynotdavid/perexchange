@@ -1,0 +1,100 @@
+---
+import ChartBlock from "../components/ChartBlock.astro";
+import Unavailable from "../components/Unavailable.astro";
+import Base from "../layouts/Base.astro";
+import { formatDay } from "../lib/format.ts";
+import { ALL_DAYS, loadHistory, loadLatest } from "../lib/load.ts";
+import { MIN_CHART_MS, bestSeries } from "../lib/market.ts";
+import type { Side } from "../lib/market.ts";
+import { BEST_RANGES } from "../lib/range.ts";
+
+export const prerender = false;
+
+const latest = await loadLatest().catch((error: unknown) => {
+  console.error(error);
+  return null;
+});
+if (latest === null) {
+  Astro.response.status = 503;
+}
+const history = latest
+  ? await loadHistory(undefined, undefined, ALL_DAYS).catch((error: unknown) => {
+      console.error(error);
+      return null;
+    })
+  : null;
+const sources = new Set((latest?.rates ?? []).map((quote) => quote.source));
+
+const sides: { side: Side; title: string; series: { label: string; kind: "sell" | "buy" } }[] = [
+  { side: "buy", title: "Cheapest price to buy US$1", series: { label: "Cheapest price for US$1", kind: "sell" } },
+  { side: "sell", title: "Best price to sell US$1", series: { label: "Best price for US$1", kind: "buy" } },
+];
+const charts = sides.map((one) => {
+  const points = bestSeries(history?.snapshots ?? [], one.side, sources);
+  const first = points[0];
+  const last = points.at(-1);
+  const end = first && last && last.t - first.t >= MIN_CHART_MS ? last.t : null;
+  return { ...one, points, end };
+});
+
+function waiting(points: { t: number }[]): string {
+  const first = points[0];
+  return first === undefined
+    ? "No readings are recorded yet."
+    : `The chart appears once two days of readings are recorded. The first is from ${formatDay(first.t)}.`;
+}
+---
+
+<Base
+  title="Best dollar rate over time in Peru | perexchange"
+  description="How the best rate to buy or sell US dollars with Peruvian exchange houses has moved."
+  section="history"
+>
+  <h1 class="page-title">Best rate history</h1>
+
+  {latest === null && <Unavailable />}
+
+  {latest !== null && history === null && (
+    <section class="state error" role="alert">
+      <h2>The history is not available right now</h2>
+      <a class="button" href="">
+        Try again
+      </a>
+    </section>
+  )}
+
+  {history !== null && (
+    <div class="sided">
+      <div class="segmented" role="radiogroup" aria-label="I want to">
+        <input type="radio" name="side" id="side-buy" value="buy" checked />
+        <label for="side-buy">I want to buy US$</label>
+        <input type="radio" name="side" id="side-sell" value="sell" />
+        <label for="side-sell">I want to sell US$</label>
+      </div>
+
+      {charts.map(({ side, title, series, points, end }) => (
+        <section data-side={side} aria-labelledby={`history-${side}`}>
+          <h2 id={`history-${side}`}>{title}</h2>
+          {end !== null ? (
+            <ChartBlock
+              series={[{ id: side, label: series.label, kind: series.kind, points }]}
+              end={end}
+              subject={`${series.label}, in soles`}
+              name={side}
+              ranges={BEST_RANGES}
+              initial="7d"
+            />
+          ) : (
+            <p class="empty">{waiting(points)}</p>
+          )}
+        </section>
+      ))}
+    </div>
+  )}
+
+  <script>
+    import { bindSide, storageOf } from "../lib/choices.ts";
+
+    bindSide(document, storageOf(document));
+  </script>
+</Base>

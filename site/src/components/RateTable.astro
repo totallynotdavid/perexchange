@@ -32,8 +32,8 @@ const { quotes, best, side, now, fetchedAt, caption, startRank = 0 } = Astro.pro
         <span data-head="label">{side === "buy" ? "You pay" : "You get"}</span>
         <small data-head="for"></small>
       </th>
-      <th scope="col" class="history-col">
-        <span class="visually-hidden">Rate history</span>
+      <th scope="col" class="details-col">
+        <span class="visually-hidden">Details</span>
       </th>
     </tr>
   </thead>
@@ -67,9 +67,9 @@ const { quotes, best, side, now, fetchedAt, caption, startRank = 0 } = Astro.pro
           </th>
           <td class="num price">{formatPrice(rateFor(quote, side))}</td>
           <td class:list={["num", "total-col", "total", { best: gapToBest(quote, best, side) === 0 }]} data-total />
-          <td class="history-col">
+          <td class="details-col">
             <a href={`/house/${quote.id}/`}>
-              History<span class="visually-hidden"> of {quoteHouse(quote)}</span>
+              Details<span class="visually-hidden"> of {quoteHouse(quote)}</span>
             </a>
           </td>
         </tr>

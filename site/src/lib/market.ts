@@ -83,26 +83,6 @@ export function placeOf(
   return { place: better + 1, of: ranked.length, gap: gapToBest(quote, best, side) };
 }
 
-export interface MissingSince {
-  at: number;
-  atLeast: boolean;
-}
-
-/** Finds when a source's current run of missing fetches began. */
-export function missingSince(snapshots: Snapshot[], source: string): MissingSince | null {
-  let at: number | null = null;
-  for (const snapshot of [...snapshots].reverse()) {
-    if (snapshot.missing === null) {
-      return at === null ? null : { at, atLeast: true };
-    }
-    if (!snapshot.missing.includes(source)) {
-      return at === null ? null : { at, atLeast: false };
-    }
-    at = snapshot.t;
-  }
-  return at === null ? null : { at, atLeast: true };
-}
-
 const REASONS: Record<Failure["reason"], string> = {
   blocked: "Blocks requests from our server",
   changed: "Changed its page, so we cannot read it",
@@ -117,12 +97,6 @@ export interface MissingHouse {
   why: string;
 }
 
-function since(found: MissingSince | null): string {
-  return found === null
-    ? ""
-    : ` since ${found.atLeast ? "at least " : ""}${formatDay(found.at)}`;
-}
-
 /**
  * The houses a person might look for and cannot find: those that returned nothing, and
  * those whose only rate is too old to rank. A house another listing still covers is not
@@ -131,7 +105,6 @@ function since(found: MissingSince | null): string {
 export function missingHouses(
   quotes: Quote[],
   failures: Failure[],
-  snapshots: Snapshot[],
   now: string | number,
 ): MissingHouse[] {
   const covered = new Set(current(quotes, now).map((quote) => houseKey(quote.name)));
@@ -142,7 +115,7 @@ export function missingHouses(
     if (!covered.has(key)) {
       missing.set(key, {
         name: houseName(failure.source),
-        why: `${REASONS[failure.reason]}${since(missingSince(snapshots, failure.source))}.`,
+        why: `${REASONS[failure.reason]}.`,
       });
     }
   }
