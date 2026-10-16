@@ -26,4 +26,4 @@ def _parse_json(response_data: list[dict[str, Any]]) -> list[ExchangeRate]:
     return [rate]
 
 
-fetch_cambiafx = json_scraper(SOURCE, URL, _parse_json)
+fetch_cambiafx = json_scraper(URL, _parse_json)

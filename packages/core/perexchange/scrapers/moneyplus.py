@@ -5,4 +5,4 @@ SOURCE = "moneyplus"
 
 _parse_json = digital_tc_parser(SOURCE)
 
-fetch_moneyplus = digital_tc_scraper(SOURCE, "money-plus", _parse_json)
+fetch_moneyplus = digital_tc_scraper("money-plus", _parse_json)

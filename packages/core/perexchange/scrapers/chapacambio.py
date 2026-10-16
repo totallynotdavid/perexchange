@@ -47,4 +47,4 @@ def _try_create_rate(data: dict[str, Any]) -> ExchangeRate | None:
     return None
 
 
-fetch_chapacambio = json_scraper(SOURCE, URL, _parse_json)
+fetch_chapacambio = json_scraper(URL, _parse_json)

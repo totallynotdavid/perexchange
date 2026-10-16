@@ -43,4 +43,4 @@ def _latest_rate(html_content: str) -> Any:
         return None
 
 
-fetch_inticambio = html_scraper(SOURCE, URL, _parse_html)
+fetch_inticambio = html_scraper(URL, _parse_html)

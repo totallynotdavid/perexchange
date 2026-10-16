@@ -42,7 +42,6 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
 
 
 fetch_tkambio = json_scraper(
-    SOURCE,
     URL,
     _parse_json,
     method="POST",

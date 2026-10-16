@@ -56,7 +56,7 @@ the registry to match an aggregator row to a house. The
 
 An adapter takes a shared client and the fetch settings and returns a list of
 `ExchangeRate` objects. Every object carries the adapter's source ID. The fetch layer
-validates each adapter's source ID, and factory-generated adapters validate parser output.
+records a failure for an adapter whose rates carry another source ID.
 
 Most adapters use a factory from
 [`scrapers/factories.py`](../packages/core/perexchange/scrapers/factories.py):

@@ -23,4 +23,4 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
     return [rate]
 
 
-fetch_chaskidolar = csrf_convert_scraper(SOURCE, URL, _parse_json)
+fetch_chaskidolar = csrf_convert_scraper(URL, _parse_json)

@@ -44,4 +44,4 @@ def _parse_json(data: list[dict[str, Any]]) -> list[ExchangeRate]:
     ]
 
 
-fetch_defiperu = json_scraper(SOURCE, URL, _parse_json)
+fetch_defiperu = json_scraper(URL, _parse_json)

@@ -13,13 +13,6 @@ from perexchange.time import PERU_TZ, parse_source_timestamp
 from perexchange.transport import send
 
 
-def _validate_rates(source: str, rates: list[ExchangeRate]) -> list[ExchangeRate]:
-    if any(rate.source != source for rate in rates):
-        msg = f"parser for {source} returned a rate with the wrong source ID"
-        raise ValueError(msg)
-    return rates
-
-
 def rate_from_fields(
     data: Mapping[str, Any],
     source: str,
@@ -46,7 +39,6 @@ def rate_from_fields(
 
 
 def json_scraper(
-    source: str,
     url: str,
     parse: Callable[[Any], list[ExchangeRate]],
     *,
@@ -65,7 +57,7 @@ def json_scraper(
                 c, method, url, headers=headers, data=data, timeout=timeout
             )
             response.raise_for_status()
-            return _validate_rates(source, parse(response.json()))
+            return parse(response.json())
 
         return await fetch_with_retry(client, _fetch, max_attempts, retry_delay, url)
 
@@ -73,7 +65,6 @@ def json_scraper(
 
 
 def html_scraper(
-    source: str,
     url: str,
     parse: Callable[[str], list[ExchangeRate]],
     *,
@@ -92,7 +83,7 @@ def html_scraper(
                 c, method, url, headers=headers, data=data, timeout=timeout
             )
             response.raise_for_status()
-            return _validate_rates(source, parse(response.text))
+            return parse(response.text)
 
         return await fetch_with_retry(client, _fetch, max_attempts, retry_delay, url)
 
@@ -100,7 +91,6 @@ def html_scraper(
 
 
 def dual_endpoint_json_scraper(
-    source: str,
     buy_url: str,
     sell_url: str,
     parse: Callable[[dict[str, Any]], list[ExchangeRate]],
@@ -116,8 +106,7 @@ def dual_endpoint_json_scraper(
             buy_response.raise_for_status()
             sell_response = await send(c, "GET", sell_url, timeout=timeout)
             sell_response.raise_for_status()
-            rates = parse({"buy": buy_response.json(), "sell": sell_response.json()})
-            return _validate_rates(source, rates)
+            return parse({"buy": buy_response.json(), "sell": sell_response.json()})
 
         return await fetch_with_retry(
             client, _fetch, max_attempts, retry_delay, buy_url
@@ -138,7 +127,6 @@ def _extract_csrf_token(html_content: str) -> str:
 
 
 def csrf_convert_scraper(
-    source: str,
     base_url: str,
     parse: Callable[[Any], list[ExchangeRate]],
 ) -> ExchangeRateScraper:
@@ -174,7 +162,7 @@ def csrf_convert_scraper(
                 timeout=timeout,
             )
             api_response.raise_for_status()
-            return _validate_rates(source, parse(api_response.json()))
+            return parse(api_response.json())
 
         return await fetch_with_retry(
             client, _fetch, max_attempts, retry_delay, page_url
@@ -207,12 +195,10 @@ def digital_tc_parser(source: str) -> Callable[[Any], list[ExchangeRate]]:
 
 
 def digital_tc_scraper(
-    source: str, tenant: str, parse: Callable[[Any], list[ExchangeRate]]
+    tenant: str, parse: Callable[[Any], list[ExchangeRate]]
 ) -> ExchangeRateScraper:
     """Fetch one house from the shared API. The tenant header selects the house."""
-    return json_scraper(
-        source, DIGITAL_TC_URL, parse, headers={"X-Digital-Tenant": tenant}
-    )
+    return json_scraper(DIGITAL_TC_URL, parse, headers={"X-Digital-Tenant": tenant})
 
 
 def rate_from_convert_fields(

@@ -36,4 +36,4 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
     ]
 
 
-fetch_dinekash = dual_endpoint_json_scraper(SOURCE, BUY_URL, SELL_URL, _parse_json)
+fetch_dinekash = dual_endpoint_json_scraper(BUY_URL, SELL_URL, _parse_json)

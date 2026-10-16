@@ -140,4 +140,4 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
     return rates
 
 
-fetch_cuantoestaeldolar = html_scraper(SOURCE, URL, _parse_html)
+fetch_cuantoestaeldolar = html_scraper(URL, _parse_html)

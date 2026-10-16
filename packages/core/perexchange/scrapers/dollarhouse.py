@@ -69,4 +69,4 @@ def _parse_float(value: str | None) -> float | None:
         return None
 
 
-fetch_dollarhouse = html_scraper(SOURCE, URL, _parse_html)
+fetch_dollarhouse = html_scraper(URL, _parse_html)

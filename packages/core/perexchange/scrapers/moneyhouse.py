@@ -46,4 +46,4 @@ def _extract_rate(soup: BeautifulSoup, field_class: str) -> float | None:
         return None
 
 
-fetch_moneyhouse = html_scraper(SOURCE, URL, _parse_html)
+fetch_moneyhouse = html_scraper(URL, _parse_html)

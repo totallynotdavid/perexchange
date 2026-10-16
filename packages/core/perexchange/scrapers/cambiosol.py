@@ -48,4 +48,4 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
     ]
 
 
-fetch_cambiosol = html_scraper(SOURCE, URL, _parse_html)
+fetch_cambiosol = html_scraper(URL, _parse_html)

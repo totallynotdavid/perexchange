@@ -19,4 +19,4 @@ def _parse_json(response_data: dict[str, Any]) -> list[ExchangeRate]:
     return [rate]
 
 
-fetch_marketdollar = json_scraper(SOURCE, URL, _parse_json)
+fetch_marketdollar = json_scraper(URL, _parse_json)

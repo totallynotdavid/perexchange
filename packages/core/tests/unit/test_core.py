@@ -107,9 +107,7 @@ async def test_transport_error_outside_httpx_is_recorded_as_a_source_failure(
     monkeypatch,
 ):
     attempts = []
-    flaky = Source(
-        "flaky", json_scraper("flaky", "https://flaky.test/rates", lambda data: [])
-    )
+    flaky = Source("flaky", json_scraper("https://flaky.test/rates", lambda data: []))
     healthy = Source("healthy", AsyncMock(return_value=[rate("healthy")]))
     monkeypatch.setattr(core, "get_sources", lambda source_names: [flaky, healthy])
 

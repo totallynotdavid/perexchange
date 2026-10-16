@@ -21,4 +21,4 @@ def _parse_json(data: dict[str, Any]) -> list[ExchangeRate]:
     return [rate]
 
 
-fetch_kambioonline = json_scraper(SOURCE, URL, _parse_json)
+fetch_kambioonline = json_scraper(URL, _parse_json)

@@ -40,4 +40,4 @@ def _rate_for(entries: list[dict[str, Any]], tipo: str) -> float | None:
     return None
 
 
-fetch_metafx = json_scraper(SOURCE, URL, _parse_json)
+fetch_metafx = json_scraper(URL, _parse_json)
