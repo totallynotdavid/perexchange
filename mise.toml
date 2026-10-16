@@ -4,54 +4,125 @@ python.uv_venv_auto = "source"
 [tools]
 python = "3.15.0"
 uv = "0.13.0"
-ruff = "0.17.0"
+node = "24.22.0"
 bun = "1.4.3"
+oxfmt = "0.73.0"
 
-[tasks.sync]
-description = "Sync dependencies for all packages and dev"
-run = "uv sync --all-packages --extra dev"
+[tasks.install]
+description = "Install every dependency from the lockfiles"
+depends = ["install:*"]
 
-[tasks.test]
-description = "Run tests for core package"
-run = "uv run pytest packages/core"
+[tasks."install:py"]
+description = "Install the Python workspace and its dev extra from uv.lock"
+run = "uv sync --locked --all-packages --extra dev"
 
-[tasks.test-integration]
-description = "Run integration tests for core package"
-run = "uv run pytest packages/core -m integration"
-
-[tasks.format]
-description = "Format all packages"
-run = "ruff format . && ruff check --fix ."
-
-[tasks.format-check]
-description = "Check Python formatting and lint"
-run = "ruff format --check . && ruff check --no-fix ."
-
-[tasks.format-docs]
-description = "Format all *.md and *.yml files"
-run = "bun x oxfmt@0.73.0 \"**/*.{md,yml}\" --write"
-
-[tasks.format-docs-check]
-description = "Check Markdown and YAML formatting"
-run = "bun x oxfmt@0.73.0 \"**/*.{md,yml}\" --check"
-
-[tasks.lint]
-description = "Run type checking"
-run = "uv run mypy"
+[tasks."install:site"]
+description = "Install the site dependencies from bun.lock"
+run = "bun install --frozen-lockfile"
+dir = "site"
 
 [tasks.update]
 description = "Update dependencies for all packages"
 alias = "u"
-run = ["uv sync --all-packages --extra dev -U"]
+run = "uv sync --all-packages --extra dev -U"
+
+[tasks.lint]
+description = "Check Python, Markdown, YAML, JSON and site formatting and lint"
+depends = ["lint:*"]
+
+[tasks."lint:py"]
+description = "Check Python lint and formatting with ruff"
+run = ["uv run ruff check --no-fix .", "uv run ruff format --check ."]
+
+[tasks."lint:format"]
+description = "Check Markdown, YAML, JSON and TypeScript formatting with oxfmt"
+run = "oxfmt --check ."
+
+[tasks."lint:site"]
+description = "Check the site with oxlint, and its .astro files with Prettier"
+run = [
+  "bun x oxlint --deny-warnings",
+  "bun x prettier --plugin prettier-plugin-astro --print-width 120 --check \"src/**/*.astro\"",
+]
+dir = "site"
+
+[tasks.fix]
+description = "Apply safe lint fixes and format every file type"
+run = [{ task = "fix:py" }, { task = "fix:site" }, { task = "fix:format" }]
+
+[tasks."fix:py"]
+description = "Fix Python lint and format it with ruff"
+run = ["uv run ruff check --fix .", "uv run ruff format ."]
+
+[tasks."fix:format"]
+description = "Format Markdown, YAML, JSON and TypeScript with oxfmt"
+run = "oxfmt --write ."
+
+[tasks."fix:site"]
+description = "Fix the site with oxlint, and format its .astro files with Prettier"
+run = [
+  "bun x oxlint --fix",
+  "bun x prettier --plugin prettier-plugin-astro --print-width 120 --write \"src/**/*.astro\"",
+]
+dir = "site"
+
+[tasks.typecheck]
+description = "Type-check the Python code and the site"
+depends = ["typecheck:*"]
+
+[tasks."typecheck:py"]
+description = "Type-check the Python code with mypy"
+run = "uv run mypy"
+
+[tasks."typecheck:site"]
+description = "Type-check the site with astro check"
+run = "bun x astro check"
+dir = "site"
+
+[tasks.test]
+description = "Run the unit tests of the packages and the site"
+depends = ["test:py", "test:site"]
+
+[tasks."test:py"]
+description = "Run the core unit tests with coverage and a JUnit report"
+run = "uv run pytest packages/core --cov=perexchange --cov-report=xml --junitxml=junit.xml"
+
+[tasks."test:site"]
+description = "Check colour contrast, then run the site tests"
+run = ["node scripts/check-contrast.ts", "bun x vitest run"]
+dir = "site"
+
+[tasks."test:integration"]
+description = "Run the core tests that call the live exchange houses"
+run = "uv run pytest packages/core -m integration --tb=short"
+
+[tasks."test:min-python"]
+description = "Run the core unit tests on the oldest supported Python in a throwaway environment"
+run = "uv run --isolated --locked --python 3.12 --all-packages --extra dev pytest packages/core"
 
 [tasks.build]
-description = "Build core package"
-run = "uv build"
-dir = "packages/core"
+description = "Build the package and the site"
+depends = ["build:*"]
 
-[tasks.build-check]
-description = "Build and verify package contents"
-run = "uv run --extra dev python tools/build_check.py"
+[tasks."build:py"]
+description = "Build the package in a temporary directory and verify its contents"
+run = "uv run python tools/build_check.py"
+
+[tasks."build:site"]
+description = "Build the site into site/dist"
+run = "bun run build"
+dir = "site"
+
+[tasks.check]
+description = "Run every check CI runs: lint, typecheck, test and build"
+depends = ["lint", "typecheck", "test", "build"]
+
+[tasks.dist]
+description = "Build the sdist and wheel into packages/core/dist and check them with twine"
+run = [
+  "uv build --sdist --wheel --out-dir packages/core/dist packages/core",
+  "uv run python -m twine check packages/core/dist/*",
+]
 
 [tasks.release]
 description = "Bump the version, lock, check, commit, tag and push a release"
@@ -66,29 +137,29 @@ args=("${usage_version?}")
 if [ "${usage_dry_run:-false}" = "true" ]; then
   args+=(--dry-run)
 fi
-exec uv run --extra dev python tools/release.py "${args[@]}"
+exec uv run python tools/release.py "${args[@]}"
 '''
 
-[tasks.site-data]
+[tasks."data:site"]
 description = "Fetch every source once and record a snapshot for the site"
-run = "bun install --frozen-lockfile && bun run data"
-dir = "site"
+run = "uv run python tools/snapshot.py --data-dir site/data"
 
-[tasks.site-dev]
+[tasks."dev:site"]
 description = "Serve the site with live reload, from the recorded snapshot"
-run = "bun install --frozen-lockfile && bun run dev"
+run = "bun run astro dev"
 dir = "site"
+env = { PEREXCHANGE_DATA = "data" }
 
-[tasks.site-build]
-description = "Build the site into site/dist"
-run = "bun install --frozen-lockfile && bun run build"
+[tasks."preview:site"]
+description = "Serve the built site, from the recorded snapshot"
+run = "bun run astro preview"
 dir = "site"
+env = { PEREXCHANGE_DATA = "data" }
 
-[tasks.site-check]
-description = "Type-check, lint, format-check and test the site"
-run = "bun install --frozen-lockfile && bun run check"
-dir = "site"
+[tasks.collect]
+description = "Record snapshots into site/data for 330 minutes, one every 15"
+run = "uv run python tools/collect.py --data-dir site/data --minutes 330 --interval 15"
 
-[tasks.check]
-description = "Run formatting, lint, tests, and package checks"
-depends = ["format-check", "format-docs-check", "lint", "test", "build-check", "site-check"]
+[tasks."report:snapshot"]
+description = "Print a workflow warning naming the sources that did not answer"
+run = "bun site/scripts/report-failures.ts"

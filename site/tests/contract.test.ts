@@ -60,9 +60,9 @@ describe("data written by tools/snapshot.py", () => {
   it("follows one house across fetches", async () => {
     const { snapshots } = await loadHistory(dir);
 
-    expect(houseSeries(snapshots, "cambiafx").map((point) => point.sell)).toEqual([
-      3.458, 3.45,
-    ]);
+    expect(
+      houseSeries(snapshots, "cambiafx").map((point) => point.sell),
+    ).toEqual([3.458, 3.45]);
   });
 
   it("ranks the newest fetch", async () => {
@@ -80,7 +80,9 @@ describe("data published at a URL", () => {
         () => response.writeHead(404).end(),
       );
     });
-    await new Promise<void>((resolve) => served.listen(0, "127.0.0.1", resolve));
+    await new Promise<void>((resolve) =>
+      served.listen(0, "127.0.0.1", resolve),
+    );
     const { port } = served.address() as AddressInfo;
     const url = `http://127.0.0.1:${port}`;
 
@@ -106,7 +108,9 @@ describe("reading a longer history from a URL", () => {
     "/history/2026-04-01.jsonl": line("2026-04-01T12:00:00Z"),
   };
 
-  async function withServer<T>(use: (url: string, asked: string[]) => Promise<T>) {
+  async function withServer<T>(
+    use: (url: string, asked: string[]) => Promise<T>,
+  ) {
     const asked: string[] = [];
     const served = createServer((request, response) => {
       asked.push(request.url ?? "");
@@ -117,7 +121,9 @@ describe("reading a longer history from a URL", () => {
         response.end(body);
       }
     });
-    await new Promise<void>((resolve) => served.listen(0, "127.0.0.1", resolve));
+    await new Promise<void>((resolve) =>
+      served.listen(0, "127.0.0.1", resolve),
+    );
     try {
       return await use(
         `http://127.0.0.1:${(served.address() as AddressInfo).port}`,
@@ -135,7 +141,9 @@ describe("reading a longer history from a URL", () => {
       const { snapshots } = await loadHistory(url, now, 365);
 
       expect(
-        snapshots.map((snapshot) => new Date(snapshot.t).toISOString().slice(0, 10)),
+        snapshots.map((snapshot) =>
+          new Date(snapshot.t).toISOString().slice(0, 10),
+        ),
       ).toEqual(["2026-08-29", "2026-10-08"]);
       expect(asked).toHaveLength(90);
     });
@@ -153,10 +161,14 @@ describe("reading a longer history from a URL", () => {
 
 describe("loading an empty data directory", () => {
   it("names the command that records a snapshot", async () => {
-    await expect(loadLatest(path.join(dir, "missing"))).rejects.toThrow(/bun run data/);
+    await expect(loadLatest(path.join(dir, "missing"))).rejects.toThrow(
+      /mise run data:site/,
+    );
   });
 
   it("has no history", async () => {
-    expect((await loadHistory(path.join(dir, "missing"))).snapshots).toEqual([]);
+    expect((await loadHistory(path.join(dir, "missing"))).snapshots).toEqual(
+      [],
+    );
   });
 });

@@ -44,7 +44,7 @@ export async function loadLatest(source = __DATA_SOURCE__): Promise<Latest> {
   const text = await readText(source, "latest.json");
   if (text === null) {
     throw new Error(
-      `No snapshot at ${source}/latest.json. Run \`bun run data\` to record one, or set PEREXCHANGE_DATA.`,
+      `No snapshot at ${source}/latest.json. Run \`mise run data:site\` to record one, or set PEREXCHANGE_DATA.`,
     );
   }
   return parseLatest(text);
@@ -63,7 +63,11 @@ const dayFile = (now: Date, back: number) =>
  * The text of the history files of the last `days` UTC days. A published copy is read
  * newest first, and reading stops at the first batch that holds no file.
  */
-async function historyFiles(source: string, now: Date, days: number): Promise<string[]> {
+async function historyFiles(
+  source: string,
+  now: Date,
+  days: number,
+): Promise<string[]> {
   if (!isUrl(source)) {
     const names = await readdir(path.join(source, "history")).catch(() => []);
     const kept = names
