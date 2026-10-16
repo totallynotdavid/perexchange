@@ -4,26 +4,25 @@ For a substantial change, open an issue first so we can agree on the approach.
 
 ## The codebase
 
-Read [architecture](../docs/architecture.md) first for the module map and fetch flow.
+Read [architecture](../docs/architecture.md) first for the module map and fetch
+flow.
 
 ## Set up
 
-Install [mise](https://mise.jdx.dev/). It provides the pinned `uv`, `ruff` and
-[`bun`](https://bun.sh), which `mise run check` needs for the site and the Markdown
-checks. Without mise, install those three at the versions in [`mise.toml`](../mise.toml).
-The site checks also run `bun install`, so they need network access. Run the commands
-below from the repository root.
+Install [mise](https://mise.jdx.dev/). It provides Python, `uv`, Node, `bun` and
+`oxfmt` at the versions in [`mise.toml`](../mise.toml). Without mise, install
+those at the same versions. Run the commands below from the repository root.
 
 ```bash
 git clone https://github.com/totallynotdavid/perexchange
 cd perexchange
 mise install
-mise run sync
+mise run install
 ```
 
-To try a change by hand, use the [CLI](../packages/cli/README.md) or run a script in
-[`examples/`](../examples), such as `uv run python examples/basic.py`. Both send live
-requests.
+To try a change by hand, use the [CLI](../packages/cli/README.md) or run a
+script in [`examples/`](../examples), such as `uv run python examples/basic.py`.
+Both send live requests.
 
 ## Checks and tests
 
@@ -33,20 +32,23 @@ Run all checks:
 mise run check
 ```
 
-The task checks Python formatting and lint, Markdown and YAML formatting, types, unit
-tests, built packages, and the [site](../site/README.md). It never rewrites files.
+The task checks Python and site lint and formatting, Markdown, YAML and JSON
+formatting, types, unit tests, built packages, and the
+[site](../site/README.md). It does not change tracked files.
 
 Each part has its own task:
 
-- `mise run test` runs the unit tests.
-- `mise run format-check` checks Python formatting and lint with ruff.
-- `mise run format-docs-check` checks Markdown and YAML formatting.
-- `mise run lint` type-checks with mypy.
-- `mise run build-check` builds the packages and verifies them.
-- `mise run site-check` checks the site, and `mise run site-dev` serves it.
+- `mise run lint` checks lint and formatting. `lint:py`, `lint:format` and
+  `lint:site` run one part.
+- `mise run typecheck` type-checks the Python code with mypy and the site with
+  `astro check`.
+- `mise run test` runs the unit tests of the core package and the site.
+- `mise run build` builds and verifies the package and the site.
+- `mise run test:min-python` runs the core unit tests on Python 3.12, the oldest
+  version the package supports.
 
-Fix formatting with `mise run format` for Python and `mise run format-docs` for Markdown
-and YAML.
+`mise run fix` applies the safe lint fixes and formats every file. The `.astro`
+files are formatted with Prettier, because oxfmt does not read them.
 
 Run one test file:
 
@@ -62,32 +64,34 @@ uv run pytest --cov=perexchange --cov-report=html
 
 ## Add a source
 
-1. Add `packages/core/perexchange/scrapers/yoursite.py`. The module name is the source ID.
-   Define `SOURCE` with that ID, and one parser, `_parse_json` or `_parse_html`, that
-   turns the response into `ExchangeRate` objects carrying that ID. Build the fetcher with
-   a factory from
-   [`scrapers/factories.py`](../packages/core/perexchange/scrapers/factories.py) when the
-   source fits one of its request patterns.
+1. Add `packages/core/perexchange/scrapers/yoursite.py`. The module name is the
+   source ID. Define `SOURCE` with that ID, and one parser, `_parse_json` or
+   `_parse_html`, that turns the response into `ExchangeRate` objects carrying
+   that ID. Build the fetcher with a factory from
+   [`scrapers/factories.py`](../packages/core/perexchange/scrapers/factories.py)
+   when the source fits one of its request patterns.
 2. Add a `Source` for it to `_SOURCES` in
    [`scrapers/registry.py`](../packages/core/perexchange/scrapers/registry.py).
-3. Save one representative response as `packages/core/tests/fixtures/yoursite.json` or
-   `.html`.
+3. Save one representative response as
+   `packages/core/tests/fixtures/yoursite.json` or `.html`.
 4. Add the exact output to `EXPECTED_RATES` in
    [`test_parsers.py`](../packages/core/tests/unit/test_parsers.py).
-5. Cover a parser branch that the representative response does not reach with a second
-   fixture. Name it `yoursite-<case>` and write a test for it in `test_parsers.py`.
+5. Cover a parser branch that the representative response does not reach with a
+   second fixture. Name it `yoursite-<case>` and write a test for it in
+   `test_parsers.py`.
 
-The parser suite fails when a parser accepts a malformed payload or returns rates other
-than the ones in `EXPECTED_RATES`. Put source-specific validation in the parser. The
-factory handles requests, retries, and response decoding. Rules that span sources, such as
-dropping aggregator rows, belong in `core.py` and its tests.
+The parser suite fails when a parser accepts a malformed payload or returns
+rates other than the ones in `EXPECTED_RATES`. Put source-specific validation in
+the parser. The factory handles requests, retries, and response decoding. Rules
+that span sources, such as dropping aggregator rows, belong in `core.py` and its
+tests.
 
 ## Live tests
 
-The live tests call the real exchange-house endpoints. They are not part of the default
-tests, because endpoints can be slow, rate-limit requests, or change without notice. Run
-them with:
+The live tests call the real exchange-house endpoints. They are not part of the
+default tests, because endpoints can be slow, rate-limit requests, or change
+without notice. Run them with:
 
 ```bash
-mise run test-integration
+mise run test:integration
 ```
