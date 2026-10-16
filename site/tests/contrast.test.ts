@@ -79,7 +79,7 @@ const TEXT: [string, string][] = [
   ["bg", "accent"],
   ["warn", "bg"],
   ["warn", "bg-muted"],
-  ["warn", "warn-bg"],
+  ["warn", "bg-subtle"],
   ["danger", "danger-bg"],
   ["positive", "bg"],
   ["positive", "bg-muted"],

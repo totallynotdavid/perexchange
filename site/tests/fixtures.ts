@@ -14,7 +14,6 @@ export function quote(
 export function snapshot(
   minutesAfterStart: number,
   prices: Record<string, [buy: number, sell: number, ageMinutes?: number]>,
-  missing: string[] | null = null,
 ): Snapshot {
   const start = Date.parse("2026-10-08T00:00:00Z");
   return {
@@ -25,6 +24,5 @@ export function snapshot(
         { buy, sell, ageMinutes },
       ]),
     ),
-    missing,
   };
 }

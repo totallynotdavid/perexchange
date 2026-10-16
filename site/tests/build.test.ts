@@ -7,6 +7,7 @@ import { Window } from "happy-dom";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { bindBoard } from "../src/lib/calculator.ts";
+import { bindSide, storageOf } from "../src/lib/choices.ts";
 import { loadLatest } from "../src/lib/load.ts";
 import { recordCompleteSnapshot, recordSnapshots } from "./record.ts";
 import { scratchDir } from "./scratch.ts";
@@ -122,12 +123,24 @@ describe("the site built from a recorded snapshot", () => {
     expect(await page("index.html")).toMatch(/^<!DOCTYPE html>/i);
   });
 
-  it("shows the best rate and its house before anyone types, and how old the rates are once", async () => {
+  it("shows the best rate, its house and its age before anyone types", async () => {
     const home = text(await page("index.html"));
 
-    expect(home).toMatch(/1 house compared, updated \d+ (min|h|d) ago/);
     expect(home).toContain("Best rate per US$1 S/ 3.4500 at CambiaFX");
     expect(home).toContain("Best rate per US$1 S/ 3.4360 at CambiaFX");
+    expect(home).toMatch(
+      /Go to CambiaFX\s*, opens its website Rate from \d+ (min|h|d) ago/,
+    );
+  });
+
+  it("opens with the page's name and no repeated heading, count or eyebrow", async () => {
+    const home = text(await page("index.html"));
+
+    expect(home).toContain("Dollar rates in Peru");
+    expect(home).not.toContain("Live market board");
+    expect(home).not.toContain("compared, updated");
+    expect(home).not.toContain("Coverage");
+    expect(home).not.toContain("Open data");
   });
 
   it("hides the amount field from a browser without scripts, which has the rate to read", async () => {
@@ -138,24 +151,22 @@ describe("the site built from a recorded snapshot", () => {
     expect(text(html)).toContain("Best rate per US$1 S/ 3.4410 at Western Union");
   });
 
-  it("warns that old data is old, naming how old", async () => {
+  it("tells the reader to check an old rate, in the line that gives its age", async () => {
     const html = await page("index.html");
-    const notice = html.match(/<p class="notice"[^>]*>/)?.[0] ?? "";
+    const advice = html.match(/<p class="rate-advice"[^>]*>/)?.[0] ?? "";
 
-    expect(notice).toContain("data-since");
-    expect(notice).not.toContain("hidden");
+    expect(advice).toContain("data-since");
+    expect(advice).not.toContain("hidden");
     expect(text(html)).toMatch(
-      /These rates were fetched \d+ (h|d) ago\. The refresh is running late/,
+      /Rate from \d+ (h|d) ago Check it with the house before you go\./,
     );
   });
 
-  it("says which house is missing, why, and since when", async () => {
+  it("says which house is missing and why", async () => {
     const home = text(await page("index.html"));
 
     expect(home).toContain("1 house is not compared");
-    expect(home).toContain(
-      "Cambio Mundial: Blocks requests from our server since 8 Oct.",
-    );
+    expect(home).toContain("Cambio Mundial: Blocks requests from our server.");
   });
 
   it("shows no count of failures to a visitor when every source answered", async () => {
@@ -206,16 +217,18 @@ describe("the site built from a recorded snapshot", () => {
 
   it("leads from a house page to the house's own site", async () => {
     const html = await page("house/cambiafx/index.html");
-    const link = html.match(/<a href="([^"]+)" target="_blank"[^>]*>\s*Go to CambiaFX/);
+    const link = html.match(
+      /<a class="cta" href="([^"]+)" target="_blank"[^>]*>\s*Go to CambiaFX/,
+    );
 
     expect(link?.[1]).toBe("https://cambiafx.pe/");
   });
 
-  it("keeps a space wherever a line break meets a tag", async () => {
-    const home = text(await page("index.html"));
+  it("puts the age of the rate before the button on a house page", async () => {
+    const house = text(await page("house/cambiafx/index.html"));
 
-    expect(home).toMatch(/fetched \d+ \w+ ago\. The refresh/);
-    expect(home).toContain("not offers. Open data");
+    expect(house).toMatch(/CambiaFX Rate from \d+ \w+ ago Go to CambiaFX/);
+    expect(house).not.toContain("All houses");
   });
 
   it("renders the library docs from the repository's own Markdown", async () => {
@@ -226,7 +239,12 @@ describe("the site built from a recorded snapshot", () => {
   });
 
   it("has no inline script, which the content security policy forbids", async () => {
-    for (const file of ["index.html", "house/cambiafx/index.html", "docs/index.html"]) {
+    for (const file of [
+      "index.html",
+      "history/index.html",
+      "house/cambiafx/index.html",
+      "docs/index.html",
+    ]) {
       const html = await page(file);
       const inline = html.match(
         /<script(?![^>]*\bsrc=)(?![^>]*application\/json)[^>]*>/g,
@@ -237,7 +255,7 @@ describe("the site built from a recorded snapshot", () => {
   });
 
   it("says the rates are not available, with a 503, when there is no snapshot", async () => {
-    for (const pathname of ["/", "/house/cambiafx/"]) {
+    for (const pathname of ["/", "/history/", "/house/cambiafx/"]) {
       const response = await fetch(empty.origin + pathname);
       const html = await response.text();
 
@@ -338,9 +356,7 @@ describe("the amount field and the answer on the served home page", () => {
     expect(home.input.value).toBe("");
     expect(home.win.document.activeElement).toBe(home.input);
     expect(home.reading()).toBe("empty");
-    expect(home.summary()).toBe(
-      "Best rate per US$1 S/ 3.4550 at Gordito digital Type an amount to see the total at each house.",
-    );
+    expect(home.summary()).toBe("Best rate per US$1 S/ 3.4550 at Gordito digital");
     expect(home.rows().map((row) => row.total)).toEqual(Array(13).fill(""));
   });
 
@@ -417,8 +433,8 @@ describe("the amount field and the answer on the served home page", () => {
   });
 
   it.each([
-    ["", "Type an amount to see the total at each house."],
-    ["   ", "Type an amount to see the total at each house."],
+    ["", ""],
+    ["   ", ""],
     ["0", "Type an amount above zero."],
     ["0.00", "Type an amount above zero."],
     ["0.004", "Type an amount above zero."],
@@ -545,7 +561,7 @@ describe("selling dollars on the served home page", () => {
     const home = await openHome();
     home.chooseSide("sell");
     const cases: [string, string, string][] = [
-      ["", "Type an amount to see the total at each house.", "false"],
+      ["", "", "false"],
       ["0", "Type an amount above zero.", "true"],
       ["12a", "Use digits only, for example 200 or 1,250.50.", "true"],
       ["2000000000", "Type 1,000,000,000 or less.", "true"],
@@ -633,18 +649,17 @@ describe("the next step from the served home page", () => {
     );
   });
 
-  it("makes each row a link to its house, and the rate history a second link", async () => {
+  it("makes each row a link to its house, and its details a second link", async () => {
     const home = await openHome();
     const rows = home.rows();
+    const details = home
+      .results("buy")
+      .querySelector('tr[data-house="CambiaFX"] .details-col a');
 
     expect(rows[1]?.link.getAttribute("href")).toBe("https://cambiafx.pe/");
     expect(rows[1]?.link.getAttribute("target")).toBe("_blank");
-    expect(
-      home
-        .results("buy")
-        .querySelector('tr[data-house="CambiaFX"] .history-col a')
-        ?.getAttribute("href"),
-    ).toBe("/house/cambiafx/");
+    expect(details?.getAttribute("href")).toBe("/house/cambiafx/");
+    expect(details?.textContent).toContain("Details");
   });
 
   it("marks only the house whose rate is older than the rest", async () => {
@@ -656,22 +671,38 @@ describe("the next step from the served home page", () => {
   });
 });
 
-describe("the rate history on the served home page", () => {
-  it("is open on a wide screen and closed on a phone, below the table", async () => {
-    const wide = await openHome({}, "open", 1280);
-    const narrow = await openHome({}, "open", 390);
-    const open = (home: Awaited<ReturnType<typeof openHome>>) =>
-      home.results("buy").querySelector<HTMLDetailsElement>("details.history")!.open;
+describe("the best rate history page", () => {
+  it("is linked from every page's navigation, and the home page carries no chart", async () => {
+    for (const file of ["index.html", "house/cambiafx/index.html", "docs/index.html"]) {
+      expect(await page(file, complete), file).toContain('href="/history/"');
+    }
 
-    expect(open(wide)).toBe(true);
-    expect(open(narrow)).toBe(false);
+    const home = await page("index.html", complete);
+
+    expect(home).not.toContain("chart-block");
+    expect(home).not.toContain('<svg class="plot');
+  });
+
+  it("opens on the side the visitor left on the rates page, and keeps a new choice", async () => {
+    const win = new Window({ url: `${complete.origin}/history/`, width: 1280 });
+    win.localStorage.setItem("perexchange:side", "sell");
+    win.document.write(await page("history/index.html", complete));
+    const doc = win.document as unknown as Document;
+    bindSide(doc, storageOf(doc));
+    const radio = (side: string) =>
+      doc.getElementById(`side-${side}`) as HTMLInputElement;
+
+    expect(radio("sell").checked).toBe(true);
+    expect(radio("buy").checked).toBe(false);
+
+    radio("buy").click();
+
+    expect(win.localStorage.getItem("perexchange:side")).toBe("buy");
   });
 
   it("says how far the best rate moved in words, for each range", async () => {
-    const html = await page("index.html", complete);
-    const buy = html
-      .slice(html.indexOf('class="results" data-side="buy"'))
-      .split('class="results" data-side="sell"')[0];
+    const html = await page("history/index.html", complete);
+    const buy = html.split('data-side="sell"')[0];
     const figure = (range: string) =>
       text(
         buy.match(
@@ -692,14 +723,14 @@ describe("the rate history on the served home page", () => {
   });
 
   it("charts the cheapest base rate and never a special rate", async () => {
-    const html = await page("index.html", complete);
+    const html = await page("history/index.html", complete);
 
     expect(html).not.toContain("3.4000");
     expect(text(html)).toContain("now 3.4550, from 3.4500 to 3.4750");
   });
 
   it("labels the axis in days and never in minutes", async () => {
-    const html = await page("index.html", complete);
+    const html = await page("history/index.html", complete);
     const seven = html.match(/<figure id="chart-buy-7d"[\s\S]*?<\/figure>/)?.[0] ?? "";
     const axis = [...seven.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((one) =>
       one[1]!.trim(),
@@ -710,24 +741,26 @@ describe("the rate history on the served home page", () => {
   });
 
   it("repeats nothing under the chart", async () => {
-    const html = await page("index.html", complete);
+    const html = await page("history/index.html", complete);
 
     expect(text(html)).not.toContain("readings in this range");
   });
 
   it("has a wide and a narrow drawing of each range", async () => {
-    const html = await page("index.html", complete);
+    const html = await page("history/index.html", complete);
 
     expect(html.match(/<svg class="plot wide"/g)).toHaveLength(6);
     expect(html.match(/<svg class="plot narrow"/g)).toHaveLength(6);
   });
 
   it("shows an empty state, not a line, until two days are recorded", async () => {
-    const html = await page("index.html");
+    const html = await page("history/index.html");
 
-    expect(text(html)).toContain(
-      "The chart appears once two days of readings are recorded. The first is from 8 Oct.",
-    );
+    expect(
+      text(html).match(
+        /The chart appears once two days of readings are recorded\. The first is from 8 Oct\./g,
+      ),
+    ).toHaveLength(2);
     expect(html).not.toContain('<svg class="plot');
     expect(html).not.toContain("chart-block");
   });

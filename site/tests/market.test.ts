@@ -8,7 +8,6 @@ import {
   gapToBest,
   houseSeries,
   missingHouses,
-  missingSince,
   placeOf,
   rank,
 } from "../src/lib/market.ts";
@@ -97,54 +96,16 @@ describe("ageMinutes", () => {
   });
 });
 
-describe("missingSince", () => {
-  const down = (minutes: number) => snapshot(minutes, { a: [3.4, 3.45] }, ["x"]);
-  const up = (minutes: number) => snapshot(minutes, { a: [3.4, 3.45] }, []);
-
-  it("dates the start of the run of fetches the source has been missing from", () => {
-    const found = missingSince([up(0), down(15), down(30)], "x");
-
-    expect(found).toEqual({ at: down(15).t, atLeast: false });
-  });
-
-  it("says at least when the history ends before the source last answered", () => {
-    expect(missingSince([down(0), down(15)], "x")).toEqual({
-      at: down(0).t,
-      atLeast: true,
-    });
-  });
-
-  it("does not guess from fetches recorded without the list", () => {
-    const unknown = snapshot(0, { a: [3.4, 3.45] });
-
-    expect(missingSince([unknown, down(15)], "x")).toEqual({
-      at: down(15).t,
-      atLeast: true,
-    });
-    expect(missingSince([unknown], "x")).toBeNull();
-  });
-
-  it("is null for a source that answered in the newest fetch", () => {
-    expect(missingSince([down(0), up(15)], "x")).toBeNull();
-  });
-});
-
 describe("missingHouses", () => {
-  const history = [
-    snapshot(0, { a: [3.4, 3.45] }, []),
-    snapshot(15, { a: [3.4, 3.45] }, ["blocked"]),
-  ];
-
-  it("names a house that returned nothing, why, and since when", () => {
+  it("names a house that returned nothing, and why", () => {
     const [house] = missingHouses(
       [quote("a", 3.4, 3.45)],
       [failure("blocked")],
-      history,
       GENERATED_AT,
     );
 
     expect(house.name).toBe("blocked");
-    expect(house.why).toBe("Blocks requests from our server since 7 Oct.");
+    expect(house.why).toBe("Blocks requests from our server.");
   });
 
   it("does not list a house another listing still covers", () => {
@@ -153,9 +114,9 @@ describe("missingHouses", () => {
       name: "Cambio Mundial",
     };
 
-    expect(
-      missingHouses([aggregator], [failure("cambiomundial")], history, GENERATED_AT),
-    ).toEqual([]);
+    expect(missingHouses([aggregator], [failure("cambiomundial")], GENERATED_AT)).toEqual(
+      [],
+    );
   });
 
   it("lists a house whose only rate is too old, with the day it last changed", () => {
@@ -164,13 +125,13 @@ describe("missingHouses", () => {
       name: "Mercado Cambiario",
     };
 
-    expect(missingHouses([old], [], [], GENERATED_AT)).toEqual([
+    expect(missingHouses([old], [], GENERATED_AT)).toEqual([
       { name: "Mercado Cambiario", why: "Has not changed its rate since 10 Jun." },
     ]);
   });
 
   it("lists nothing when every house has a current rate", () => {
-    expect(missingHouses([quote("a", 3.4, 3.45)], [], history, GENERATED_AT)).toEqual([]);
+    expect(missingHouses([quote("a", 3.4, 3.45)], [], GENERATED_AT)).toEqual([]);
   });
 });
 

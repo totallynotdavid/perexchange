@@ -6,12 +6,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { loadHistory, loadLatest } from "../src/lib/load.ts";
-import {
-  DEAD_AFTER_MINUTES,
-  houseSeries,
-  missingSince,
-  rank,
-} from "../src/lib/market.ts";
+import { DEAD_AFTER_MINUTES, houseSeries, rank } from "../src/lib/market.ts";
 import { recordSnapshots } from "./record.ts";
 import { scratchDir } from "./scratch.ts";
 
@@ -60,20 +55,6 @@ describe("data written by tools/snapshot.py", () => {
       DEAD_AFTER_MINUTES,
     );
     expect(houseSeries(snapshots, "chapacambio")).toEqual([]);
-  });
-
-  it("dates when a source began to return nothing", async () => {
-    const { snapshots } = await loadHistory(dir);
-
-    expect(snapshots.map((snapshot) => snapshot.missing)).toEqual([
-      ["mercadocambiario"],
-      ["cambiomundial"],
-    ]);
-    expect(missingSince(snapshots, "cambiomundial")).toEqual({
-      at: Date.parse("2026-10-08T12:15:00Z"),
-      atLeast: false,
-    });
-    expect(missingSince(snapshots, "mercadocambiario")).toBeNull();
   });
 
   it("follows one house across fetches", async () => {

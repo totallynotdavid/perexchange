@@ -75,8 +75,8 @@ describe("parseLatest", () => {
 });
 
 describe("parseHistory", () => {
-  const line = (t: string, prices: Record<string, number[]>, f?: string[]) =>
-    JSON.stringify({ t, r: prices, f });
+  const line = (t: string, prices: Record<string, number[]>) =>
+    JSON.stringify({ t, r: prices });
 
   it("returns snapshots in time order across day files", () => {
     const later = line("2026-10-09T00:10:00Z", { a: [3.4, 3.45, 0] });
@@ -107,15 +107,6 @@ describe("parseHistory", () => {
     const text = line("2026-10-08T00:00:00Z", { a: [0, 3.45, 0] });
 
     expect(parseHistory([text]).skippedLines).toBe(1);
-  });
-
-  it("reads the sources a fetch returned nothing from, and null where it was not recorded", () => {
-    const withList = line("2026-10-08T00:00:00Z", { a: [3.4, 3.45, 0] }, ["b"]);
-    const without = line("2026-10-08T00:15:00Z", { a: [3.4, 3.45, 0] });
-
-    const { snapshots } = parseHistory([withList, without]);
-
-    expect(snapshots.map((s) => s.missing)).toEqual([["b"], null]);
   });
 
   it("treats a missing age as a current quote", () => {

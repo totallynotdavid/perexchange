@@ -17,14 +17,14 @@ function age(isoTime: string) {
   };
 }
 
-function notice(since: string) {
+function advice(since: string) {
   return { dataset: { since }, hidden: true };
 }
 
-function page(ages: ReturnType<typeof age>[], notices: ReturnType<typeof notice>[]) {
+function page(ages: ReturnType<typeof age>[], advices: ReturnType<typeof advice>[]) {
   return {
     querySelectorAll: (selector: string) =>
-      selector.startsWith("time") ? ages : notices,
+      selector.startsWith("time") ? ages : advices,
   } as unknown as ParentNode;
 }
 
@@ -55,9 +55,9 @@ describe("refreshAges", () => {
     expect([fresh.classes.has("old"), old.classes.has("old")]).toEqual([false, true]);
   });
 
-  it("shows a notice only once the data it watches is old enough", () => {
-    const fresh = notice("2026-10-08T14:30:00Z");
-    const old = notice("2026-10-08T11:00:00Z");
+  it("shows the advice on an age only once the data it watches is old enough", () => {
+    const fresh = advice("2026-10-08T14:30:00Z");
+    const old = advice("2026-10-08T11:00:00Z");
 
     refreshAges(page([], [fresh, old]), NOW);
 
