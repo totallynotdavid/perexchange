@@ -87,7 +87,6 @@
   --progress-height: 2px;
   --progress-delay: 200ms;
 
-  --duration-quick: 100ms;
   --duration: 160ms;
   --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 

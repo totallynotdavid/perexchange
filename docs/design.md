@@ -88,7 +88,7 @@ shadow and the selected switch has the stronger 1 px shadow.
 
 Every colour is a `light-dark()` pair except `--chart-buy`, so the page follows the
 browser's colour scheme with no script and no class. `color-scheme: light dark` is set on
-`:root`. `--chart-buy` is one value in both schemes, and the contrast test checks it in
+`:root`. `--chart-buy` is one value in both schemes, and the contrast check covers it in
 both.
 
 ### Type
@@ -132,11 +132,11 @@ Lines are solid greys, so they keep their colour over a tinted card.
 
 ### Text
 
-| Token            | Light     | Dark      | Use              |
-| ---------------- | --------- | --------- | ---------------- |
-| `--fg`           | `#282a30` | `#f7f8f8` | Body, figures    |
-| `--fg-secondary` | `#3c4149` | `#d0d6e0` | Lede, table text |
-| `--fg-muted`     | `#6c6b74` | `#8a8f98` | Labels, ages     |
+| Token            | Light     | Dark      | Use           |
+| ---------------- | --------- | --------- | ------------- |
+| `--fg`           | `#282a30` | `#f7f8f8` | Body, figures |
+| `--fg-secondary` | `#3c4149` | `#d0d6e0` | Table text    |
+| `--fg-muted`     | `#6c6b74` | `#8a8f98` | Labels, ages  |
 
 ### Accent and status
 
@@ -158,7 +158,7 @@ page or card it belongs to.
 | Token                                    | Value                                                        | Use                                         |
 | ---------------------------------------- | ------------------------------------------------------------ | ------------------------------------------- |
 | `--radius-sm`, `--radius`, `--radius-lg` | 5, 8, 12 px                                                  | Badges, controls, cards                     |
-| `--duration-quick`, `--duration`         | 100 ms, 160 ms                                               | Hover and state transitions                 |
+| `--duration`                             | 160 ms                                                       | Hover and state transitions                 |
 | `--ease`                                 | `cubic-bezier(0.25, 0.46, 0.45, 0.94)`                       | Every transition                            |
 | `--shadow-panel`, `--shadow-selected`    | `0 1px 2px rgb(0 0 0 / 0.04)`, `0 1px 2px rgb(0 0 0 / 0.08)` | Panels and selected controls                |
 | `--space-1` … `--space-12`               | 0.25, 0.5, 0.75, 1, 1.5, 2, 3 rem                            | Gaps and padding                            |
@@ -177,18 +177,18 @@ The switch's radios are invisible, so focus is drawn on the track: when a radio 
 `:focus-visible`, the whole control gets the focus ring (`--focus-width` and
 `--focus-offset` in `--accent`), the same ring every other focusable element has. A mouse
 click shows no ring. The ring's `--accent` is held to 3:1 on both page backgrounds by the
-contrast test.
+contrast check.
 
 ## Contrast
 
-`site/tests/contrast.test.ts` reads `tokens.css`, converts each colour, and fails when a
-text pair drops under 4.5:1 or a control's edge or chart line under 3:1. The table lists
+`site/scripts/check-contrast.ts` reads `tokens.css`, converts each colour, and fails when
+a text pair drops under 4.5:1 or a control's edge or chart line under 3:1. The table lists
 the pairs that matter most.
 
 | Pair                         | Light | Dark  | Used for                      |
 | ---------------------------- | ----- | ----- | ----------------------------- |
 | `--fg` on `--bg`             | 14.34 | 17.94 | Body                          |
-| `--fg-secondary` on `--bg`   | 10.27 | 13.07 | Lede, table text              |
+| `--fg-secondary` on `--bg`   | 10.27 | 13.07 | Table text                    |
 | `--fg-muted` on `--bg`       | 5.26  | 5.88  | Labels, ages                  |
 | `--fg-muted` on `--bg-muted` | 4.61  | 5.12  | Details link on a hovered row |
 | `--accent` on `--bg`         | 5.85  | 10.03 | Links                         |

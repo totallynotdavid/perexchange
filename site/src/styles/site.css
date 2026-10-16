@@ -245,12 +245,6 @@ h2 {
   }
 }
 
-.lede {
-  margin: 0 0 1.5rem;
-  max-width: 40rem;
-  color: var(--fg-secondary);
-}
-
 .num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -270,8 +264,6 @@ time.old {
   color: var(--warn);
   font-weight: 500;
 }
-
-/* Controls */
 
 .button {
   display: inline-flex;
@@ -635,8 +627,6 @@ input::placeholder {
   color: var(--fg-secondary);
   font-size: 0.9375rem;
 }
-
-/* Rate tables */
 
 table.rates {
   width: 100%;
@@ -1089,8 +1079,6 @@ main > .cta {
   color: var(--fg-secondary);
   text-align: center;
 }
-
-/* Docs */
 
 .docs {
   display: grid;
