@@ -9,15 +9,13 @@ concurrency:
   group: snapshot
   cancel-in-progress: false
 
-env:
-  UV_PYTHON: "3.14.0"
-
 jobs:
   snapshot:
     # A variable holding a JSON runner label, such as '["self-hosted","pe"]', moves the
     # fetch to a machine whose address the exchange houses do not block.
     runs-on:
-      ${{ vars.REFRESH_RUNNER && fromJSON(vars.REFRESH_RUNNER) || 'ubuntu-latest' }}
+      ${{ vars.REFRESH_RUNNER && fromJSON(vars.REFRESH_RUNNER) ||
+      'ubuntu-latest' }}
     if: github.ref == 'refs/heads/master'
     # The job limit is six hours. The collector stops starting fetches after 330 minutes.
     timeout-minutes: 350
@@ -34,18 +32,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        with:
-          enable-cache: true
-          cache-dependency-glob: uv.lock
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: "1.4.3"
-
-      - run: uv python install
-
-      - run: uv sync --locked --all-packages
+      - run: mise run install:py
 
       # A self-hosted runner keeps its clone between runs. The checkout deletes the old
       # worktree directory but not git's record of it, which would block the branch.
@@ -62,24 +51,13 @@ jobs:
       # The data branch carries site/vercel.json, which turns Vercel deployments off for it.
       # Without that file Vercel fails on each push, since the project root is `site`.
       - name: Record snapshots
-        run:
-          uv run python tools/collect.py --data-dir site/data --minutes 330 --interval 15
+        run: mise run collect
 
       # A blocked runner address is fixed outside the code, so this step reports sources
       # that did not answer.
       - name: Report sources that did not answer
         if: always()
-        run: |
-          # shellcheck disable=SC2016
-          bun -e '
-            const file = Bun.file("site/data/latest.json");
-            if (!(await file.exists())) process.exit(0);
-            const latest = await file.json();
-            const names = latest.failures.map((failure) => failure.source);
-            if (names.length > 0) {
-              console.log(`::warning title=Sources did not answer::${names.join(", ")}. If this runner address is blocked, set the REFRESH_RUNNER variable to a runner on another network.`);
-            }
-          '
+        run: mise run report:snapshot
 
       - name: Hold the group after a failure
         if: failure()
