@@ -7,7 +7,7 @@ import type { History, Latest } from "./data.ts";
 /** A directory, or the URL of a published copy of one. astro.config.mjs injects it. */
 declare const __DATA_SOURCE__: string;
 
-export const HISTORY_DAYS = 30;
+const HISTORY_DAYS = 30;
 
 /** Every page render asks for the same files, and the house pages render separately. */
 const CACHE_MS = 5 * 60_000;

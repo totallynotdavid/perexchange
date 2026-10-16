@@ -5,8 +5,7 @@ const REPOSITORY = "https://github.com/totallynotdavid/perexchange";
 const BRANCH = "master";
 const REPO_ROOT = path.resolve(process.cwd(), "..");
 
-/** Repository files the site renders, and the page that shows each. */
-export const PAGES = {
+const PAGES = {
   "README.md": "/docs/",
   "docs/README.md": "/docs/",
   "docs/api.md": "/docs/api/",

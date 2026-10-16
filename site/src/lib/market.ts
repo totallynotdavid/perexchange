@@ -10,14 +10,13 @@ import { houseKey, houseName, isVariant } from "./houses.ts";
 export const DEAD_AFTER_MINUTES = 24 * 60;
 
 /** Past this age a rate is shown as old, though it is still ranked. */
-export const OLD_AFTER_MINUTES = 3 * 60;
+const OLD_AFTER_MINUTES = 3 * 60;
 
 const MINUTE = 60_000;
 
-/** The transaction direction used to select a rate. */
 export type Side = "buy" | "sell";
 
-/** Whole minutes from an ISO time to now. A time in the future counts as now. */
+/** A time in the future counts as now. */
 export function minutesSince(at: string, now: string | number): number {
   const age =
     ((typeof now === "string" ? Date.parse(now) : now) - Date.parse(at)) / MINUTE;
@@ -32,25 +31,22 @@ export function ageMinutes(quote: Quote, now: string | number): number {
   return minutesSince(quote.timestamp, now);
 }
 
-/** Selects the rate relevant to a transaction direction. */
 export function rateFor(quote: Quote, side: Side): number {
   return side === "buy" ? quote.sell : quote.buy;
 }
 
-/** Measures a quote's gap from the best rate for a transaction direction. */
 export function gapToBest(quote: Quote, best: Quote, side: Side): number {
   const gap = side === "buy" ? quote.sell - best.sell : best.buy - quote.buy;
   return Math.max(0, Math.round(gap * 10_000) / 10_000);
 }
 
-/** Returns each house's current base rate. */
-export function current(quotes: Quote[], now: string | number): Quote[] {
+function current(quotes: Quote[], now: string | number): Quote[] {
   return quotes.filter(
     (quote) => !isVariant(quote) && ageMinutes(quote, now) <= DEAD_AFTER_MINUTES,
   );
 }
 
-/** Ranks current base rates, preferring newer quotes when rates tie. */
+/** A newer quote ranks first when rates tie. */
 export function rank(quotes: Quote[], side: Side, now: string | number): Quote[] {
   const sign = side === "buy" ? 1 : -1;
   return current(quotes, now).sort(
@@ -67,7 +63,6 @@ export interface Place {
   gap: number;
 }
 
-/** Finds a quote's place among current base rates, or null when it is not ranked. */
 export function placeOf(
   quotes: Quote[],
   quote: Quote,
@@ -137,7 +132,6 @@ export interface HousePoint {
   sell: number;
 }
 
-/** Returns a house's current rates over time. */
 export function houseSeries(snapshots: Snapshot[], id: string): HousePoint[] {
   const points: HousePoint[] = [];
   for (const snapshot of snapshots) {
@@ -149,7 +143,6 @@ export function houseSeries(snapshots: Snapshot[], id: string): HousePoint[] {
   return points;
 }
 
-/** The shortest span of readings the best-rate chart draws. */
 export const MIN_CHART_MS = 2 * 24 * 60 * MINUTE;
 
 /**

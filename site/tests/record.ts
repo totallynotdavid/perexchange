@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 
-export const ROOT = path.resolve(import.meta.dirname, "../..");
+const ROOT = path.resolve(import.meta.dirname, "../..");
 
 /** Records two fetches with `tools/snapshot.py`, the same code the scheduled job runs. */
 const RECORD = `

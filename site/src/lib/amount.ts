@@ -2,9 +2,8 @@ import { formatMoney, formatPrice } from "./format.ts";
 import type { Side } from "./market.ts";
 
 /** The largest amount accepted. It is far above any exchange and keeps cents exact. */
-export const MAX_AMOUNT = 1_000_000_000;
+const MAX_AMOUNT = 1_000_000_000;
 
-/** The currency the person types the amount in. */
 export type Unit = "usd" | "pen";
 
 export type Reading =
@@ -43,7 +42,7 @@ export function readAmount(text: string): Reading {
  * cents rounded down, so the figure never exceeds what the money is worth. A person who
  * pays or gives it is charged to the nearest cent.
  */
-export function convert(side: Side, unit: Unit, amount: number, rate: number): number {
+function convert(side: Side, unit: Unit, amount: number, rate: number): number {
   const exact = unit === "usd" ? amount * rate : amount / rate;
   const received = side === "buy" ? unit === "pen" : unit === "usd";
   return received ? Math.floor(hundredths(exact)) : Math.round(hundredths(exact));

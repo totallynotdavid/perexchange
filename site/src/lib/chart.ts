@@ -9,7 +9,7 @@ export interface ChartSeries {
   points: ChartPoint[];
 }
 
-export interface DrawnSeries {
+interface DrawnSeries {
   id: string;
   label: string;
   path: string;
