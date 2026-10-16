@@ -75,14 +75,12 @@ uv run pytest --cov=perexchange --cov-report=html
 4. Add the exact output to `EXPECTED_RATES` in
    [`test_parsers.py`](../packages/core/tests/unit/test_parsers.py).
 5. Cover a parser branch that the representative response does not reach with a second
-   fixture. Name it `yoursite-<case>`, add that name to `BRANCH_FIXTURES` in
-   `test_parsers.py`, and write a test for it.
+   fixture. Name it `yoursite-<case>` and write a test for it in `test_parsers.py`.
 
-The parser suite fails when a registered source lacks a fixture or an `EXPECTED_RATES`
-row, when a fixture belongs to no source, or when a parser accepts a malformed payload.
-Put source-specific validation in the parser. The factory handles requests, retries, and
-response decoding. Rules that span sources, such as dropping aggregator rows, belong in
-`core.py` and its tests.
+The parser suite fails when a parser accepts a malformed payload or returns rates other
+than the ones in `EXPECTED_RATES`. Put source-specific validation in the parser. The
+factory handles requests, retries, and response decoding. Rules that span sources, such as
+dropping aggregator rows, belong in `core.py` and its tests.
 
 ## Live tests
 

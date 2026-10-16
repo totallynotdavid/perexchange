@@ -19,6 +19,15 @@ def test_invalid_source_selection_raises_configuration_error(source_names):
         get_sources(source_names)
 
 
-def test_source_for_name_returns_none_for_unknown_or_non_string_values():
-    assert source_for_name("not registered") is None
-    assert source_for_name(None) is None
+@pytest.mark.parametrize(
+    ("display_name", "registered"),
+    [
+        ("CambiaFX", True),
+        ("kambio online 2", True),
+        ("Uncovered House", False),
+        ("not registered", False),
+        (None, False),
+    ],
+)
+def test_source_for_name_matches_registry_aliases(display_name, registered):
+    assert (source_for_name(display_name) is not None) is registered

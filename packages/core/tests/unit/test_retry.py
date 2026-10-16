@@ -7,28 +7,6 @@ from perexchange.errors import SourceParseError
 from perexchange.retry import _backoff, fetch_with_retry
 
 
-async def test_retries_on_network_errors():
-    call_count = 0
-
-    def failing_fetch(client):
-        nonlocal call_count
-        call_count += 1
-        msg = "Connection failed"
-        raise httpx.HTTPError(msg)
-
-    async with httpx.AsyncClient() as client:
-        with pytest.raises(httpx.HTTPError):
-            await fetch_with_retry(
-                client,
-                failing_fetch,
-                max_attempts=3,
-                retry_delay=0.01,
-                error_context="test-url",
-            )
-
-    assert call_count == 3
-
-
 async def test_succeeds_after_transient_failure():
     sometimes_failing_fetch = AsyncMock(
         side_effect=[httpx.HTTPError("Temporary failure"), "success"]
@@ -84,7 +62,7 @@ async def count_attempts(error, max_attempts=3, retry_delay=0.01):
         raise error
 
     async with httpx.AsyncClient() as client:
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(type(error)):
             await fetch_with_retry(
                 client,
                 always_failing,
@@ -100,9 +78,19 @@ async def test_client_errors_are_not_retried(status):
     assert await count_attempts(status_error(status)) == 1
 
 
-@pytest.mark.parametrize("status", [408, 429, 500, 503])
-async def test_transient_errors_are_retried(status):
-    assert await count_attempts(status_error(status)) == 3
+@pytest.mark.parametrize(
+    "error",
+    [
+        status_error(408),
+        status_error(429, headers={"Retry-After": "0"}),
+        status_error(500),
+        status_error(503),
+        httpx.ConnectError("connection failed"),
+    ],
+    ids=["408", "429", "500", "503", "network"],
+)
+async def test_transient_errors_are_retried(error):
+    assert await count_attempts(error) == 3
 
 
 def test_rate_limit_backoff_honours_retry_after():

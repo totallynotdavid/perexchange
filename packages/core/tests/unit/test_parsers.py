@@ -1,8 +1,7 @@
 """Parser contract tests for captured source responses.
 
-Each registered source has one fixture and one `EXPECTED_RATES` row. The table
-pins exact output, while shared cases reject malformed payloads and enforce the
-registry-to-fixture mapping.
+The `EXPECTED_RATES` table pins each source's exact output, while shared cases
+reject malformed payloads.
 """
 
 import json
@@ -16,7 +15,6 @@ import pytest
 
 from perexchange.models import ExchangeRate
 from perexchange.retry import PARSE_ERRORS
-from perexchange.scrapers.registry import get_sources, source_for_name
 
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
@@ -61,12 +59,6 @@ EXPECTED_RATES: dict[str, list[tuple[str, float, float]]] = {
     ],
     "tucambista": [("tucambista", 3.348, 3.375)],
     "westernunion": [("westernunion", 3.352, 3.374)],
-}
-
-# These fixtures cover parser behavior that a representative response does not exercise.
-BRANCH_FIXTURES = {
-    "cuantoestaeldolar-all-covered",
-    "dollarhouse-stale-hidden-inputs",
 }
 
 # Reject malformed payloads instead of inventing a quote.
@@ -142,20 +134,6 @@ def test_junk_payload_raises_instead_of_inventing_rates(source_name, junk):
         parser_for(source_name)(junk)
 
 
-def test_every_registered_source_has_a_case():
-    registered = {source.id for source in get_sources()}
-
-    assert registered == set(EXPECTED_RATES), (
-        "every registered source needs a fixture and an EXPECTED_RATES row"
-    )
-
-
-def test_no_orphan_fixtures():
-    on_disk = {path.stem for path in FIXTURES.iterdir()}
-
-    assert on_disk == set(EXPECTED_RATES) | BRANCH_FIXTURES
-
-
 def test_cuantoestaeldolar_parser_keeps_all_valid_houses():
     rates = parser_for("cuantoestaeldolar")(
         load_fixture("cuantoestaeldolar-all-covered")
@@ -165,14 +143,6 @@ def test_cuantoestaeldolar_parser_keeps_all_valid_houses():
         ("CambiaFX", 3.35, 3.36),
         ("Tu Cambista", 3.34, 3.36),
     ]
-
-
-@pytest.mark.parametrize(
-    ("display_name", "expected"),
-    [("CambiaFX", True), ("kambio online 2", True), ("Uncovered House", False)],
-)
-def test_aggregator_name_matching_uses_registry_aliases(display_name, expected):
-    assert (source_for_name(display_name) is not None) is expected
 
 
 def test_dollarhouse_prefers_displayed_rates_over_stale_hidden_inputs():

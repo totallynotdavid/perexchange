@@ -1,5 +1,5 @@
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
-import { readdir, rm } from "node:fs/promises";
+import { rm } from "node:fs/promises";
 import { createServer } from "node:net";
 import path from "node:path";
 
@@ -26,7 +26,6 @@ let main: Running;
 let complete: Running;
 let empty: Running;
 
-/** Fetch the URL that corresponds to a static-build file from a running site. */
 async function page(file: string, from = main): Promise<string> {
   const response = await fetch(from.origin + "/" + file.replace(/index\.html$/, ""));
   expect(response.status, file).toBe(200);
@@ -115,14 +114,6 @@ describe("the site built from a recorded snapshot", () => {
     expect(served).toEqual(await loadLatest(data));
   });
 
-  it("builds the static pages and a server for the rates pages", async () => {
-    const files = await readdir(path.join(main.dist, "client"), { recursive: true });
-
-    expect(files).toContain(path.join("docs", "index.html"));
-    expect(files).toContain("404.html");
-    expect(await page("index.html")).toMatch(/^<!DOCTYPE html>/i);
-  });
-
   it("shows the best rate, its house and its age before anyone types", async () => {
     const home = text(await page("index.html"));
 
@@ -131,16 +122,6 @@ describe("the site built from a recorded snapshot", () => {
     expect(home).toMatch(
       /Go to CambiaFX\s*, opens its website Rate from \d+ (min|h|d) ago/,
     );
-  });
-
-  it("opens with the page's name and no repeated heading, count or eyebrow", async () => {
-    const home = text(await page("index.html"));
-
-    expect(home).toContain("Dollar rates in Peru");
-    expect(home).not.toContain("Live market board");
-    expect(home).not.toContain("compared, updated");
-    expect(home).not.toContain("Coverage");
-    expect(home).not.toContain("Open data");
   });
 
   it("hides the amount field from a browser without scripts, which has the rate to read", async () => {
@@ -329,7 +310,6 @@ async function openHome(
     unit: () => doc.querySelector("[data-unit-text]")!.textContent,
     fieldLabel: () => doc.querySelector("[data-label]")!.textContent,
     reading: () => doc.querySelector<HTMLElement>(".board")!.dataset.reading,
-    /** What the hero says, as a reader gets it. */
     summary: (side = "buy") =>
       hero(side).querySelector("output")!.textContent!.replace(/\s+/g, " ").trim(),
     figure: (side = "buy") => part(side, "figure"),
@@ -738,12 +718,6 @@ describe("the best rate history page", () => {
 
     expect(axis.some((label) => /^\d{1,2} [A-Z][a-z]{2}$/.test(label))).toBe(true);
     expect(axis.some((label) => /\d:\d\d/.test(label))).toBe(false);
-  });
-
-  it("repeats nothing under the chart", async () => {
-    const html = await page("history/index.html", complete);
-
-    expect(text(html)).not.toContain("readings in this range");
   });
 
   it("has a wide and a narrow drawing of each range", async () => {

@@ -80,6 +80,8 @@ def test_latest_lists_every_rate_with_utc_times_and_the_failures(tmp_path):
             "message": "Client error '403 Forbidden'",
         }
     ]
+    [line] = history_lines(tmp_path, "2026-10-08")
+    assert line["f"] == ["okane"]
 
 
 @pytest.mark.parametrize(
@@ -120,18 +122,6 @@ def test_a_quote_that_pays_more_than_it_charges_is_reported_not_recorded(tmp_pat
     assert [failure.source for failure in written.failures] == ["m"]
 
 
-def test_history_lists_the_sources_that_returned_nothing(tmp_path):
-    report = FetchReport(
-        rates=(quote("a", "a", 3.3, 3.4),),
-        failures=(SourceFailure("okane", "HTTPStatusError", "", 403),),
-    )
-
-    snapshot.write_snapshot(report, tmp_path, MORNING)
-
-    [line] = history_lines(tmp_path, "2026-10-08")
-    assert line["f"] == ["okane"]
-
-
 def test_each_fetch_appends_one_line_to_the_utc_day_it_happened_in(tmp_path):
     report = FetchReport(rates=(quote("a", "a", 3.3, 3.4),), failures=())
     late_evening = datetime(2026, 10, 8, 23, 50, tzinfo=timezone(timedelta(hours=-5)))
@@ -149,22 +139,7 @@ def test_each_fetch_appends_one_line_to_the_utc_day_it_happened_in(tmp_path):
     ]
 
 
-def test_history_keeps_buy_then_sell_for_each_quote(tmp_path):
-    report = FetchReport(
-        rates=(
-            quote("a", "a", 3.3, 3.4),
-            quote("cuanto", "Gordito digital", 3.35, 3.45),
-        ),
-        failures=(),
-    )
-
-    snapshot.write_snapshot(report, tmp_path, MORNING)
-
-    [line] = history_lines(tmp_path, "2026-10-08")
-    assert line["r"] == {"a": [3.3, 3.4, 0], "gordito-digital": [3.35, 3.45, 0]}
-
-
-def test_history_records_how_old_each_quote_was_when_fetched(tmp_path):
+def test_history_keeps_buy_sell_and_age_in_minutes_for_each_quote(tmp_path):
     stale = ExchangeRate(
         source="chapacambio",
         name="chapacambio",
@@ -172,13 +147,17 @@ def test_history_records_how_old_each_quote_was_when_fetched(tmp_path):
         sell_price=3.464,
         timestamp=MORNING - timedelta(hours=12, minutes=14),
     )
-    report = FetchReport(rates=(stale, quote("a", "a", 3.3, 3.4)), failures=())
+    report = FetchReport(
+        rates=(stale, quote("cuanto", "Gordito digital", 3.35, 3.45)), failures=()
+    )
 
     snapshot.write_snapshot(report, tmp_path, MORNING)
 
     [line] = history_lines(tmp_path, "2026-10-08")
-    assert line["r"]["chapacambio"] == [3.433, 3.464, 734]
-    assert line["r"]["a"][2] == 0
+    assert line["r"] == {
+        "chapacambio": [3.433, 3.464, 734],
+        "gordito-digital": [3.35, 3.45, 0],
+    }
 
 
 def test_a_house_listed_twice_keeps_its_first_price(tmp_path):
