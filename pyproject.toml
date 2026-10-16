@@ -25,12 +25,14 @@ dev = [
 ]
 
 [tool.ruff]
-fix = true
 line-length = 88
 
 [tool.ruff.lint]
 preview = true
-extend-select = [
+select = [
+    "E4",  # pycodestyle imports
+    "E7",  # pycodestyle statements
+    "E9",  # pycodestyle runtime errors
     "A",   # flake8-builtins
     "B",   # flake8-bugbear
     "BLE", # flake8-blind-except
