@@ -1,8 +1,8 @@
 # perexchange site
 
 The site shows who gives the best PEN/USD rate right now and how old that rate is, with
-every house ranked below it, a page and history chart for each house, and the library
-docs. It is an [Astro](https://astro.build) site, live at
+every house ranked below it, a page for the best rate's history, a page and history chart
+for each house, and the library docs. It is an [Astro](https://astro.build) site, live at
 <https://perexchange.vercel.app>.
 
 ## How it works
@@ -22,10 +22,10 @@ it. A small script keeps the ages true while the page is open, and another remem
 side, the unit and the amount a visitor chose. Without scripts the page still shows every
 rate and chart.
 
-A house page charts the last 30 days and reads at most that many history files. The home
-page reads every recorded day, up to 365, for the All range of its best-rate chart. The
-look, from colour tokens to the calculator and the error states, is in
-[Site design](../docs/design.md).
+A house page charts the last 30 days and reads at most that many history files. The
+history page at `/history/` reads every recorded day, up to 365, for the All range of its
+best-rate chart, and the home page reads none. The look, from colour tokens to the
+calculator and the error states, is in [Site design](../docs/design.md).
 
 The file formats are in [Open data](src/docs/data.md). Who may write the data branch, and
 what a reader sees while a run is in progress, are in
@@ -73,10 +73,10 @@ snapshots each day holds and the gaps between them, for a checkout of the `data`
 
 Some exchange houses block the address ranges of GitHub-hosted runners, and a snapshot
 lists them as `blocked` [failures](src/docs/data.md#latest-snapshot). The site lists them
-under "not compared", with the reason and the day they went missing, which it reads from
-the history. The run prints a warning that names them. To fetch from a machine they
-accept, register a self-hosted runner and set the repository variable `REFRESH_RUNNER` to
-its labels as JSON, for example `["self-hosted","peru"]`.
+under "not compared", with the reason from the latest snapshot. The run prints a warning
+that names them. To fetch from a machine they accept, register a self-hosted runner and
+set the repository variable `REFRESH_RUNNER` to its labels as JSON, for example
+`["self-hosted","peru"]`.
 
 [`vercel.json`](vercel.json) sets the response headers, including the content security
 policy. The policy allows no inline script, so every script must be an external file.

@@ -66,7 +66,7 @@ recorded before `f` existed do not have it.
 The age of a rate is the time from its `timestamp` to now. The site ranks only rates with
 an age of 24 hours or less, because a house that has not updated its quote in a day is
 closed or has stopped publishing. It shows an age of three hours or more as old, and it
-warns when the whole snapshot is three hours old.
+asks the reader to check the best rate with the house once that rate is three hours old.
 
 A job fetches every source about every 15 minutes and publishes the result. The
 [architecture](../../../docs/architecture.md#site-data) says how it keeps that beat, and

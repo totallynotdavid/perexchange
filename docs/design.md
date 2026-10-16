@@ -6,21 +6,76 @@ The rules the site's look follows, and the values that carry them. The values li
 
 ## What the site is for
 
-perexchange publishes the PEN/USD rates that Peruvian exchange houses post. Three kinds of
+perexchange publishes the PEN/USD rates that Peruvian exchange houses post. Four kinds of
 page serve three readers.
 
-| Page      | Reader                                                  | The page must                                                                                                         |
-| --------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `/`       | Someone in Peru about to exchange dollars, on a phone   | Take an amount, say what it costs or yields at the best house, send the reader there, rank the others, chart the rate |
-| `/house/` | The same person checking one house, or a developer      | Show both sides, where the house stands, its other rates, and the 24 hour, 7 day and 30 day history                   |
-| `/docs/`  | A developer deciding whether to use the library or data | Render the README, API, CLI, architecture and open-data documents                                                     |
+| Page        | Reader                                                  | The page must                                                                                         |
+| ----------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `/`         | Someone in Peru about to exchange dollars, on a phone   | Take an amount, say what it costs or yields at the best house, send the reader there, rank the others |
+| `/history/` | The same person, deciding whether to wait               | Chart how the best rate to buy and to sell has moved, on its own page so the board stays short        |
+| `/house/`   | The same person checking one house, or a developer      | Show both sides, where the house stands, its other rates, and the 24 hour, 7 day and 30 day history   |
+| `/docs/`    | A developer deciding whether to use the library or data | Render the README, API, CLI, architecture and open-data documents                                     |
 
 The reader's question is "where do I get the best deal, and how many soles is it?". The
 home page answers it in one path: type an amount, read the total at the best house, go to
 that house. So the design does four things: the amount field comes first and has focus,
 the answer to the amount is the one large figure, the one filled button leads to the
-house, and age is shown once, in the header, and in a colour of its own only where a rate
-is late. Every figure is written in one monospaced face with equal digit widths.
+house, and the age of that rate sits directly under the button, in a colour of its own
+only when the rate is old. Every figure is written in one monospaced face with equal digit
+widths.
+
+## Pages
+
+Every page has the same header and footer. The header holds the brand and four links:
+Rates, History, Docs and GitHub, with the current page marked. The GitHub link is hidden
+below 40 rem. The open data's own document is in the docs navigation, so the header and
+footer do not repeat it. The footer is one sentence: "Rates are what each house publishes,
+not offers."
+
+A page says only what a reader needs to act on. The page's name is its `h1`, and nothing
+above it repeats the name. A number or age is shown once, where the reader decides with
+it. A message appears when the reader must do something because of it: the rate is old, a
+house is missing, a read failed.
+
+### `/`
+
+On a phone the first screen, with no scrolling, is the side switch, the amount field, the
+best house for that side with its rate, the button that leads to it, and how old the rate
+is. The blocks, in order:
+
+1. The `h1`, "Dollar rates in Peru".
+2. The card: the side switch, the amount field, the answer (the best rate and the house),
+   the button, and under it "Rate from 15 min ago". When that rate is 3 hours old or more,
+   a second line asks the reader to check it with the house before going.
+3. The `h2` "26 houses, cheapest first" (or "highest payout first" on the selling side)
+   and the table of the first five houses, with the rest behind "Show the other 21
+   houses".
+4. "1 house is not compared", a disclosure that names each house and why. It shows only
+   when a house could not be read.
+
+At 62 rem and wider the card is a sticky column beside the table, and the `h1` is above
+both.
+
+### `/history/`
+
+1. The `h1`, "Best rate history".
+2. The side switch, the same one as on `/`, set to the side the reader last chose.
+3. The `h2` for the chosen side, "Cheapest price to buy US$1" or "Best price to sell
+   US$1", and its chart.
+
+### `/house/<id>/`
+
+1. The `h1`, the house's name, with its special-rate label for a variant.
+2. The age of the house's rate, then the button to the house's own site.
+3. Two cards, the price to buy and the price to sell, each with where the house stands.
+4. "Other rates from X", when the house has special rates or a standard one besides this.
+5. The `h2` "Rate history" and its chart with a legend, the 24 hour, 7 day and 30 day
+   range switch and a sentence per series.
+
+### `/docs/`
+
+The docs navigation beside the text on a wide screen and above it on a narrow one, then
+the rendered document.
 
 ## Direction
 
@@ -77,11 +132,11 @@ Lines are solid greys, so they keep their colour over a tinted card.
 
 ### Text
 
-| Token            | Light     | Dark      | Use                     |
-| ---------------- | --------- | --------- | ----------------------- |
-| `--fg`           | `#282a30` | `#f7f8f8` | Body, figures           |
-| `--fg-secondary` | `#3c4149` | `#d0d6e0` | Lede, table text        |
-| `--fg-muted`     | `#6c6b74` | `#8a8f98` | Labels, meta line, ages |
+| Token            | Light     | Dark      | Use              |
+| ---------------- | --------- | --------- | ---------------- |
+| `--fg`           | `#282a30` | `#f7f8f8` | Body, figures    |
+| `--fg-secondary` | `#3c4149` | `#d0d6e0` | Lede, table text |
+| `--fg-muted`     | `#6c6b74` | `#8a8f98` | Labels, ages     |
 
 ### Accent and status
 
@@ -90,12 +145,13 @@ Lines are solid greys, so they keep their colour over a tinted card.
 | `--accent`                   | `oklch(0.5 0.16 247.27)` | `oklch(0.787 0.128 230.318)` | Links, focus, the button that leads to a house           |
 | `--accent-soft`              | `oklch(0.96 0.025 247)`  | `oklch(0.246 0.025 247)`     | Quiet accent surfaces                                    |
 | `--positive`                 | green                    | green                        | The best total in the table                              |
-| `--warn`, `-bg`, `-border`   | amber                    | amber                        | Old data and the late-refresh notice                     |
+| `--warn`                     | amber                    | amber                        | An old rate and the advice to check it                   |
 | `--danger`, `-bg`, `-border` | red                      | red                          | A failed read                                            |
 | `--chart-buy`                | `#27a644`                | `#27a644`                    | The "you get" line. Reaches 3:1 on both page backgrounds |
 
-A warning and an error each have a pale fill and a slightly stronger border of the same
-hue: an 8% fill and a 20% border. The status colour reads on its fill at 4.5:1.
+An error has a pale fill and a slightly stronger border of the same hue: an 8% fill and a
+20% border. The status colour reads on its fill at 4.5:1. A warning is text only, on the
+page or card it belongs to.
 
 ### Shape and motion
 
@@ -133,13 +189,13 @@ the pairs that matter most.
 | ---------------------------- | ----- | ----- | ----------------------------- |
 | `--fg` on `--bg`             | 14.34 | 17.94 | Body                          |
 | `--fg-secondary` on `--bg`   | 10.27 | 13.07 | Lede, table text              |
-| `--fg-muted` on `--bg`       | 5.26  | 5.88  | Labels, meta line             |
-| `--fg-muted` on `--bg-muted` | 4.61  | 5.12  | History link on a hovered row |
+| `--fg-muted` on `--bg`       | 5.26  | 5.88  | Labels, ages                  |
+| `--fg-muted` on `--bg-muted` | 4.61  | 5.12  | Details link on a hovered row |
 | `--accent` on `--bg`         | 5.85  | 10.03 | Links                         |
 | `--accent` on `--bg-subtle`  | 5.51  | 9.55  | Links inside a card           |
 | `--bg` on `--accent`         | 5.85  | 10.03 | The button's label            |
 | `--warn` on `--bg`           | 6.13  | 11.06 | A late rate                   |
-| `--warn` on `--warn-bg`      | 5.86  | 9.70  | The late-refresh notice       |
+| `--warn` on `--bg-subtle`    | 5.76  | 10.53 | The advice inside the card    |
 | `--danger` on `--danger-bg`  | 5.48  | 7.48  | An error card's heading       |
 | `--positive` on `--bg`       | 5.64  | 9.47  | The best total                |
 | `--border-control` on `--bg` | 3.64  | 3.47  | A text field's edge           |
@@ -159,13 +215,8 @@ The container is `min(100% - 2rem, 84rem)`. The page has three breakpoints, all
 | 62 rem     | The home page becomes two columns: a sticky card with the switch, the amount field, the answer and the button, and the table beside it. The answer returns to 40/44. Headings take their larger size |
 
 At 390 px nothing scrolls sideways, and the card with the field, the answer and the button
-fits the first screen, so the answer is in view without scrolling. Below 40 rem a script
-closes the rate history, which stays one tap away under the table. Docs tables and code
+fits the first screen, so the answer is in view without scrolling. Docs tables and code
 blocks scroll inside their own box. The charts switch to a narrow drawing below 40 rem.
-
-When one or more sources are missing, the home page adds a compact coverage strip above
-the freshness notice. It shows the number of houses not compared and does not repeat the
-compared count or fetch age, which remain in the page header.
 
 ## The calculator
 
@@ -194,8 +245,8 @@ appear only in the library's documents.
    gets "See X", which opens the house's page on this site.
 
 With no amount the answer is the best rate: the label "Best rate per US$1", the rate
-large, and the house. The note asks for an amount. There is no default amount, so the
-field shows the placeholder "Amount" and nothing the reader did not type.
+large, and the house. The note is empty. There is no default amount, so the field shows
+the placeholder "Amount" and nothing the reader did not type.
 
 With an amount the label is the total's name and the figure is the total at the best
 house, as in "You pay S/ 691.00 at Gordito digital". The note says what the choice saves,
@@ -213,8 +264,10 @@ note says so, and for one house it is empty.
 The note always compares with the worst house of the side: the one that charges the most
 to a buyer, or pays the least to a seller.
 
-When the best house's rate is 3 hours or more older than the fetch, the card carries one
-line, "Rate from 5 h ago", under the button.
+Under the button the card always says how old the best house's rate is, "Rate from 15 min
+ago", in the muted colour. Once that rate is 3 hours old or more, the age turns amber and
+a second line, "Check it with the house before you go.", follows. A script updates both
+while the page is open.
 
 ### The table
 
@@ -224,18 +277,15 @@ The table ranks the houses by rate, best first, and shows the first five. A disc
 - **House.** The name is a link to the house's own site, and its target covers the whole
   row, so a thumb has a row-high target. A rate 3 hours or more older than the fetch adds
   the line "Rate from 5 h ago" in amber under the name. A fresh rate adds nothing, because
-  the header says when the page was updated.
+  the card gives the age of the best rate.
 - **Rate per US$1.**
 - **You pay**, **You get** or **You sell**, with a second line that names the amount, "for
   US$200.00" or "to get S/ 691.00". The best total is green. The column and its head
   appear only while the amount is valid.
-- **History**, a link to the house's page on this site with its 24 hour, 7 day and 30 day
-  charts.
+- **Details**, a link to the house's page on this site.
 
-The page header says how many houses were compared and when the data was fetched: "14
-houses compared, updated 16 min ago". It is the only age shown for fresh rates. When the
-fetch is 3 hours old or more, an amber notice says so and asks the reader to check the
-rate with the house before going. A script shows the notice if the open page ages into it.
+The table's `h2` gives the count and the order, "14 houses, cheapest first". The count is
+shown there and nowhere else.
 
 The amount, the side and the unit are kept in `localStorage` under `perexchange:amount`,
 `perexchange:side` and `perexchange:unit`. A blocked store or an empty one gives the
@@ -256,15 +306,15 @@ The arithmetic runs in whole cents.
 - Binary noise is removed before rounding: 690 soles at 3.45 is exactly US$200.00.
 - The largest amount is 1,000,000,000.
 
-| Input                        | The field | The note says                                  |
-| ---------------------------- | --------- | ---------------------------------------------- |
-| Empty                        | Normal    | Type an amount to see the total at each house. |
-| Zero, or rounds to zero      | Red edge  | Type an amount above zero.                     |
-| Letters, symbols, two points | Red edge  | Use digits only, for example 200 or 1,250.50.  |
-| Above 1,000,000,000          | Red edge  | Type 1,000,000,000 or less.                    |
+| Input                        | The field | The note says                                 |
+| ---------------------------- | --------- | --------------------------------------------- |
+| Empty                        | Normal    | Nothing                                       |
+| Zero, or rounds to zero      | Red edge  | Type an amount above zero.                    |
+| Letters, symbols, two points | Red edge  | Use digits only, for example 200 or 1,250.50. |
+| Above 1,000,000,000          | Red edge  | Type 1,000,000,000 or less.                   |
 
 For these inputs the answer shows the best rate and the total column is hidden. The field
-sets `aria-invalid` for the last three.
+sets `aria-invalid` for the last three. The note reserves one line, empty or not.
 
 The server renders the card for no amount and leaves the field hidden, so the best rate
 and the full table are in the page before any script runs. The script shows the field,
@@ -273,11 +323,12 @@ every keystroke with the same function the server used.
 
 ## The best-rate chart
 
-Each side of the home page ends with a line chart of the best rate over time: the cheapest
-sell rate on the buying side and the highest buy rate on the selling side. It sits in the
-"Rate history" disclosure below the table, because the amount and the answer come first. A
-script closes the disclosure below 40 rem. The points are the runs the pipeline recorded
-in `history/`, one per run, so the chart needs no storage of its own.
+The `/history/` page charts the best rate over time, one chart per side: the cheapest sell
+rate on the buying side and the highest buy rate on the selling side. It has its own page
+so the board stays short and the page that reads every recorded day is one a reader opens
+on purpose. The side switch is the home page's, and the two pages share the choice in
+`perexchange:side`. The points are the runs the pipeline recorded in `history/`, one per
+run, so the chart needs no storage of its own.
 
 - A point is the best rate among the houses that were current in that run: a quote older
   than 24 hours does not count, and neither does a variant, a house's second rate such as
@@ -324,28 +375,29 @@ range switches are CSS.
 
 ### Cases
 
-| Where                       | Condition                                | What shows                                                                                                                            |
-| --------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                         | The fetch is late                        | An amber notice with the age and the advice to check with the house                                                                   |
-| `/`                         | One rate is late                         | The line "Rate from 5 h ago" in amber under the house's name, and under the button for the best house                                 |
-| `/`                         | No house has a current rate              | A dashed card pointing to the houses that could not be read, which opens by default                                                   |
-| `/`                         | One side has no current rate             | That side's card says so and points to the houses that could not be read                                                              |
-| `/`                         | Some houses could not be read            | A disclosure naming each house and the reason                                                                                         |
-| `/`                         | The best rate spans under two days       | In place of the chart, one sentence: the chart appears once two days are recorded, and the first is from a date                       |
-| `/`                         | No reading is recorded                   | In place of the chart, "No readings are recorded yet."                                                                                |
-| `/`                         | The amount is empty, zero, invalid, huge | The note gives a hint, the answer shows the best rate and the total column is hidden. Zero, invalid and huge also turn the border red |
-| `/`, `/house/`              | `latest.json` cannot be read             | Status 503 and a red card with a "Try again" link                                                                                     |
-| `/house/`                   | The history cannot be read               | The rates show; the chart area becomes a red card with a "Try again" link                                                             |
-| `/house/`                   | A range holds no reading, or one reading | A dashed card saying so, or a point and the sentence "One reading so far, so there is no line yet"                                    |
-| `/house/` for an unknown id | The id is not in the snapshot            | Status 404 and the not-found page                                                                                                     |
-| Any other address           | No such page                             | The not-found page with links to the rates and the docs                                                                               |
+| Where                       | Condition                                | What shows                                                                                                      |
+| --------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `/`                         | The best rate is old                     | The age under the button turns amber, and a line asks the reader to check the rate with the house               |
+| `/`                         | One rate in the table is late            | The line "Rate from 5 h ago" in amber under the house's name                                                    |
+| `/`                         | No house has a current rate              | A dashed card pointing to the houses that could not be read, which opens by default                             |
+| `/`                         | Some houses could not be read            | A disclosure naming each house and the reason                                                                   |
+| `/`                         | The amount is zero, invalid or huge      | The note gives a hint, the answer shows the best rate, the total column is hidden and the border turns red      |
+| `/history/`                 | The best rate spans under two days       | In place of the chart, one sentence: the chart appears once two days are recorded, and the first is from a date |
+| `/history/`                 | No reading is recorded                   | In place of the chart, "No readings are recorded yet."                                                          |
+| `/history/`                 | The history cannot be read               | A red card with a "Try again" link                                                                              |
+| `/`, `/history/`, `/house/` | `latest.json` cannot be read             | Status 503 and a red card with a "Try again" link                                                               |
+| `/house/`                   | The history cannot be read               | The rates show; the chart area becomes a red card with a "Try again" link                                       |
+| `/house/`                   | A range holds no reading, or one reading | A dashed card saying so, or a point and the sentence "One reading so far, so there is no line yet"              |
+| `/house/` for an unknown id | The id is not in the snapshot            | Status 404 and the not-found page                                                                               |
+| Any other address           | No such page                             | The not-found page with links to the rates and the docs                                                         |
 
 Without scripts the page still shows the best rate per side, every rate in the table and
-the chart. The amount field stays hidden, because it cannot work, and the side and range
-switches still work, because they are CSS. The "Go to" button works too.
+the charts. The amount field stays hidden, because it cannot work, and the side and range
+switches still work, because they are CSS. The "Go to" button works too. Without scripts
+the side switch starts on buying and does not remember a choice.
 
 ## Checking a change
 
 Run `bun run check` in `site/`. To look at the pages, run `bun run data` once and
-`bun run dev`, then open the home page, a house page and a docs page in both colour
-schemes at 1440, 768 and 390 px.
+`bun run dev`, then open the home page, the history page, a house page and a docs page in
+both colour schemes at 1440, 768 and 390 px.
