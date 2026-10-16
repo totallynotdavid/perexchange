@@ -1,4 +1,5 @@
 {
-  "printWidth": 90,
-  "proseWrap": "always"
+  "printWidth": 80,
+  "proseWrap": "always",
+  "ignorePatterns": ["**/*.toml", "packages/core/tests/fixtures/**"]
 }
