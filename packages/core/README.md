@@ -1,8 +1,9 @@
 # perexchange
 
-perexchange is an asynchronous Python library that fetches live PEN/USD exchange rates
-from Peruvian exchange houses. It queries the houses concurrently and returns the rates
-that arrived. It needs no API key and requires Python 3.12 or later.
+perexchange is an asynchronous Python library that fetches live PEN/USD exchange
+rates from Peruvian exchange houses. It queries the houses concurrently and
+returns the rates that arrived. It needs no API key and requires Python 3.12 or
+later.
 
 ## Install
 
@@ -32,13 +33,13 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-Each `ExchangeRate` has a `buy_price`, what the house pays you for a dollar, and a
-`sell_price`, what it charges you. A source that fails is listed in `report.failures` and
-does not stop the others.
+Each `ExchangeRate` has a `buy_price`, what the house pays you for a dollar, and
+a `sell_price`, what it charges you. A source that fails is listed in
+`report.failures` and does not stop the others.
 
 ## Learn more
 
 [API reference](https://github.com/totallynotdavid/perexchange/blob/master/docs/api.md)
-covers source selection, fetch settings, retries, failures and the data classes. The
-[repository](https://github.com/totallynotdavid/perexchange) has the issue tracker and the
-contributing guide.
+covers source selection, fetch settings, retries, failures and the data classes.
+The [repository](https://github.com/totallynotdavid/perexchange) has the issue
+tracker and the contributing guide.

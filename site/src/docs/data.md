@@ -1,7 +1,7 @@
 # Open data
 
-The site is built from snapshots of `perexchange.fetch_rates_report()`, and the newest one
-is public.
+The site is built from snapshots of `perexchange.fetch_rates_report()`, and the
+newest one is public.
 
 ## Latest snapshot
 
@@ -32,45 +32,52 @@ is public.
 }
 ```
 
-- `buy` is what the house pays for a dollar. `sell` is what it charges. Both are soles.
-- `id` is the quote's name in lowercase with runs of other characters replaced by `-`. Two
-  sources that list the same house share an id.
-- `timestamp` is the source's own time when it gives one, and the fetch time otherwise.
-- `failures` lists what gave no usable rate in that fetch, with the first line of the
-  error as `message`. `reason` is one of `blocked` (the source refused our address with
-  401, 403 or 429), `changed` (its page no longer parses), `timeout`, `error` (another
-  HTTP error), `unreachable` (no answer at all) and `invalid` (the source answered, but
-  its quote pays more than it charges). The site reads a missing or unknown `reason` as
-  `error`.
-- A quote that pays more than it charges is a source error, not a rate. It is left out of
-  `rates` and listed in `failures` with the reason `invalid`. Its `source` is the name of
-  the quote, not the ID of the source, because the answer was received and only the quote
-  is rejected.
+- `buy` is what the house pays for a dollar. `sell` is what it charges. Both are
+  soles.
+- `id` is the quote's name in lowercase with runs of other characters replaced
+  by `-`. Two sources that list the same house share an id.
+- `timestamp` is the source's own time when it gives one, and the fetch time
+  otherwise.
+- `failures` lists what gave no usable rate in that fetch, with the first line
+  of the error as `message`. `reason` is one of `blocked` (the source refused
+  our address with 401, 403 or 429), `changed` (its page no longer parses),
+  `timeout`, `error` (another HTTP error), `unreachable` (no answer at all) and
+  `invalid` (the source answered, but its quote pays more than it charges). The
+  site reads a missing or unknown `reason` as `error`.
+- A quote that pays more than it charges is a source error, not a rate. It is
+  left out of `rates` and listed in `failures` with the reason `invalid`. Its
+  `source` is the name of the quote, not the ID of the source, because the
+  answer was received and only the quote is rejected.
 
 ## History
 
 Every fetch is also appended to one line of `history/YYYY-MM-DD.jsonl` on the
-[`data` branch](https://github.com/totallynotdavid/perexchange/tree/data), named for the
-UTC day of the fetch:
+[`data` branch](https://github.com/totallynotdavid/perexchange/tree/data), named
+for the UTC day of the fetch:
 
 ```json
-{ "t": "2026-10-08T14:30:00Z", "r": { "cambiafx": [3.435, 3.458, 0] }, "f": ["okane"] }
+{
+  "t": "2026-10-08T14:30:00Z",
+  "r": { "cambiafx": [3.435, 3.458, 0] },
+  "f": ["okane"]
+}
 ```
 
-Each price is `[buy, sell, minutes since the quote]`. `f` lists the `source` of every
-entry in that fetch's `failures`, so it includes a quote rejected as `invalid`. Lines
-recorded before `f` existed do not have it.
+Each price is `[buy, sell, minutes since the quote]`. `f` lists the `source` of
+every entry in that fetch's `failures`, so it includes a quote rejected as
+`invalid`. Lines recorded before `f` existed do not have it.
 
 ## How fresh it is
 
-The age of a rate is the time from its `timestamp` to now. The site ranks only rates with
-an age of 24 hours or less, because a house that has not updated its quote in a day is
-closed or has stopped publishing. It shows an age of three hours or more as old, and it
-asks the reader to check the best rate with the house once that rate is three hours old.
+The age of a rate is the time from its `timestamp` to now. The site ranks only
+rates with an age of 24 hours or less, because a house that has not updated its
+quote in a day is closed or has stopped publishing. It shows an age of three
+hours or more as old, and it asks the reader to check the best rate with the
+house once that rate is three hours old.
 
 A job fetches every source about every 15 minutes and publishes the result. The
-[architecture](../../../docs/architecture.md#site-data) says how it keeps that beat, and
-[when it fetches less](../../../docs/architecture.md#opening-hours). A fetch can still be
-late or missing, and a chart lifts its line across a stretch with no snapshot instead of
-drawing a price that was never recorded. The page counts each age from now, not from the
-time of the fetch.
+[architecture](../../../docs/architecture.md#site-data) says how it keeps that
+beat, and [when it fetches less](../../../docs/architecture.md#opening-hours). A
+fetch can still be late or missing, and a chart lifts its line across a stretch
+with no snapshot instead of drawing a price that was never recorded. The page
+counts each age from now, not from the time of the fetch.

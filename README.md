@@ -4,12 +4,14 @@
 [![tests](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/totallynotdavid/perexchange/graph/badge.svg?token=KYQVD9QU30)](https://codecov.io/gh/totallynotdavid/perexchange)
 
-perexchange is an asynchronous Python library that fetches live PEN/USD exchange rates
-from Peruvian exchange houses. It queries every house at once, needs no API key, and
-returns the rates that arrived. A house that fails is left out and reported.
+perexchange is an asynchronous Python library that fetches live PEN/USD exchange
+rates from Peruvian exchange houses. It queries every house at once, needs no
+API key, and returns the rates that arrived. A house that fails is left out and
+reported.
 
-It reads the public pages and endpoints of each house, so it returns what they publish and
-nothing else: PEN/USD only, with no history. Requires Python 3.12 or later.
+It reads the public pages and endpoints of each house, so it returns what they
+publish and nothing else: PEN/USD only, with no history. Requires Python 3.12 or
+later.
 
 ## Get started
 
@@ -42,8 +44,8 @@ asyncio.run(main())
 mercadocambiario: S/3.4410 per USD
 ```
 
-`buy_price` is what the house pays you for a dollar. `sell_price` is what it charges. See
-the [API reference](docs/api.md) for every field.
+`buy_price` is what the house pays you for a dollar. `sell_price` is what it
+charges. See the [API reference](docs/api.md) for every field.
 
 ## Features
 
@@ -57,10 +59,12 @@ the [API reference](docs/api.md) for every field.
 
 ## Learn more
 
-- [Manual](docs/README.md): the API reference, the CLI, how a fetch works, and how
-  releases are made.
-- [Examples](examples): list every rate, find the best rates to buy and sell, summarize
-  the market, and cache results. Run one with `uv run python examples/best_rates.py`.
-- [Site](site/README.md): the rates site at <https://perexchange.vercel.app>, its open
-  data, and how it is built and deployed.
-- [Contributing](.github/CONTRIBUTING.md): set up, run the checks, and add a source.
+- [Manual](docs/README.md): the API reference, the CLI, how a fetch works, and
+  how releases are made.
+- [Examples](examples): list every rate, find the best rates to buy and sell,
+  summarize the market, and cache results. Run one with
+  `uv run python examples/best_rates.py`.
+- [Site](site/README.md): the rates site at <https://perexchange.vercel.app>,
+  its open data, and how it is built and deployed.
+- [Contributing](.github/CONTRIBUTING.md): set up, run the checks, and add a
+  source.
