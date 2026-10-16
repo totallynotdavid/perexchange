@@ -7,7 +7,7 @@ export interface Quote {
   timestamp: string;
 }
 
-export const FAILURE_REASONS = [
+const FAILURE_REASONS = [
   "blocked",
   "changed",
   "timeout",
@@ -15,7 +15,7 @@ export const FAILURE_REASONS = [
   "invalid",
   "unreachable",
 ] as const;
-export type FailureReason = (typeof FAILURE_REASONS)[number];
+type FailureReason = (typeof FAILURE_REASONS)[number];
 
 export interface Failure {
   source: string;
@@ -30,7 +30,7 @@ export interface Latest {
   failures: Failure[];
 }
 
-export interface HistoricalPrice {
+interface HistoricalPrice {
   buy: number;
   sell: number;
   ageMinutes: number;
@@ -82,9 +82,9 @@ function isFailureReason(value: unknown): value is FailureReason {
 }
 
 /**
- * A failure only explains why a house is missing, so a reason this reader does not know,
- * such as one from a snapshot written before reasons existed, reads as a plain error
- * and never makes the rates unreadable.
+ * A failure only explains why a house is missing, so a missing or unknown reason reads
+ * as a plain error and never makes the rates unreadable. The collector and the site
+ * deploy separately, so either may run a version ahead.
  */
 function parseFailure(value: unknown): Failure {
   if (!isRecord(value) || typeof value.source !== "string") {
@@ -134,15 +134,16 @@ function parseSnapshot(line: string): Snapshot | null {
 
   const prices: Record<string, HistoricalPrice> = {};
   for (const [id, entry] of Object.entries(value.r)) {
-    if (!Array.isArray(entry) || !isPrice(entry[0]) || !isPrice(entry[1])) {
+    if (
+      !Array.isArray(entry) ||
+      !isPrice(entry[0]) ||
+      !isPrice(entry[1]) ||
+      typeof entry[2] !== "number" ||
+      !(entry[2] >= 0)
+    ) {
       return null;
     }
-    const age = entry[2];
-    prices[id] = {
-      buy: entry[0],
-      sell: entry[1],
-      ageMinutes: typeof age === "number" && age >= 0 ? age : 0,
-    };
+    prices[id] = { buy: entry[0], sell: entry[1], ageMinutes: entry[2] };
   }
   return { t, prices };
 }

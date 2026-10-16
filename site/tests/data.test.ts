@@ -36,16 +36,11 @@ describe("parseLatest", () => {
     ]);
   });
 
-  it("reads a snapshot published before failures had a reason, keeping its rates", () => {
+  it("reads a missing or unknown failure reason as an error, keeping the rates", () => {
     const published = {
       ...LATEST,
       failures: [
-        {
-          source: "b",
-          error_type: "HTTPStatusError",
-          message:
-            "Client error '403 Forbidden'\nFor more information check: https://example.test",
-        },
+        { source: "b", message: "x" },
         { ...LATEST.failures[0], reason: "sulking" },
       ],
     };
@@ -103,15 +98,13 @@ describe("parseHistory", () => {
     expect(history.skippedLines).toBe(2);
   });
 
-  it("skips a line with a price that is not positive", () => {
-    const text = line("2026-10-08T00:00:00Z", { a: [0, 3.45, 0] });
+  it.each([
+    ["a price that is not positive", [0, 3.45, 0]],
+    ["no age", [3.4, 3.45]],
+    ["a negative age", [3.4, 3.45, -1]],
+  ])("skips a line with %s", (_name, entry) => {
+    const text = line("2026-10-08T00:00:00Z", { a: entry });
 
     expect(parseHistory([text]).skippedLines).toBe(1);
-  });
-
-  it("treats a missing age as a current quote", () => {
-    const text = line("2026-10-08T00:00:00Z", { a: [3.4, 3.45] });
-
-    expect(parseHistory([text]).snapshots[0].prices.a.ageMinutes).toBe(0);
   });
 });
