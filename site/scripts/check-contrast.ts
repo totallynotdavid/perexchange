@@ -1,8 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
-
 type Rgb = [number, number, number];
 type Scheme = "light" | "dark";
 
@@ -94,12 +92,24 @@ const GRAPHICS: [string, string][] = [
   ["chart-buy", "bg"],
 ];
 
-describe.each<Scheme>(["light", "dark"])("the %s palette", (scheme) => {
-  it.each(TEXT)("reads %s on %s at 4.5:1 or more", (foreground, background) => {
-    expect(ratio(foreground, background, scheme)).toBeGreaterThanOrEqual(4.5);
-  });
+const failures: string[] = [];
+for (const scheme of ["light", "dark"] as const) {
+  for (const [pairs, minimum] of [
+    [TEXT, 4.5],
+    [GRAPHICS, 3],
+  ] as const) {
+    for (const [foreground, background] of pairs) {
+      const found = ratio(foreground, background, scheme);
+      if (found < minimum) {
+        failures.push(
+          `${scheme}: --${foreground} on --${background} is ${found.toFixed(2)}:1, needs ${minimum}:1`,
+        );
+      }
+    }
+  }
+}
 
-  it.each(GRAPHICS)("shows %s against %s at 3:1 or more", (foreground, background) => {
-    expect(ratio(foreground, background, scheme)).toBeGreaterThanOrEqual(3);
-  });
-});
+if (failures.length > 0) {
+  console.error(failures.join("\n"));
+  process.exit(1);
+}

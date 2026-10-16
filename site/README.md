@@ -53,10 +53,10 @@ The site reads the published `data` branch. `bun run dev` and `bun run preview` 
 The tests cover the data path. `tests/contract.test.ts` runs the real Python tool on a few
 made-up quotes and reads its output with the loaders the site uses, so a change to the
 format on either side fails a test. `tests/build.test.ts` builds the site from that
-output, starts the server and requests the pages. `tests/contrast.test.ts` checks the
-contrast of the colour tokens in both schemes. The tool's own tests run it against the
-captured source responses. The tests build into `site/.scratch`, because Astro cannot move
-files across filesystems.
+output, starts the server and requests the pages. The tool's own tests run it against the
+captured source responses. `bun run check:contrast` checks the contrast of the colour
+tokens in both schemes, and `bun run check` runs it. The tests build into `site/.scratch`,
+because Astro cannot move files across filesystems.
 
 ## Deploy
 

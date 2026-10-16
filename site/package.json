@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "PEREXCHANGE_DATA=data astro preview",
     "format:astro": "prettier --plugin prettier-plugin-astro --print-width 120 --write \"src/**/*.astro\"",
-    "check": "astro check && oxlint && oxfmt --check . && prettier --plugin prettier-plugin-astro --print-width 120 --check \"src/**/*.astro\" && vitest run",
+    "check:contrast": "node scripts/check-contrast.ts",
+    "check": "astro check && oxlint && oxfmt --check . && prettier --plugin prettier-plugin-astro --print-width 120 --check \"src/**/*.astro\" && bun run check:contrast && vitest run",
     "test": "vitest run"
   },
   "dependencies": {
