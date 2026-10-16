@@ -66,7 +66,11 @@ export function priceAxis(
   const step = niceStep(span);
 
   const ticks: number[] = [];
-  for (let tick = Math.ceil(min / step) * step; tick <= max + 1e-9; tick += step) {
+  for (
+    let tick = Math.ceil(min / step) * step;
+    tick <= max + 1e-9;
+    tick += step
+  ) {
     ticks.push(Number(tick.toFixed(4)));
   }
   return { min, max, ticks };
@@ -94,7 +98,8 @@ function timeTicks(
     const grid = (days ? 1 : step) * unit;
     return Math.ceil((start + LIMA_OFFSET) / grid) * grid - LIMA_OFFSET;
   };
-  const count = (step: number) => Math.floor((end - firstOf(step)) / (step * unit)) + 1;
+  const count = (step: number) =>
+    Math.floor((end - firstOf(step)) / (step * unit)) + 1;
   const step = steps.find((one) => count(one) <= max) ?? steps.at(-1) ?? 1;
   const first = firstOf(step);
   const format: Intl.DateTimeFormatOptions = days
@@ -102,7 +107,10 @@ function timeTicks(
     : { hour: "2-digit", minute: "2-digit", hour12: false };
 
   const label = (t: number) =>
-    new Date(t).toLocaleString("en-GB", { timeZone: "America/Lima", ...format });
+    new Date(t).toLocaleString("en-GB", {
+      timeZone: "America/Lima",
+      ...format,
+    });
   // A span shorter than the step holds no whole hour: label where it starts.
   if (count(step) < 1) {
     return [{ t: start, label: label(start) }];
@@ -150,7 +158,8 @@ export function buildChart(
       ? (plot.left + plot.right) / 2
       : plot.left + ((t - startT) / spanMs) * (plot.right - plot.left);
   const y = (v: number): number =>
-    plot.bottom - ((v - axis.min) / (axis.max - axis.min)) * (plot.bottom - plot.top);
+    plot.bottom -
+    ((v - axis.min) / (axis.max - axis.min)) * (plot.bottom - plot.top);
 
   const drawn: DrawnSeries[] = series
     .filter((one) => one.points.length > 0)
@@ -167,14 +176,22 @@ export function buildChart(
       return {
         id: one.id,
         label: one.label,
-        path: dots.map((dot, i) => `${joined[i] ? "L" : "M"}${dot.x} ${dot.y}`).join(" "),
+        path: dots
+          .map((dot, i) => `${joined[i] ? "L" : "M"}${dot.x} ${dot.y}`)
+          .join(" "),
         dots,
         alone: dots.filter((_, i) => !joined[i] && !joined[i + 1]),
-        last: { x: round(x(lastPoint.t)), y: round(y(lastPoint.v)), value: lastPoint.v },
+        last: {
+          x: round(x(lastPoint.t)),
+          y: round(y(lastPoint.v)),
+          value: lastPoint.v,
+        },
       };
     });
 
-  const decimals = axis.ticks.every((tick) => Math.round(tick * 100) / 100 === tick)
+  const decimals = axis.ticks.every(
+    (tick) => Math.round(tick * 100) / 100 === tick,
+  )
     ? 2
     : 3;
   const ticks =
@@ -206,7 +223,11 @@ export function buildChart(
         x: at,
         label: tick.label,
         anchor:
-          at - plot.left < EDGE ? "start" : plot.right - at < EDGE ? "end" : "middle",
+          at - plot.left < EDGE
+            ? "start"
+            : plot.right - at < EDGE
+              ? "end"
+              : "middle",
       };
     }),
   };

@@ -37,7 +37,8 @@ export default defineConfig({
       // rolldown without shipping its native binding.
       rolldownOptions: {
         treeshake: {
-          moduleSideEffects: (id) => id !== "rolldown" && id !== "@vercel/routing-utils",
+          moduleSideEffects: (id) =>
+            id !== "rolldown" && id !== "@vercel/routing-utils",
         },
       },
     },

@@ -33,7 +33,10 @@ export function sliceRange<T extends { t: number }>(
  * keeping the last point of each. The last point of the series always survives, so the
  * chart ends on the current price.
  */
-export function downsample<T extends { t: number }>(points: T[], maxPoints: number): T[] {
+export function downsample<T extends { t: number }>(
+  points: T[],
+  maxPoints: number,
+): T[] {
   const first = points[0];
   const last = points.at(-1);
   if (first === undefined || last === undefined || points.length <= maxPoints) {
@@ -46,7 +49,10 @@ export function downsample<T extends { t: number }>(points: T[], maxPoints: numb
 
   const kept = new Map<number, T>();
   for (const point of points) {
-    const bucket = Math.min(maxPoints - 1, Math.floor((point.t - first.t) / width));
+    const bucket = Math.min(
+      maxPoints - 1,
+      Math.floor((point.t - first.t) / width),
+    );
     kept.set(bucket, point);
   }
   return [...kept.values()];

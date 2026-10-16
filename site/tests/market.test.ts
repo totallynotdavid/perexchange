@@ -16,21 +16,36 @@ import { GENERATED_AT, quote, snapshot } from "./fixtures.ts";
 const minutesBefore = (minutes: number) =>
   new Date(Date.parse(GENERATED_AT) - minutes * 60_000).toISOString();
 
-const failure = (source: string, reason: Failure["reason"] = "blocked"): Failure => ({
+const failure = (
+  source: string,
+  reason: Failure["reason"] = "blocked",
+): Failure => ({
   source,
   reason,
   message: "",
 });
 
 describe("rank", () => {
-  const quotes = [quote("a", 3.3, 3.5), quote("b", 3.4, 3.45), quote("c", 3.2, 3.6)];
+  const quotes = [
+    quote("a", 3.3, 3.5),
+    quote("b", 3.4, 3.45),
+    quote("c", 3.2, 3.6),
+  ];
 
   it("puts the lowest price first for someone buying dollars", () => {
-    expect(rank(quotes, "buy", GENERATED_AT).map((q) => q.id)).toEqual(["b", "a", "c"]);
+    expect(rank(quotes, "buy", GENERATED_AT).map((q) => q.id)).toEqual([
+      "b",
+      "a",
+      "c",
+    ]);
   });
 
   it("puts the highest price first for someone selling dollars", () => {
-    expect(rank(quotes, "sell", GENERATED_AT).map((q) => q.id)).toEqual(["b", "a", "c"]);
+    expect(rank(quotes, "sell", GENERATED_AT).map((q) => q.id)).toEqual([
+      "b",
+      "a",
+      "c",
+    ]);
   });
 
   it("puts the newer of two equal rates first", () => {
@@ -44,17 +59,26 @@ describe("rank", () => {
   });
 
   it("leaves out a rate its house has not changed in a day", () => {
-    const closed = quote("closed", 3.9, 3.0, minutesBefore(DEAD_AFTER_MINUTES + 1));
+    const closed = quote(
+      "closed",
+      3.9,
+      3.0,
+      minutesBefore(DEAD_AFTER_MINUTES + 1),
+    );
     const edge = quote("edge", 3.3, 3.4, minutesBefore(DEAD_AFTER_MINUTES));
 
-    expect(rank([closed, edge], "buy", GENERATED_AT).map((q) => q.id)).toEqual(["edge"]);
+    expect(rank([closed, edge], "buy", GENERATED_AT).map((q) => q.id)).toEqual([
+      "edge",
+    ]);
   });
 
   it("ranks a house's own rate and not its special rates", () => {
     const own = quote("tkambio", 3.4, 3.46);
     const large = { ...quote("tkambio-5000", 3.43, 3.44), source: "tkambio" };
 
-    expect(rank([own, large], "buy", GENERATED_AT).map((q) => q.id)).toEqual(["tkambio"]);
+    expect(rank([own, large], "buy", GENERATED_AT).map((q) => q.id)).toEqual([
+      "tkambio",
+    ]);
   });
 
   it("has nothing to rank without current quotes", () => {
@@ -63,7 +87,11 @@ describe("rank", () => {
 });
 
 describe("gapToBest and placeOf", () => {
-  const quotes = [quote("a", 3.3, 3.5), quote("b", 3.4, 3.45), quote("c", 3.4, 3.45)];
+  const quotes = [
+    quote("a", 3.3, 3.5),
+    quote("b", 3.4, 3.45),
+    quote("c", 3.4, 3.45),
+  ];
   const [a, b, c] = quotes;
 
   it("measures how far a rate is from the best on the side that matters", () => {
@@ -73,8 +101,16 @@ describe("gapToBest and placeOf", () => {
   });
 
   it("gives houses that tie for the best the same place", () => {
-    expect(placeOf(quotes, b, "buy", GENERATED_AT)).toEqual({ place: 1, of: 3, gap: 0 });
-    expect(placeOf(quotes, c, "buy", GENERATED_AT)).toEqual({ place: 1, of: 3, gap: 0 });
+    expect(placeOf(quotes, b, "buy", GENERATED_AT)).toEqual({
+      place: 1,
+      of: 3,
+      gap: 0,
+    });
+    expect(placeOf(quotes, c, "buy", GENERATED_AT)).toEqual({
+      place: 1,
+      of: 3,
+      gap: 0,
+    });
     expect(placeOf(quotes, a, "buy", GENERATED_AT)).toEqual({
       place: 3,
       of: 3,
@@ -91,8 +127,12 @@ describe("gapToBest and placeOf", () => {
 
 describe("ageMinutes", () => {
   it("is the whole minutes between the snapshot and the quote, never negative", () => {
-    expect(ageMinutes(quote("a", 1, 1, minutesBefore(154)), GENERATED_AT)).toBe(154);
-    expect(ageMinutes(quote("a", 1, 1, minutesBefore(-3)), GENERATED_AT)).toBe(0);
+    expect(ageMinutes(quote("a", 1, 1, minutesBefore(154)), GENERATED_AT)).toBe(
+      154,
+    );
+    expect(ageMinutes(quote("a", 1, 1, minutesBefore(-3)), GENERATED_AT)).toBe(
+      0,
+    );
   });
 });
 
@@ -114,9 +154,9 @@ describe("missingHouses", () => {
       name: "Cambio Mundial",
     };
 
-    expect(missingHouses([aggregator], [failure("cambiomundial")], GENERATED_AT)).toEqual(
-      [],
-    );
+    expect(
+      missingHouses([aggregator], [failure("cambiomundial")], GENERATED_AT),
+    ).toEqual([]);
   });
 
   it("lists a house whose only rate is too old, with the day it last changed", () => {
@@ -126,12 +166,17 @@ describe("missingHouses", () => {
     };
 
     expect(missingHouses([old], [], GENERATED_AT)).toEqual([
-      { name: "Mercado Cambiario", why: "Has not changed its rate since 10 Jun." },
+      {
+        name: "Mercado Cambiario",
+        why: "Has not changed its rate since 10 Jun.",
+      },
     ]);
   });
 
   it("lists nothing when every house has a current rate", () => {
-    expect(missingHouses([quote("a", 3.4, 3.45)], [], GENERATED_AT)).toEqual([]);
+    expect(missingHouses([quote("a", 3.4, 3.45)], [], GENERATED_AT)).toEqual(
+      [],
+    );
   });
 });
 
@@ -175,7 +220,9 @@ describe("bestSeries", () => {
   });
 
   it("keeps a house whose id has a hyphen but is nobody's special rate", () => {
-    const hyphen = [snapshot(0, { "cambio-mundial": [3.43, 3.44], a: [3.4, 3.46] })];
+    const hyphen = [
+      snapshot(0, { "cambio-mundial": [3.43, 3.44], a: [3.4, 3.46] }),
+    ];
 
     expect(bestSeries(hyphen, "buy", variants).map((p) => p.v)).toEqual([3.44]);
   });

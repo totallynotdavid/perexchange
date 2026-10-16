@@ -25,25 +25,27 @@ interface Panel {
 }
 
 function panelsOf(board: ParentNode): Panel[] {
-  return [...board.querySelectorAll<HTMLElement>(".hero[data-side]")].flatMap((hero) => {
-    const side = hero.dataset.side === "sell" ? "sell" : "buy";
-    const results = board.querySelector(`.results[data-side="${side}"]`);
-    if (results === null) {
-      return [];
-    }
-    const rows = [...results.querySelectorAll<HTMLElement>("tr[data-rate]")];
-    return [
-      {
-        side,
-        hero,
-        rows,
-        table: rows.map((row) => ({
-          rate: Number(row.dataset.rate),
-          house: row.dataset.house ?? "",
-        })),
-      } satisfies Panel,
-    ];
-  });
+  return [...board.querySelectorAll<HTMLElement>(".hero[data-side]")].flatMap(
+    (hero) => {
+      const side = hero.dataset.side === "sell" ? "sell" : "buy";
+      const results = board.querySelector(`.results[data-side="${side}"]`);
+      if (results === null) {
+        return [];
+      }
+      const rows = [...results.querySelectorAll<HTMLElement>("tr[data-rate]")];
+      return [
+        {
+          side,
+          hero,
+          rows,
+          table: rows.map((row) => ({
+            rate: Number(row.dataset.rate),
+            house: row.dataset.house ?? "",
+          })),
+        } satisfies Panel,
+      ];
+    },
+  );
 }
 
 /**
@@ -90,8 +92,11 @@ export function bindBoard(doc: Document): void {
       setText(part("figure"), view.figure);
       setText(part("note"), view.note);
 
-      const results = board.querySelector(`.results[data-side="${panel.side}"]`);
-      for (const head of results?.querySelectorAll("[data-head='label']") ?? []) {
+      const results = board.querySelector(
+        `.results[data-side="${panel.side}"]`,
+      );
+      for (const head of results?.querySelectorAll("[data-head='label']") ??
+        []) {
         setText(head, view.head.label);
       }
       for (const head of results?.querySelectorAll("[data-head='for']") ?? []) {

@@ -96,8 +96,13 @@ html[data-pending] .site-header::after {
   position: absolute;
   inset: auto 0 -1px;
   height: var(--progress-height);
-  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent) 0 0 /
-    40% 100% no-repeat;
+  background: linear-gradient(
+      90deg,
+      transparent,
+      var(--accent) 50%,
+      transparent
+    )
+    0 0 / 40% 100% no-repeat;
   opacity: 0;
   animation:
     progress-show 0s var(--progress-delay) forwards,

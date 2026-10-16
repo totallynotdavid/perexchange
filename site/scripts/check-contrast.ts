@@ -23,7 +23,8 @@ function token(name: string): Record<Scheme, string> {
   return { light, dark };
 }
 
-const linear = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+const linear = (v: number) =>
+  v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
 
 /** Convert a hex or OKLCH token to linear-light sRGB. */
 function parse(color: string): Rgb {

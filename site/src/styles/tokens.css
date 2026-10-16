@@ -39,7 +39,8 @@
   color-scheme: light dark;
 
   --font-sans: "Geist Variable", "Geist Fallback", system-ui, sans-serif;
-  --font-mono: "Geist Mono Variable", "Geist Mono Fallback", ui-monospace, monospace;
+  --font-mono:
+    "Geist Mono Variable", "Geist Mono Fallback", ui-monospace, monospace;
 
   --bg: light-dark(oklch(1 0 0), oklch(0.171 0 0));
   --bg-subtle: light-dark(oklch(0.979 0.001 286.375), oklch(0.198 0 0));

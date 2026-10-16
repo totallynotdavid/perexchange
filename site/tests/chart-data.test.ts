@@ -38,12 +38,16 @@ describe("rangeCharts", () => {
 
     expect(day.range).toBe("24h");
     expect(day.wide.width).toBeGreaterThan(day.narrow.width);
-    expect(day.wide.series[0].dots).toHaveLength(day.narrow.series[0].dots.length);
+    expect(day.wide.series[0].dots).toHaveLength(
+      day.narrow.series[0].dots.length,
+    );
   });
 
   it("counts a range from the newest snapshot", () => {
     const charts = rangeCharts(series(48), END);
-    const byRange = Object.fromEntries(charts.map((chart) => [chart.range, chart]));
+    const byRange = Object.fromEntries(
+      charts.map((chart) => [chart.range, chart]),
+    );
 
     expect(byRange["24h"].summaries[0].count).toBe(25);
     expect(byRange["7d"].summaries[0].count).toBe(48);
@@ -52,7 +56,9 @@ describe("rangeCharts", () => {
   it("takes the low and high from every snapshot, not from the drawn points", () => {
     const input = series(1000);
     input[0].points[500].v = 9;
-    const month = rangeCharts(input, END).find((chart) => chart.range === "30d");
+    const month = rangeCharts(input, END).find(
+      (chart) => chart.range === "30d",
+    );
 
     expect(month?.summaries[0].high).toBe(9);
   });

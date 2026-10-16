@@ -27,7 +27,9 @@ let complete: Running;
 let empty: Running;
 
 async function page(file: string, from = main): Promise<string> {
-  const response = await fetch(from.origin + "/" + file.replace(/index\.html$/, ""));
+  const response = await fetch(
+    from.origin + "/" + file.replace(/index\.html$/, ""),
+  );
   expect(response.status, file).toBe(200);
   return response.text();
 }
@@ -128,8 +130,12 @@ describe("the site built from a recorded snapshot", () => {
     const html = await page("index.html", complete);
 
     expect(html).toMatch(/<div class="amount" hidden/);
-    expect(text(html)).toContain("Best rate per US$1 S/ 3.4550 at Gordito digital");
-    expect(text(html)).toContain("Best rate per US$1 S/ 3.4410 at Western Union");
+    expect(text(html)).toContain(
+      "Best rate per US$1 S/ 3.4550 at Gordito digital",
+    );
+    expect(text(html)).toContain(
+      "Best rate per US$1 S/ 3.4410 at Western Union",
+    );
   });
 
   it("tells the reader to check an old rate, in the line that gives its age", async () => {
@@ -163,7 +169,9 @@ describe("the site built from a recorded snapshot", () => {
       .split("</section>")[0];
     const [shown, rest] = buy.split("<details");
 
-    expect(shown.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr[ >]/g)).toHaveLength(5);
+    expect(
+      shown.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr[ >]/g),
+    ).toHaveLength(5);
     expect(text(rest)).toContain("Show the other 8 houses");
     expect(rest.match(/<tr[ >]/g)).toHaveLength(8 + 1);
   });
@@ -241,7 +249,9 @@ describe("the site built from a recorded snapshot", () => {
       const html = await response.text();
 
       expect(response.status, pathname).toBe(503);
-      expect(text(html), pathname).toContain("Rates are not available right now");
+      expect(text(html), pathname).toContain(
+        "Rates are not available right now",
+      );
       expect(html, pathname).toContain('role="alert"');
     }
   });
@@ -290,10 +300,12 @@ async function openHome(
 
   const doc = win.document;
   const input = doc.getElementById("amount") as unknown as HTMLInputElement;
-  const hero = (side: string) => doc.querySelector(`.hero[data-side="${side}"]`)!;
+  const hero = (side: string) =>
+    doc.querySelector(`.hero[data-side="${side}"]`)!;
   const part = (side: string, name: string) =>
     hero(side).querySelector(`[data-part="${name}"]`)!.textContent!;
-  const results = (side: string) => doc.querySelector(`.results[data-side="${side}"]`)!;
+  const results = (side: string) =>
+    doc.querySelector(`.results[data-side="${side}"]`)!;
   return {
     win,
     input,
@@ -304,17 +316,25 @@ async function openHome(
       input.dispatchEvent(new win.Event("input", { bubbles: true }));
     },
     chooseSide: (side: "buy" | "sell") =>
-      (doc.getElementById(`side-${side}`) as unknown as HTMLInputElement).click(),
+      (
+        doc.getElementById(`side-${side}`) as unknown as HTMLInputElement
+      ).click(),
     flip: () =>
-      (doc.querySelector("[data-unit]") as unknown as HTMLButtonElement).click(),
+      (
+        doc.querySelector("[data-unit]") as unknown as HTMLButtonElement
+      ).click(),
     unit: () => doc.querySelector("[data-unit-text]")!.textContent,
     fieldLabel: () => doc.querySelector("[data-label]")!.textContent,
     reading: () => doc.querySelector<HTMLElement>(".board")!.dataset.reading,
     summary: (side = "buy") =>
-      hero(side).querySelector("output")!.textContent!.replace(/\s+/g, " ").trim(),
+      hero(side)
+        .querySelector("output")!
+        .textContent!.replace(/\s+/g, " ")
+        .trim(),
     figure: (side = "buy") => part(side, "figure"),
     note: (side = "buy") => part(side, "note"),
-    cta: (side = "buy") => hero(side).querySelector<HTMLAnchorElement>("a.cta")!,
+    cta: (side = "buy") =>
+      hero(side).querySelector<HTMLAnchorElement>("a.cta")!,
     rows: (side = "buy") =>
       [...results(side).querySelectorAll("tr[data-rate]")].map((row) => ({
         house: row.getAttribute("data-house"),
@@ -322,7 +342,10 @@ async function openHome(
         total: row.querySelector("[data-total]")!.textContent,
         link: row.querySelector<HTMLAnchorElement>("th a")!,
         late:
-          row.querySelector(".late")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+          row
+            .querySelector(".late")
+            ?.textContent?.replace(/\s+/g, " ")
+            .trim() ?? null,
       })),
     head: (side = "buy") =>
       text(results(side).querySelector("thead .total-col")!.innerHTML).trim(),
@@ -336,7 +359,9 @@ describe("the amount field and the answer on the served home page", () => {
     expect(home.input.value).toBe("");
     expect(home.win.document.activeElement).toBe(home.input);
     expect(home.reading()).toBe("empty");
-    expect(home.summary()).toBe("Best rate per US$1 S/ 3.4550 at Gordito digital");
+    expect(home.summary()).toBe(
+      "Best rate per US$1 S/ 3.4550 at Gordito digital",
+    );
     expect(home.rows().map((row) => row.total)).toEqual(Array(13).fill(""));
   });
 
@@ -429,7 +454,9 @@ describe("the amount field and the answer on the served home page", () => {
     home.type(typed);
 
     expect(home.note()).toBe(hint);
-    expect(home.summary()).toContain("Best rate per US$1 S/ 3.4550 at Gordito digital");
+    expect(home.summary()).toContain(
+      "Best rate per US$1 S/ 3.4550 at Gordito digital",
+    );
     expect(home.rows().every((row) => row.total === "")).toBe(true);
   });
 
@@ -525,7 +552,9 @@ describe("selling dollars on the served home page", () => {
     home.flip();
 
     expect(home.head("sell")).toContain("to get S/");
-    expect(home.summary("sell")).toMatch(/^You sell US\$ [\d.,]+ at Western Union/);
+    expect(home.summary("sell")).toMatch(
+      /^You sell US\$ [\d.,]+ at Western Union/,
+    );
   });
 
   it("keeps the amount when the side changes", async () => {
@@ -563,7 +592,9 @@ describe("remembering the visitor's choices", () => {
     home.flip();
     home.chooseSide("sell");
 
-    expect(home.win.localStorage.getItem("perexchange:amount")).toBe(home.input.value);
+    expect(home.win.localStorage.getItem("perexchange:amount")).toBe(
+      home.input.value,
+    );
     expect(home.win.localStorage.getItem("perexchange:unit")).toBe("pen");
     expect(home.win.localStorage.getItem("perexchange:side")).toBe("sell");
   });
@@ -575,10 +606,15 @@ describe("remembering the visitor's choices", () => {
     });
 
     expect(home.input.value).toBe("1,000");
-    expect(home.summary("sell")).toContain("You get S/ 3,441.00 at Western Union");
+    expect(home.summary("sell")).toContain(
+      "You get S/ 3,441.00 at Western Union",
+    );
     expect(
-      (home.win.document.getElementById("side-sell") as unknown as HTMLInputElement)
-        .checked,
+      (
+        home.win.document.getElementById(
+          "side-sell",
+        ) as unknown as HTMLInputElement
+      ).checked,
     ).toBe(true);
     expect(home.fieldLabel()).toBe("Amount to sell");
   });
@@ -653,7 +689,11 @@ describe("the next step from the served home page", () => {
 
 describe("the best rate history page", () => {
   it("is linked from every page's navigation, and the home page carries no chart", async () => {
-    for (const file of ["index.html", "house/cambiafx/index.html", "docs/index.html"]) {
+    for (const file of [
+      "index.html",
+      "house/cambiafx/index.html",
+      "docs/index.html",
+    ]) {
       expect(await page(file, complete), file).toContain('href="/history/"');
     }
 
@@ -711,12 +751,15 @@ describe("the best rate history page", () => {
 
   it("labels the axis in days and never in minutes", async () => {
     const html = await page("history/index.html", complete);
-    const seven = html.match(/<figure id="chart-buy-7d"[\s\S]*?<\/figure>/)?.[0] ?? "";
+    const seven =
+      html.match(/<figure id="chart-buy-7d"[\s\S]*?<\/figure>/)?.[0] ?? "";
     const axis = [...seven.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((one) =>
       one[1]!.trim(),
     );
 
-    expect(axis.some((label) => /^\d{1,2} [A-Z][a-z]{2}$/.test(label))).toBe(true);
+    expect(axis.some((label) => /^\d{1,2} [A-Z][a-z]{2}$/.test(label))).toBe(
+      true,
+    );
     expect(axis.some((label) => /\d:\d\d/.test(label))).toBe(false);
   });
 

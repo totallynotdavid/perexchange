@@ -101,7 +101,9 @@ export function rangeCharts(
     // Downsampling spaces points up to two buckets apart, so a longer range tolerates more.
     const span = Math.max(
       0,
-      ...inRange.map((one) => (one.points.at(-1)?.t ?? 0) - (one.points[0]?.t ?? 0)),
+      ...inRange.map(
+        (one) => (one.points.at(-1)?.t ?? 0) - (one.points[0]?.t ?? 0),
+      ),
     );
     const maxGap = Math.max(MAX_GAP, (2 * span) / MAX_POINTS);
     const draw = (size: (typeof SIZES)[keyof typeof SIZES]) =>

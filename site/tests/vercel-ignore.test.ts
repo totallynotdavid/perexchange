@@ -1,5 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -25,8 +31,10 @@ function ignore(ref: string, previous: string | undefined): number | null {
   } else {
     env.VERCEL_GIT_PREVIOUS_SHA = previous;
   }
-  return spawnSync("sh", ["-c", ignoreCommand], { cwd: path.join(repo, "site"), env })
-    .status;
+  return spawnSync("sh", ["-c", ignoreCommand], {
+    cwd: path.join(repo, "site"),
+    env,
+  }).status;
 }
 
 /** Commit one file change and return the exit code Vercel would read for that push. */

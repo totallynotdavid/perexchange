@@ -50,7 +50,9 @@ export function bindSide(
   store: Store,
   onChange: () => void = () => {},
 ): { current: () => Side } {
-  const radios = [...doc.querySelectorAll<HTMLInputElement>("input[name='side']")];
+  const radios = [
+    ...doc.querySelectorAll<HTMLInputElement>("input[name='side']"),
+  ];
   const current = (): Side =>
     radios.find((radio) => radio.checked)?.value === "sell" ? "sell" : "buy";
   const saved = store.getItem(KEYS.side);

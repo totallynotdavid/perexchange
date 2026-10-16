@@ -40,7 +40,10 @@ describe("buildChart", () => {
     {
       id: "sell",
       label: "Lowest sell",
-      points: [0, 1, 2].map((i) => ({ t: START + i * HOUR, v: 3.44 + i * 0.01 })),
+      points: [0, 1, 2].map((i) => ({
+        t: START + i * HOUR,
+        v: 3.44 + i * 0.01,
+      })),
     },
   ];
 
@@ -77,7 +80,9 @@ describe("buildChart", () => {
   ];
 
   it("labels a week with whole days, never a time of day", () => {
-    const labels = buildChart(over(7), 760, 280, 8).xTicks.map((tick) => tick.label);
+    const labels = buildChart(over(7), 760, 280, 8).xTicks.map(
+      (tick) => tick.label,
+    );
 
     expect(labels).toEqual([
       "9 Oct",
@@ -91,7 +96,9 @@ describe("buildChart", () => {
   });
 
   it("thins the day labels for a narrow chart and a long range, without a time of day", () => {
-    const narrow = buildChart(over(7), 330, 250, 4).xTicks.map((tick) => tick.label);
+    const narrow = buildChart(over(7), 330, 250, 4).xTicks.map(
+      (tick) => tick.label,
+    );
     const year = buildChart(over(300), 760, 280, 8).xTicks;
 
     expect(narrow).toEqual(["9 Oct", "11 Oct", "13 Oct", "15 Oct"]);
@@ -141,7 +148,9 @@ describe("buildChart", () => {
     );
 
     expect(chart.series[0].dots).toHaveLength(1);
-    expect(chart.series[0].dots[0].x).toBe((chart.plot.left + chart.plot.right) / 2);
+    expect(chart.series[0].dots[0].x).toBe(
+      (chart.plot.left + chart.plot.right) / 2,
+    );
     expect(chart.xTicks).toHaveLength(1);
   });
 
@@ -151,7 +160,10 @@ describe("buildChart", () => {
       {
         id: "s",
         label: "s",
-        points: hours.map((h) => ({ t: START + h * HOUR, v: 3.44 + h * 0.001 })),
+        points: hours.map((h) => ({
+          t: START + h * HOUR,
+          v: 3.44 + h * 0.001,
+        })),
       },
     ];
 
@@ -163,7 +175,8 @@ describe("buildChart", () => {
     });
 
     it("dots a reading that has a gap on both sides, and no other", () => {
-      const { alone, dots } = buildChart(gappy, 640, 240, 5, 3 * HOUR).series[0];
+      const { alone, dots } = buildChart(gappy, 640, 240, 5, 3 * HOUR)
+        .series[0];
 
       expect(alone).toEqual([dots[5]]);
     });
@@ -177,8 +190,8 @@ describe("buildChart", () => {
   });
 
   it("returns an empty chart when no series has points", () => {
-    expect(buildChart([{ id: "s", label: "s", points: [] }], 640, 240).series).toEqual(
-      [],
-    );
+    expect(
+      buildChart([{ id: "s", label: "s", points: [] }], 640, 240).series,
+    ).toEqual([]);
   });
 });

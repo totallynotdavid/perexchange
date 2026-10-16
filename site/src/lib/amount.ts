@@ -45,7 +45,9 @@ export function readAmount(text: string): Reading {
 function convert(side: Side, unit: Unit, amount: number, rate: number): number {
   const exact = unit === "usd" ? amount * rate : amount / rate;
   const received = side === "buy" ? unit === "pen" : unit === "usd";
-  return received ? Math.floor(hundredths(exact)) : Math.round(hundredths(exact));
+  return received
+    ? Math.floor(hundredths(exact))
+    : Math.round(hundredths(exact));
 }
 
 export interface Row {
@@ -87,7 +89,12 @@ function labels(side: Side, unit: Unit): { total: string; currency: string } {
  * What the hero and the table say for an amount on one side. `rows` are the houses, best
  * rate first, so the first row is the best deal and the last row the worst.
  */
-export function answer(side: Side, unit: Unit, reading: Reading, rows: Row[]): Answer {
+export function answer(
+  side: Side,
+  unit: Unit,
+  reading: Reading,
+  rows: Row[],
+): Answer {
   const { total, currency } = labels(side, unit);
   const best = rows[0];
   const worst = rows.at(-1);
@@ -97,7 +104,10 @@ export function answer(side: Side, unit: Unit, reading: Reading, rows: Row[]): A
       label: "Best rate per US$1",
       currency: "S/",
       figure: best === undefined ? "" : formatPrice(best.rate),
-      note: reading.kind === "ok" || reading.kind === "empty" ? "" : HINTS[reading.kind],
+      note:
+        reading.kind === "ok" || reading.kind === "empty"
+          ? ""
+          : HINTS[reading.kind],
       totals: rows.map(() => ""),
       head,
     };
@@ -107,9 +117,12 @@ export function answer(side: Side, unit: Unit, reading: Reading, rows: Row[]): A
     unit === "usd"
       ? `US$${formatMoney(reading.amount)}`
       : `S/ ${formatMoney(reading.amount)}`;
-  head.for = side === "sell" && unit === "pen" ? `to get ${entered}` : `for ${entered}`;
+  head.for =
+    side === "sell" && unit === "pen" ? `to get ${entered}` : `for ${entered}`;
 
-  const cents = rows.map((row) => convert(side, unit, reading.amount, row.rate));
+  const cents = rows.map((row) =>
+    convert(side, unit, reading.amount, row.rate),
+  );
   const top = cents[0] ?? 0;
   const edge = Math.abs(top - (cents.at(-1) ?? top));
   const received = side === "buy" ? unit === "pen" : unit === "usd";

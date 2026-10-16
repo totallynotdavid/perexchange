@@ -56,9 +56,12 @@ function isBadgeParagraph(node) {
   return (
     links.length > 0 &&
     links.every(
-      (link) => link.tagName === "a" && link.children.some((c) => c.tagName === "img"),
+      (link) =>
+        link.tagName === "a" && link.children.some((c) => c.tagName === "img"),
     ) &&
-    node.children.every((child) => child.type === "element" || child.value.trim() === "")
+    node.children.every(
+      (child) => child.type === "element" || child.value.trim() === "",
+    )
   );
 }
 
@@ -73,7 +76,11 @@ function rewrite(node, fromFile, repoRoot) {
       child.tagName === "a" &&
       typeof child.properties?.href === "string"
     ) {
-      child.properties.href = resolveRepoLink(child.properties.href, fromFile, repoRoot);
+      child.properties.href = resolveRepoLink(
+        child.properties.href,
+        fromFile,
+        repoRoot,
+      );
     }
     rewrite(child, fromFile, repoRoot);
   }

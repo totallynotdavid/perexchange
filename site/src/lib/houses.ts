@@ -12,8 +12,14 @@ interface House {
 
 const HOUSES: Record<string, House> = {
   cambiafx: { name: "CambiaFX", site: "https://cambiafx.pe/" },
-  cambiodigital: { name: "Cambio Digital", site: "https://cambiodigitalperu.com/" },
-  cambiomundial: { name: "Cambio Mundial", site: "https://www.cambiomundial.com/" },
+  cambiodigital: {
+    name: "Cambio Digital",
+    site: "https://cambiodigitalperu.com/",
+  },
+  cambiomundial: {
+    name: "Cambio Mundial",
+    site: "https://www.cambiomundial.com/",
+  },
   cambioseguro: { name: "Cambio Seguro", site: "https://cambioseguro.com/" },
   cambiosol: { name: "Cambiosol", site: "https://cambiosol.pe/" },
   chapacambio: { name: "Chapa Cambio", site: "https://chapacambio.com/" },
@@ -23,7 +29,10 @@ const HOUSES: Record<string, House> = {
   dinekash: { name: "Dinekash", site: "https://dinekash.pe/" },
   dolarex: { name: "Dolarex", site: "https://dolarex.pe/" },
   dollarhouse: { name: "Dollar House", site: "https://dollarhouse.pe/" },
-  gorditodigital: { name: "Gordito digital", site: "https://cambioselgordito.com/" },
+  gorditodigital: {
+    name: "Gordito digital",
+    site: "https://cambioselgordito.com/",
+  },
   inkamoney: { name: "Inka Money", site: "https://inkamoney.com/" },
   inticambio: { name: "Inticambio", site: "https://inticambio.pe/" },
   kambioonline: { name: "Kambio Online", site: "https://kambio.com.pe/" },
@@ -81,7 +90,9 @@ export function sameHouse(a: Quote, b: Quote): boolean {
 }
 
 export function houseSite(quote: Quote): string | null {
-  return HOUSES[houseKey(isVariant(quote) ? quote.source : quote.name)]?.site ?? null;
+  return (
+    HOUSES[houseKey(isVariant(quote) ? quote.source : quote.name)]?.site ?? null
+  );
 }
 
 /**

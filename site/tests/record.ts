@@ -69,9 +69,13 @@ for days_back, shift in moments:
 `;
 
 function run(script: string, dataDir: string): void {
-  execFileSync("uv", ["run", "--project", ROOT, "python", "-c", script, ROOT, dataDir], {
-    stdio: "pipe",
-  });
+  execFileSync(
+    "uv",
+    ["run", "--project", ROOT, "python", "-c", script, ROOT, dataDir],
+    {
+      stdio: "pipe",
+    },
+  );
 }
 
 export function recordSnapshots(dataDir: string): void {

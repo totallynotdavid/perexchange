@@ -19,7 +19,8 @@ export type Side = "buy" | "sell";
 /** A time in the future counts as now. */
 export function minutesSince(at: string, now: string | number): number {
   const age =
-    ((typeof now === "string" ? Date.parse(now) : now) - Date.parse(at)) / MINUTE;
+    ((typeof now === "string" ? Date.parse(now) : now) - Date.parse(at)) /
+    MINUTE;
   return Math.max(0, Math.round(age));
 }
 
@@ -42,12 +43,17 @@ export function gapToBest(quote: Quote, best: Quote, side: Side): number {
 
 function current(quotes: Quote[], now: string | number): Quote[] {
   return quotes.filter(
-    (quote) => !isVariant(quote) && ageMinutes(quote, now) <= DEAD_AFTER_MINUTES,
+    (quote) =>
+      !isVariant(quote) && ageMinutes(quote, now) <= DEAD_AFTER_MINUTES,
   );
 }
 
 /** A newer quote ranks first when rates tie. */
-export function rank(quotes: Quote[], side: Side, now: string | number): Quote[] {
+export function rank(
+  quotes: Quote[],
+  side: Side,
+  now: string | number,
+): Quote[] {
   const sign = side === "buy" ? 1 : -1;
   return current(quotes, now).sort(
     (a, b) =>
@@ -75,7 +81,11 @@ export function placeOf(
     return null;
   }
   const better = ranked.filter((one) => gapToBest(quote, one, side) > 0).length;
-  return { place: better + 1, of: ranked.length, gap: gapToBest(quote, best, side) };
+  return {
+    place: better + 1,
+    of: ranked.length,
+    gap: gapToBest(quote, best, side),
+  };
 }
 
 const REASONS: Record<Failure["reason"], string> = {
@@ -102,7 +112,9 @@ export function missingHouses(
   failures: Failure[],
   now: string | number,
 ): MissingHouse[] {
-  const covered = new Set(current(quotes, now).map((quote) => houseKey(quote.name)));
+  const covered = new Set(
+    current(quotes, now).map((quote) => houseKey(quote.name)),
+  );
   const missing = new Map<string, MissingHouse>();
 
   for (const failure of failures) {
@@ -168,7 +180,10 @@ export function bestSeries(
       return false;
     };
     const rates = Object.entries(snapshot.prices)
-      .filter(([id, price]) => !isSpecial(id) && price.ageMinutes <= DEAD_AFTER_MINUTES)
+      .filter(
+        ([id, price]) =>
+          !isSpecial(id) && price.ageMinutes <= DEAD_AFTER_MINUTES,
+      )
       .map(([, price]) => (side === "buy" ? price.sell : price.buy));
     if (rates.length > 0) {
       points.push({

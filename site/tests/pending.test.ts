@@ -31,7 +31,9 @@ function openPage(body: string) {
     },
     /** The browser restoring this page from memory, as Back does. */
     comeBack: () =>
-      win.dispatchEvent(new win.PageTransitionEvent("pageshow", { persisted: true })),
+      win.dispatchEvent(
+        new win.PageTransitionEvent("pageshow", { persisted: true }),
+      ),
   };
 }
 
@@ -87,7 +89,9 @@ describe("showPendingNavigation on a click", () => {
   it("leaves the page alone when another script already handled the click", () => {
     const page = openPage(LINKS);
     // A listener on the link runs before the one on the document.
-    page.$("#docs").addEventListener("click", (event) => event.preventDefault());
+    page
+      .$("#docs")
+      .addEventListener("click", (event) => event.preventDefault());
 
     page.click("#docs");
 
@@ -164,10 +168,10 @@ describe("showPendingNavigation on a submit", () => {
 
     submit(page, selector);
 
-    expect([page.pending(), page.$(selector).getAttribute("aria-busy")]).toEqual([
-      true,
-      "true",
-    ]);
+    expect([
+      page.pending(),
+      page.$(selector).getAttribute("aria-busy"),
+    ]).toEqual([true, "true"]);
   });
 
   it.each([
@@ -192,7 +196,9 @@ describe("showPendingNavigation on a submit", () => {
 
   it("leaves the page alone when another script already handled the submit", () => {
     const page = openPage(FORMS);
-    page.$("#same-site").addEventListener("submit", (event) => event.preventDefault());
+    page
+      .$("#same-site")
+      .addEventListener("submit", (event) => event.preventDefault());
 
     submit(page, "#same-site");
 
@@ -205,9 +211,9 @@ describe("showPendingNavigation on a submit", () => {
 
     page.comeBack();
 
-    expect([page.pending(), page.$("#same-site").hasAttribute("aria-busy")]).toEqual([
-      false,
-      false,
-    ]);
+    expect([
+      page.pending(),
+      page.$("#same-site").hasAttribute("aria-busy"),
+    ]).toEqual([false, false]);
   });
 });

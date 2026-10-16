@@ -65,7 +65,9 @@ function parseQuote(value: unknown): Quote {
     !isPrice(value.buy) ||
     !isPrice(value.sell)
   ) {
-    throw new Error(`latest.json has a malformed rate: ${JSON.stringify(value)}`);
+    throw new Error(
+      `latest.json has a malformed rate: ${JSON.stringify(value)}`,
+    );
   }
   return {
     id: value.id,
@@ -88,7 +90,9 @@ function isFailureReason(value: unknown): value is FailureReason {
  */
 function parseFailure(value: unknown): Failure {
   if (!isRecord(value) || typeof value.source !== "string") {
-    throw new Error(`latest.json has a malformed failure: ${JSON.stringify(value)}`);
+    throw new Error(
+      `latest.json has a malformed failure: ${JSON.stringify(value)}`,
+    );
   }
   return {
     source: value.source,

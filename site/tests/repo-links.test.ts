@@ -22,7 +22,9 @@ const GITHUB = "https://github.com/totallynotdavid/perexchange";
 describe("resolveRepoLink", () => {
   it("sends a link to a rendered file to its page, keeping the anchor", () => {
     expect(resolveRepoLink("docs/api.md", readme, root)).toBe("/docs/api/");
-    expect(resolveRepoLink("docs/api.md#fetch", readme, root)).toBe("/docs/api/#fetch");
+    expect(resolveRepoLink("docs/api.md#fetch", readme, root)).toBe(
+      "/docs/api/#fetch",
+    );
     expect(resolveRepoLink("../README.md", apiDoc, root)).toBe("/docs/");
   });
 
@@ -55,7 +57,12 @@ describe("rehypeRepoLinks", () => {
     properties: { href },
     children,
   });
-  const image = { type: "element", tagName: "img", properties: {}, children: [] };
+  const image = {
+    type: "element",
+    tagName: "img",
+    properties: {},
+    children: [],
+  };
   const text = (value: string) => ({ type: "text", value });
 
   it("drops a row of badges and rewrites the links in prose", () => {
@@ -78,7 +85,9 @@ describe("rehypeRepoLinks", () => {
     rehypeRepoLinks({ repoRoot: root })(tree, { path: readme });
 
     expect(tree.children).toEqual([prose]);
-    expect(prose.children[1]).toMatchObject({ properties: { href: "/docs/api/" } });
+    expect(prose.children[1]).toMatchObject({
+      properties: { href: "/docs/api/" },
+    });
   });
 
   it("keeps a paragraph that mixes a linked image with words", () => {

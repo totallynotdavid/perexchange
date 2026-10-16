@@ -21,7 +21,10 @@ function advice(since: string) {
   return { dataset: { since }, hidden: true };
 }
 
-function page(ages: ReturnType<typeof age>[], advices: ReturnType<typeof advice>[]) {
+function page(
+  ages: ReturnType<typeof age>[],
+  advices: ReturnType<typeof advice>[],
+) {
   return {
     querySelectorAll: (selector: string) =>
       selector.startsWith("time") ? ages : advices,
@@ -52,7 +55,10 @@ describe("refreshAges", () => {
 
     refreshAges(page([fresh, old], []), NOW);
 
-    expect([fresh.classes.has("old"), old.classes.has("old")]).toEqual([false, true]);
+    expect([fresh.classes.has("old"), old.classes.has("old")]).toEqual([
+      false,
+      true,
+    ]);
   });
 
   it("shows the advice on an age only once the data it watches is old enough", () => {

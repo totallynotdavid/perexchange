@@ -16,7 +16,10 @@ describe("sliceRange", () => {
 });
 
 describe("downsample", () => {
-  const series = Array.from({ length: 1000 }, (_, i) => ({ t: i * 60_000, v: i }));
+  const series = Array.from({ length: 1000 }, (_, i) => ({
+    t: i * 60_000,
+    v: i,
+  }));
 
   it("returns a short series unchanged", () => {
     expect(downsample(series.slice(0, 10), 50)).toHaveLength(10);

@@ -7,7 +7,9 @@ function isRoundTrip(to: URL, here: Location): boolean {
     return false;
   }
   const jumpsWithinPage =
-    to.hash !== "" && to.pathname === here.pathname && to.search === here.search;
+    to.hash !== "" &&
+    to.pathname === here.pathname &&
+    to.search === here.search;
   return !jumpsWithinPage;
 }
 
@@ -41,11 +43,16 @@ function submitAsksServer(
   }
   const target = event.submitter?.getAttribute("formtarget") ?? form.target;
   const method = event.submitter?.getAttribute("formmethod") ?? form.method;
-  if ((target !== "" && target !== "_self") || method.toLowerCase() === "dialog") {
+  if (
+    (target !== "" && target !== "_self") ||
+    method.toLowerCase() === "dialog"
+  ) {
     return false;
   }
   const action =
-    event.submitter?.getAttribute("formaction") ?? form.getAttribute("action") ?? "";
+    event.submitter?.getAttribute("formaction") ??
+    form.getAttribute("action") ??
+    "";
   return isRoundTrip(new URL(action, here.href), here);
 }
 

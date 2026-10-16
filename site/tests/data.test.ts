@@ -32,7 +32,11 @@ describe("parseLatest", () => {
     expect(latest.rates).toHaveLength(1);
     expect(latest.rates[0].sell).toBe(3.45);
     expect(latest.failures).toEqual([
-      { source: "b", reason: "blocked", message: "Client error '403 Forbidden'" },
+      {
+        source: "b",
+        reason: "blocked",
+        message: "Client error '403 Forbidden'",
+      },
     ]);
   });
 
@@ -48,13 +52,21 @@ describe("parseLatest", () => {
     const latest = parseLatest(JSON.stringify(published));
 
     expect(latest.rates).toHaveLength(1);
-    expect(latest.failures.map((failure) => failure.reason)).toEqual(["error", "error"]);
+    expect(latest.failures.map((failure) => failure.reason)).toEqual([
+      "error",
+      "error",
+    ]);
   });
 
   it("rejects a failure that names no source", () => {
-    const broken = { ...LATEST, failures: [{ reason: "blocked", message: "x" }] };
+    const broken = {
+      ...LATEST,
+      failures: [{ reason: "blocked", message: "x" }],
+    };
 
-    expect(() => parseLatest(JSON.stringify(broken))).toThrow(/malformed failure/);
+    expect(() => parseLatest(JSON.stringify(broken))).toThrow(
+      /malformed failure/,
+    );
   });
 
   it("rejects a rate whose price is not a positive number", () => {
@@ -87,9 +99,12 @@ describe("parseHistory", () => {
 
   it("skips and counts a half-written or malformed line without losing the rest", () => {
     const good = line("2026-10-08T00:00:00Z", { a: [3.4, 3.45, 5] });
-    const text = [good, '{"t":"2026-10-08T00:15:00Z","r":{"a":[3.4', "null", ""].join(
-      "\n",
-    );
+    const text = [
+      good,
+      '{"t":"2026-10-08T00:15:00Z","r":{"a":[3.4',
+      "null",
+      "",
+    ].join("\n");
 
     const history = parseHistory([text]);
 
