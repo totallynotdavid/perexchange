@@ -1,16 +1,10 @@
 name: snapshot
 
-# GitHub starts a scheduled run when it can, and for this repository that was about once
-# in five hours. So one run records snapshots on its own beat for most of six hours, and
-# queues the run that follows it. The schedule only starts a chain that has broken.
 on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
 
-# One run records at a time, and a newer waiting run replaces an older one. Every run is
-# the same, so a run queued by the previous one, by the schedule or by hand takes over
-# when the recording run ends. A recording run is never cancelled.
 concurrency:
   group: snapshot
   cancel-in-progress: false
@@ -24,8 +18,6 @@ jobs:
     # fetch to a machine whose address the exchange houses do not block.
     runs-on:
       ${{ vars.REFRESH_RUNNER && fromJSON(vars.REFRESH_RUNNER) || 'ubuntu-latest' }}
-    # Only master records snapshots. A manual run of another branch would otherwise push its
-    # snapshot to the data branch.
     if: github.ref == 'refs/heads/master'
     # The job limit is six hours. The collector stops starting fetches after 330 minutes.
     timeout-minutes: 350
@@ -37,8 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Queue the next run before recording, so the chain survives a failure below. It
-      # waits for this run to end because of the concurrency group.
       - name: Queue the next run
         run: gh workflow run snapshot.yml --ref "$GITHUB_REF_NAME"
         env:
@@ -57,7 +47,6 @@ jobs:
 
       - run: uv sync --locked --all-packages
 
-      # The history lives on an orphan `data` branch, so snapshots never touch master.
       # A self-hosted runner keeps its clone between runs. The checkout deletes the old
       # worktree directory but not git's record of it, which would block the branch.
       - name: Check out the data branch
@@ -76,8 +65,8 @@ jobs:
         run:
           uv run python tools/collect.py --data-dir site/data --minutes 330 --interval 15
 
-      # The site says which sources are missing beside its best prices. This makes the
-      # run say so too, because a blocked runner address is fixed outside the code.
+      # A blocked runner address is fixed outside the code, so this step reports sources
+      # that did not answer.
       - name: Report sources that did not answer
         if: always()
         run: |
@@ -92,8 +81,6 @@ jobs:
             }
           '
 
-      # The next run is already queued and starts the moment this one ends. A run that
-      # keeps failing would otherwise restart every minute.
       - name: Hold the group after a failure
         if: failure()
         run: sleep 600

@@ -39,8 +39,6 @@ __all__ = ["Source", "get_sources", "source_for_name"]
 
 @dataclass(frozen=True, slots=True)
 class Source:
-    """The stable identity and fetcher for one exchange-house source."""
-
     id: str
     fetcher: ExchangeRateScraper
     aliases: tuple[str, ...] = ()
@@ -92,7 +90,6 @@ _NAMES_TO_IDS = {
 
 
 def source_for_name(name: str) -> str | None:
-    """Return the source ID matching a source ID, alias, or display name."""
     if not isinstance(name, str):
         return None
     return _NAMES_TO_IDS.get(_normalize_name(name))

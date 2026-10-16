@@ -19,7 +19,6 @@ const SPAN: Record<Range, number> = {
   all: Infinity,
 };
 
-/** Points up to `end` that fall inside the range, which counts back from `end`. */
 export function sliceRange<T extends { t: number }>(
   points: T[],
   range: Range,

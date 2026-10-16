@@ -5,7 +5,6 @@ export function formatPrice(price: number): string {
   return price.toFixed(4);
 }
 
-/** Formats elapsed minutes for a relative timestamp. */
 export function formatAge(minutes: number): string {
   if (minutes < 1) {
     return "just now";
@@ -19,7 +18,6 @@ export function formatAge(minutes: number): string {
   return `${Math.round(minutes / (60 * 24))} d ago`;
 }
 
-/** Formats an instant as a Lima calendar day. */
 export function formatDay(time: number): string {
   return new Date(time).toLocaleDateString("en-GB", {
     timeZone: LIMA,
@@ -35,7 +33,6 @@ export function formatMoney(amount: number): string {
   });
 }
 
-/** Formats an instant as a Lima time for a relative-age tooltip. */
 export function formatLimaTime(iso: string): string {
   return new Date(iso).toLocaleString("en-GB", {
     timeZone: LIMA,

@@ -7,7 +7,6 @@ export function houseKey(text: string): string {
 
 interface House {
   name: string;
-  /** The house's own page, where it publishes the rate. */
   site: string;
 }
 
@@ -47,7 +46,6 @@ const HOUSES: Record<string, House> = {
   },
 };
 
-/** The name a person knows a house by, from a source id or the name an aggregator lists. */
 export function houseName(text: string): string {
   return HOUSES[houseKey(text)]?.name ?? text;
 }
@@ -70,7 +68,6 @@ export function variantLabel(quote: Quote): string {
     : suffix;
 }
 
-/** The house a quote belongs to: the one a variant is a variant of, or the quote's own. */
 export function quoteHouse(quote: Quote): string {
   return houseName(isVariant(quote) ? quote.source : quote.name);
 }
@@ -83,7 +80,6 @@ export function sameHouse(a: Quote, b: Quote): boolean {
   return houseKey(quoteHouse(a)) === houseKey(quoteHouse(b));
 }
 
-/** The house's own page, or null for a house this site has no address for. */
 export function houseSite(quote: Quote): string | null {
   return HOUSES[houseKey(isVariant(quote) ? quote.source : quote.name)]?.site ?? null;
 }

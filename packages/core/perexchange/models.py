@@ -83,7 +83,5 @@ class SourceFailure:
 
 @dataclass(frozen=True, slots=True)
 class FetchReport:
-    """Rates and expected source failures from one fetch."""
-
     rates: tuple[ExchangeRate, ...]
     failures: tuple[SourceFailure, ...]
