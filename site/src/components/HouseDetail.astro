@@ -4,7 +4,7 @@ import ChartBlock from "./ChartBlock.astro";
 import { formatPrice } from "../lib/format.ts";
 import { HOUSE_RANGES } from "../lib/range.ts";
 import type { History, Latest, Quote } from "../lib/data.ts";
-import { houseSite, isVariant, quoteHouse, variantLabel } from "../lib/houses.ts";
+import { houseSite, isVariant, quoteHouse, sameHouse, variantLabel } from "../lib/houses.ts";
 import { houseSeries, placeOf, rateFor } from "../lib/market.ts";
 import type { Side } from "../lib/market.ts";
 
@@ -21,7 +21,7 @@ const variant = isVariant(quote);
 const house = quoteHouse(quote);
 const heading = variant ? `${house}, ${variantLabel(quote)}` : house;
 const site = houseSite(quote);
-const variants = latest.rates.filter((rate) => rate.id !== quote.id && rate.source === quote.source);
+const variants = latest.rates.filter((rate) => rate.id !== quote.id && sameHouse(rate, quote));
 
 const sides: { side: Side; title: string }[] = [
   { side: "buy", title: "To buy dollars, you pay" },
@@ -59,22 +59,16 @@ const series = [
 ];
 ---
 
-<p class="breadcrumb">
-  <a href="/">All houses</a>
-</p>
 <h1>{heading}</h1>
 <p class="where">
   Rate from <Age at={quote.timestamp} now={now} />
-  {site !== null && (
-    <>
-      {" · "}
-      <a href={site} target="_blank" rel="noopener noreferrer">
-        Go to {house}
-        <span class="visually-hidden">, opens its website</span>
-      </a>
-    </>
-  )}
 </p>
+{site !== null && (
+  <a class="cta" href={site} target="_blank" rel="noopener noreferrer">
+    Go to {house}
+    <span class="visually-hidden">, opens its website</span>
+  </a>
+)}
 
 <div class="figures">
   {sides.map(({ side, title }) => (
@@ -104,11 +98,11 @@ const series = [
   </section>
 )}
 
-<h2>Recent rates</h2>
+<h2>Rate history</h2>
 {history === null ? (
   <section class="state error" role="alert">
     <h3>The history is not available right now</h3>
-    <p>The rates above are current. The chart needs the recorded readings, which we could not read.</p>
+    <p>The rates above are current.</p>
     <a class="button" href="">
       Try again
     </a>

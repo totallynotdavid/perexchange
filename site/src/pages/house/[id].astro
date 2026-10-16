@@ -35,10 +35,7 @@ const heading = !quote ? "Rates not available" : isVariant(quote) ? `${house}, $
   section="rates"
 >
   {latest === null || quote === undefined ? (
-    <>
-      <h1>Rates not available</h1>
-      <Unavailable />
-    </>
+    <Unavailable level="h1" />
   ) : (
     <HouseDetail latest={latest} quote={quote} history={history} />
   )}

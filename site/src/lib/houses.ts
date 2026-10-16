@@ -75,6 +75,14 @@ export function quoteHouse(quote: Quote): string {
   return houseName(isVariant(quote) ? quote.source : quote.name);
 }
 
+/**
+ * Whether two quotes belong to one house. An aggregator lists many houses under one
+ * source, so the source alone cannot identify the house.
+ */
+export function sameHouse(a: Quote, b: Quote): boolean {
+  return houseKey(quoteHouse(a)) === houseKey(quoteHouse(b));
+}
+
 /** The house's own page, or null for a house this site has no address for. */
 export function houseSite(quote: Quote): string | null {
   return HOUSES[houseKey(isVariant(quote) ? quote.source : quote.name)]?.site ?? null;
