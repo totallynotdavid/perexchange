@@ -11,7 +11,7 @@ maintainers = [
     { name = "David Duran", email = "dadch1404@gmail.com" },
 ]
 
-dependencies = ["holidays>=0.106"]
+dependencies = ["holidays>=0.107"]
 
 [project.optional-dependencies]
 dev = [
@@ -19,7 +19,7 @@ dev = [
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
-    "ruff>=0.17.0",
+    "ruff>=0.17.1",
     "build>=1.6.1",
     "twine>=7.0.0",
 ]
