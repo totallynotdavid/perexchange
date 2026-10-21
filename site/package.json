@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "astro build"
+    "dev": "PEREXCHANGE_DATA=data astro dev",
+    "build": "astro build",
+    "preview": "PEREXCHANGE_DATA=data astro preview"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.11",

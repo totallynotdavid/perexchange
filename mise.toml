@@ -21,10 +21,10 @@ description = "Install the site dependencies from bun.lock"
 run = "bun install --frozen-lockfile"
 dir = "site"
 
-[tasks.update]
-description = "Update dependencies for all packages"
+[tasks.upgrade]
+description = "Upgrade the Python dependencies to their newest versions and rewrite uv.lock"
 alias = "u"
-run = "uv sync --all-packages --extra dev -U"
+run = ["uv lock --upgrade", "uv sync --locked --all-packages --extra dev"]
 
 [tasks.lint]
 description = "Check Python, Markdown, YAML, JSON and site formatting and lint"
@@ -101,17 +101,8 @@ description = "Run the core unit tests on the oldest supported Python in a throw
 run = "uv run --isolated --locked --python 3.12 --all-packages --extra dev pytest packages/core"
 
 [tasks.build]
-description = "Build the package and the site"
-depends = ["build:*"]
-
-[tasks."build:py"]
-description = "Build the package in a temporary directory and verify its contents"
-run = "uv run python tools/build_check.py"
-
-[tasks."build:site"]
-description = "Build the site into site/dist"
-run = "bun run build"
-dir = "site"
+description = "Build and verify the package in a temporary directory, then build the site into site/dist"
+run = ["uv run python tools/build_check.py", "bun run --cwd site build"]
 
 [tasks.check]
 description = "Run every check CI runs: lint, typecheck, test and build"
@@ -143,18 +134,6 @@ exec uv run python tools/release.py "${args[@]}"
 [tasks."data:site"]
 description = "Fetch every source once and record a snapshot for the site"
 run = "uv run python tools/snapshot.py --data-dir site/data"
-
-[tasks."dev:site"]
-description = "Serve the site with live reload, from the recorded snapshot"
-run = "bun run astro dev"
-dir = "site"
-env = { PEREXCHANGE_DATA = "data" }
-
-[tasks."preview:site"]
-description = "Serve the built site, from the recorded snapshot"
-run = "bun run astro preview"
-dir = "site"
-env = { PEREXCHANGE_DATA = "data" }
 
 [tasks.collect]
 description = "Record snapshots into site/data for 330 minutes, one every 15"

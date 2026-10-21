@@ -422,5 +422,5 @@ remember a choice.
 ## Checking a change
 
 Run `mise run check`. To look at the pages, run `mise run data:site` once and
-`mise run dev:site`, then open the home page, the history page, a house page and
-a docs page in both colour schemes at 1440, 768 and 390 px.
+`bun run --cwd site dev`, then open the home page, the history page, a house
+page and a docs page in both colour schemes at 1440, 768 and 390 px.

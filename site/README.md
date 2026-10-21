@@ -37,24 +37,23 @@ branch, and what a reader sees while a run is in progress, are in
 
 Run these from the repository root.
 
-| Task                      | What it does                               |
-| ------------------------- | ------------------------------------------ |
-| `mise run data:site`      | Fetch every source and record a snapshot.  |
-| `mise run dev:site`       | Serve the site with live reload.           |
-| `mise run preview:site`   | Serve the built site.                      |
-| `mise run build:site`     | Build into `site/dist`.                    |
-| `mise run lint:site`      | Lint with oxlint and check `.astro` files. |
-| `mise run typecheck:site` | Type-check with `astro check`.             |
-| `mise run test:site`      | Check colour contrast and run the tests.   |
+| Command                      | What it does                               |
+| ---------------------------- | ------------------------------------------ |
+| `mise run data:site`         | Fetch every source and record a snapshot.  |
+| `bun run --cwd site dev`     | Serve the site with live reload.           |
+| `bun run --cwd site preview` | Serve the built site.                      |
+| `bun run --cwd site build`   | Build into `site/dist`.                    |
+| `mise run lint:site`         | Lint with oxlint and check `.astro` files. |
+| `mise run typecheck:site`    | Type-check with `astro check`.             |
+| `mise run test:site`         | Check colour contrast and run the tests.   |
 
 `mise run fix:site` formats the `.astro` files with Prettier, because oxfmt does
 not read them. Prettier moves spaces around inline tags, so the build test
 checks that the spaces in the rendered text survive.
 
-The site reads the published `data` branch. `mise run dev:site` and
-`mise run preview:site` read `site/data` instead, which is ignored by git.
-`mise run data:site` fills it. Set `PEREXCHANGE_DATA` to read another directory,
-relative to `site/`.
+The site reads the published `data` branch. `dev` and `preview` read `site/data`
+instead, which is ignored by git. `mise run data:site` fills it. Set
+`PEREXCHANGE_DATA` to read another directory, relative to `site/`.
 
 The tests cover the data path. `tests/contract.test.ts` runs the real Python
 tool on a few made-up quotes and reads its output with the loaders the site
