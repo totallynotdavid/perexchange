@@ -63,6 +63,17 @@ jobs:
             exit 1
           fi
 
+      - name: Check the release notes
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          EXPECTED="perexchange ${TAG_NAME#v} is out."
+          FIRST_LINE=$(head -n 1 .github/release-notes.md)
+          if [ "$FIRST_LINE" != "$EXPECTED" ]; then
+            echo "First line of .github/release-notes.md is '$FIRST_LINE', expected '$EXPECTED'"
+            exit 1
+          fi
+
       - run: mise run dist
 
       - name: Install the wheel
@@ -110,6 +121,10 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dist
@@ -117,5 +132,6 @@ jobs:
 
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
+          body_path: .github/release-notes.md
           files: dist/*
           generate_release_notes: true
