@@ -1,6 +1,6 @@
 [project]
 name = "perexchange"
-version = "3.0.0"
+version = "2.1.0"
 description = "Library for fetching Peruvian exchange rates"
 readme = "README.md"
 requires-python = ">=3.12"

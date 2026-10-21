@@ -1,14 +1,15 @@
-perexchange 3.0.0 is out.
+perexchange 2.1.0 is out.
 
-It has been 52 days since 2.0.0. This is a major release: it drops Python 3.10
-and 3.11 and removes the `cambiodigital` source. Everything else is a fix or an
-addition.
+It has been 52 days since 2.0.0. This is a minor release: it needs Python 3.12
+or later and removes the `cambiodigital` source, which no longer worked.
+Everything else is a fix or an addition. If you are on Python 3.12 or later and
+do not name `cambiodigital`, upgrade.
 
 The biggest fix is in the aggregator. Selecting `cuantoestaeldolar` alone used
-to return one rate, because a row was dropped whenever its house was not also
-selected. Now you get a rate for every house it lists. A row is dropped only
-when you also selected that house's own source and it returned rates. If the
-house's own source failed, the aggregator's row stays.
+to drop every row whose house has a source of its own, even when you had not
+selected that source. Now you get a rate for every house it lists. A row is
+dropped only when you also selected that house's own source and it returned
+rates. If the house's own source failed, the aggregator's row stays.
 
 Failures now say more, and a rate's age is now honest. `SourceFailure` has a new
 `status_code` field, the HTTP status of an error response, so a `403` from a
@@ -31,29 +32,28 @@ a rebuilt site, and docs. The `ExchangeRate` docstring and the examples now say
 which side of a quote `buy_price` and `sell_price` are: `buy_price` is what the
 house pays you, `sell_price` is what it charges.
 
-## Breaking changes
+## Python 3.12 and the removed source
 
-Python 3.10 and 3.11 are no longer supported. The package requires Python 3.12
-or later (`9f206dd`). Python 3.10 reaches end of life this month and 3.11
-in 2027. pip refuses to install 3.0.0 on them. Stay on the last 2.x release:
+2.1.0 requires Python 3.12 or later (`9f206dd`). Python 3.10 reaches end of life
+this month and 3.11 in 2027. pip checks the requirement, so on Python 3.10 or
+3.11 it keeps installing 2.0.0 and your code keeps working:
 
 ```bash
-# before: worked on Python 3.10 and 3.11
-python3.11 -m pip install perexchange
-
-# after: on Python 3.10 or 3.11, pin the old line
-python3.11 -m pip install "perexchange<3"
+# on Python 3.10 or 3.11: installs 2.0.0, no pin needed
+python3.11 -m pip install -U perexchange
 ```
 
-The `cambiodigital` source is gone (`14a2243`). Its endpoint returns 404 and has
-no replacement. Selecting it by name now raises `ConfigurationError`, and a call
-without `sources` no longer queries it:
+The `cambiodigital` source is gone because its site is gone (`14a2243`). Its
+endpoint returns 404 and has no replacement, so it already failed for every
+caller. In 2.0.0 a call that named it got no rates and a `SourceFailure`. Now
+naming it raises `ConfigurationError`, and a call without `sources` no longer
+queries it:
 
 ```python
-# before: returned one rate
+# 2.0.0: no rates, report.failures held a 404 for cambiodigital
 await perexchange.fetch_rates(sources=["cambiodigital"])
 
-# after: raises ConfigurationError, "Unknown source: 'cambiodigital'"
+# 2.1.0: raises ConfigurationError, "Unknown source: 'cambiodigital'"
 await perexchange.fetch_rates(sources=["cambiafx", "tucambista"])
 ```
 
@@ -66,7 +66,7 @@ office connection.
 
 ## What to do
 
-Upgrade with `pip install -U perexchange` on Python 3.12 or later. Remove
-`cambiodigital` from any `sources` list. If you run `fetch_rates_report()`,
-check `report.failures` after the upgrade. Report problems at
+Upgrade with `pip install -U perexchange`. Remove `cambiodigital` from any
+`sources` list. If you run `fetch_rates_report()`, check `report.failures` after
+the upgrade. Report problems at
 https://github.com/totallynotdavid/perexchange/issues.

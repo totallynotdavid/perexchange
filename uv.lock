@@ -996,7 +996,7 @@ wheels = [
 
 [[package]]
 name = "perexchange"
-version = "3.0.0"
+version = "2.1.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "beautifulsoup4" },
