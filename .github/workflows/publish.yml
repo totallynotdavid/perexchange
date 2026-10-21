@@ -3,12 +3,54 @@ name: release
 on:
   push:
     tags: ["v*.*.*"]
+  # A pull request or a manual run is a dry run. It builds and checks the release
+  # without publishing, and skips the steps that need a tag.
+  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
+  preflight:
+    name: Check publish prerequisites
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      actions: read
+      deployments: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The names come from this file, so a job added or renamed later is checked
+      # without editing this step. No job reads a secret. PyPI takes an OIDC token,
+      # and the GitHub release uses the job's GITHUB_TOKEN.
+      - name: Check that each publish environment exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          names=$(yq '.jobs[].environment | select(. != null) | ((select(tag == "!!map") | .name), (select(tag == "!!str")))' .github/workflows/publish.yml | sort -u)
+          if [ -z "$names" ]; then
+            echo "No job in publish.yml names an environment"
+            exit 1
+          fi
+          missing=0
+          while IFS= read -r name; do
+            encoded=$(jq -rn --arg name "$name" '$name | @uri')
+            if gh api "repos/$GITHUB_REPOSITORY/environments/$encoded" --silent 2> /dev/null; then
+              echo "environment '$name' exists"
+            else
+              echo "::error::The repository has no environment '$name', so the job that names it cannot deploy"
+              missing=1
+            fi
+          done <<< "$names"
+          exit "$missing"
+
   verify:
     name: Verify release
     runs-on: ubuntu-latest
@@ -22,10 +64,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - run: git fetch origin master --no-tags
-
       - name: Require a master branch commit
-        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/master
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          git fetch origin master --no-tags
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/master
 
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
 
@@ -52,22 +95,30 @@ jobs:
 
       - run: mise run install:py
 
+      - name: Read the package version
+        id: package
+        run: |
+          VERSION=$(python -c 'import tomllib; print(tomllib.load(open("packages/core/pyproject.toml", "rb"))["project"]["version"])')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Check tag and package versions
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           TAG_NAME: ${{ github.ref_name }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
         run: |
-          TAG_VERSION="${TAG_NAME#v}"
-          PACKAGE_VERSION=$(python -c 'import tomllib; print(tomllib.load(open("packages/core/pyproject.toml", "rb"))["project"]["version"])')
-          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
-            echo "Tag $TAG_VERSION does not match package $PACKAGE_VERSION"
+          if [ "${TAG_NAME#v}" != "$PACKAGE_VERSION" ]; then
+            echo "Tag ${TAG_NAME#v} does not match package $PACKAGE_VERSION"
             exit 1
           fi
 
+      # On a tag, the package version already equals the tag version. On a dry run
+      # there is no tag, so the notes are checked against the package version.
       - name: Check the release notes
         env:
-          TAG_NAME: ${{ github.ref_name }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
         run: |
-          EXPECTED="perexchange ${TAG_NAME#v} is out."
+          EXPECTED="perexchange $PACKAGE_VERSION is out."
           FIRST_LINE=$(head -n 1 .github/release-notes.md)
           if [ "$FIRST_LINE" != "$EXPECTED" ]; then
             echo "First line of .github/release-notes.md is '$FIRST_LINE', expected '$EXPECTED'"
@@ -77,10 +128,12 @@ jobs:
       - run: mise run dist
 
       - name: Install the wheel
+        env:
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
         run: |
-          python -m venv /tmp/perexchange-release
-          /tmp/perexchange-release/bin/pip install packages/core/dist/*.whl
-          /tmp/perexchange-release/bin/python -c 'import perexchange; assert perexchange.__version__ == "${{ github.ref_name }}"[1:]'
+          python -m venv "$RUNNER_TEMP/perexchange-release"
+          "$RUNNER_TEMP/perexchange-release/bin/pip" install packages/core/dist/*.whl
+          "$RUNNER_TEMP/perexchange-release/bin/python" -c 'import os, perexchange; assert perexchange.__version__ == os.environ["PACKAGE_VERSION"]'
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -91,12 +144,14 @@ jobs:
 
   pypi:
     name: Publish to PyPI
-    needs: build
+    needs: [preflight, build]
+    # Skipped on a dry run. The job would wait on the protected environment, and a
+    # pull request cannot deploy. The preflight job checks that the environment exists.
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     environment:
-      # Must match the PyPI trusted publisher and the repository environment.
-      name: pypy
+      name: pypi
       url: https://pypi.org/p/perexchange
 
     permissions:
@@ -115,7 +170,10 @@ jobs:
 
   github:
     name: Create GitHub release
-    needs: pypi
+    needs: [preflight, build, pypi]
+    # The pypi job is skipped on a dry run. Without this condition, this job
+    # would be skipped too.
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
 
     permissions:
@@ -131,7 +189,15 @@ jobs:
           name: dist
           path: dist
 
-      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+      - name: Check the release files
+        run: |
+          find dist -type f -ls
+          test "$(find dist -name '*.whl' | wc -l)" -eq 1
+          test "$(find dist -name '*.tar.gz' | wc -l)" -eq 1
+          test -s .github/release-notes.md
+
+      - if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           body_path: .github/release-notes.md
           files: dist/*
