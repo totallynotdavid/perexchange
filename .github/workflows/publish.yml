@@ -95,7 +95,8 @@ jobs:
     runs-on: ubuntu-latest
 
     environment:
-      name: pypi
+      # Must match the PyPI trusted publisher and the repository environment.
+      name: pypy
       url: https://pypi.org/p/perexchange
 
     permissions:
