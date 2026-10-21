@@ -6,15 +6,10 @@ import { unified } from "@astrojs/markdown-remark";
 import vercel from "@astrojs/vercel";
 import { defineConfig } from "astro/config";
 
+import { dataSource } from "./src/lib/data-source.mjs";
 import rehypeRepoLinks from "./src/lib/repo-links.mjs";
 
-// Use the published `data` branch unless PEREXCHANGE_DATA names a directory.
-// Resolve that directory against this file because a build can run from "/".
-const PUBLISHED_DATA = `https://raw.githubusercontent.com/${process.env.VERCEL_GIT_REPO_OWNER ?? "totallynotdavid"}/${process.env.VERCEL_GIT_REPO_SLUG ?? "perexchange"}/data`;
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
-const dataSource = process.env.PEREXCHANGE_DATA
-  ? path.resolve(siteRoot, process.env.PEREXCHANGE_DATA)
-  : PUBLISHED_DATA;
 
 // Vercel sets VERCEL during a build. The rates pages render on request there and are
 // cached for one snapshot interval. Anywhere else a Node server runs them.
@@ -42,7 +37,9 @@ export default defineConfig({
         },
       },
     },
-    define: { __DATA_SOURCE__: JSON.stringify(dataSource) },
+    define: {
+      __DATA_SOURCE__: JSON.stringify(dataSource(process.env, siteRoot)),
+    },
   },
   markdown: {
     shikiConfig: {
