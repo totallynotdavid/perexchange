@@ -4,7 +4,8 @@
 Usage: `mise run release VERSION [--dry-run]`
 
 `--dry-run` runs the preconditions and prints the steps without changing anything. The
-release workflow starts from the pushed tag and repeats the version check.
+release notes must already be committed and open with `perexchange VERSION is out.`.
+The release workflow starts from the pushed tag and repeats the version and notes checks.
 """
 
 import argparse
@@ -20,6 +21,7 @@ from tomllib import loads
 ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT = Path("packages/core/pyproject.toml")
 LOCKFILE = Path("uv.lock")
+NOTES = Path(".github/release-notes.md")
 BRANCH = "master"
 REMOTE = "origin"
 
@@ -59,12 +61,27 @@ def project_version(pyproject_text: str) -> str:
     return version
 
 
+def check_notes(root: Path, version: str) -> None:
+    """Fail unless the release notes open with the line the workflow expects."""
+    path = root / NOTES
+    if not path.is_file():
+        msg = f"{NOTES} is missing"
+        raise ReleaseError(msg)
+    expected = f"perexchange {version} is out."
+    lines = path.read_text(encoding="utf-8").splitlines()
+    first = lines[0] if lines else ""
+    if first != expected:
+        msg = f"the first line of {NOTES} is {first!r}, expected {expected!r}"
+        raise ReleaseError(msg)
+
+
 def check_ready(root: Path, version: str) -> None:
     """Fail unless `master` is clean, matches the remote, and `version` is new."""
     current = project_version((root / PYPROJECT).read_text(encoding="utf-8"))
     if parse_version(version) <= parse_version(current):
         msg = f"version {version} must be greater than the current {current}"
         raise ReleaseError(msg)
+    check_notes(root, version)
 
     branch = git(root, "branch", "--show-current")
     if branch != BRANCH:

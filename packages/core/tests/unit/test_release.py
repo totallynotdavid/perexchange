@@ -24,6 +24,9 @@ source = { editable = "packages/core" }
 """
 
 
+NOTES = "perexchange 2.1.0 is out.\n\nThe rest is tests.\n"
+
+
 def load_tool():
     spec = importlib.util.spec_from_file_location("release_tool", TOOL)
     assert spec is not None
@@ -62,6 +65,8 @@ def repo(tmp_path) -> Path:
     (work / "packages/core").mkdir(parents=True)
     (work / "packages/core/pyproject.toml").write_text(PYPROJECT, encoding="utf-8")
     (work / "uv.lock").write_text(LOCKFILE, encoding="utf-8")
+    (work / ".github").mkdir()
+    (work / ".github/release-notes.md").write_text(NOTES, encoding="utf-8")
     git(work, "add", ".")
     git(work, "commit", "-m", "start")
     git(work, "push", "-u", "origin", "master")
@@ -108,6 +113,22 @@ def test_rejects_a_version_that_is_not_a_newer_release(repo, version):
         release.release(repo, version, lock=nothing, check=nothing)
 
     assert git(remote_of(repo), "tag", "--list") == ""
+
+
+def test_refuses_notes_for_another_version(repo):
+    with pytest.raises(release.ReleaseError, match=r"first line of .*release-notes"):
+        release.release(repo, "2.2.0", lock=nothing, check=nothing)
+
+    assert git(remote_of(repo), "tag", "--list") == ""
+
+
+def test_refuses_missing_notes(repo):
+    git(repo, "rm", "-q", ".github/release-notes.md")
+    git(repo, "commit", "-m", "drop the notes")
+    git(repo, "push", "origin", "master")
+
+    with pytest.raises(release.ReleaseError, match=r"release-notes\.md is missing"):
+        release.release(repo, "2.1.0", lock=nothing, check=nothing)
 
 
 def test_refuses_a_dirty_tree(repo):
