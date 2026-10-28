@@ -1,7 +1,7 @@
 # perexchange
 
 [![CodeQL](https://github.com/totallynotdavid/perexchange/actions/workflows/codeql.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/codeql.yml)
-[![tests](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/test.yml)
+[![tests](https://github.com/totallynotdavid/perexchange/actions/workflows/ci.yml/badge.svg)](https://github.com/totallynotdavid/perexchange/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/totallynotdavid/perexchange/graph/badge.svg?token=KYQVD9QU30)](https://codecov.io/gh/totallynotdavid/perexchange)
 
 perexchange is an asynchronous Python library that fetches live PEN/USD exchange
