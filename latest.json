@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T22:21:37Z",
+ "generated_at": "2026-11-02T22:36:36Z",
  "library_version": "2.1.0",
  "rates": [
   {
@@ -8,7 +8,7 @@
    "name": "cambioseguro",
    "buy": 3.449,
    "sell": 3.476,
-   "timestamp": "2026-11-02T22:21:30Z"
+   "timestamp": "2026-11-02T22:36:30Z"
   },
   {
    "id": "cambioseguro-comparative",
@@ -16,7 +16,7 @@
    "name": "cambioseguro_comparative",
    "buy": 3.4263,
    "sell": 3.4951,
-   "timestamp": "2026-11-02T22:21:30Z"
+   "timestamp": "2026-11-02T22:36:30Z"
   },
   {
    "id": "cambioseguro-paralelo",
@@ -24,7 +24,7 @@
    "name": "cambioseguro_paralelo",
    "buy": 3.4388,
    "sell": 3.4882,
-   "timestamp": "2026-11-02T22:21:30Z"
+   "timestamp": "2026-11-02T22:36:30Z"
   },
   {
    "id": "cambiafx",
@@ -32,7 +32,7 @@
    "name": "cambiafx",
    "buy": 3.453,
    "sell": 3.468,
-   "timestamp": "2026-11-02T22:21:30Z"
+   "timestamp": "2026-11-02T22:36:30Z"
   },
   {
    "id": "cambiosol",
@@ -40,7 +40,7 @@
    "name": "cambiosol",
    "buy": 3.45,
    "sell": 3.465,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "chapacambio",
@@ -55,8 +55,8 @@
    "source": "chaskidolar",
    "name": "chaskidolar",
    "buy": 3.4490000000000003,
-   "sell": 3.468,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "sell": 3.467,
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "cambio-mundial",
@@ -64,7 +64,7 @@
    "name": "Cambio Mundial",
    "buy": 3.461,
    "sell": 3.467,
-   "timestamp": "2026-11-02T21:58:37Z"
+   "timestamp": "2026-11-02T22:34:33Z"
   },
   {
    "id": "mercado-cambiario",
@@ -88,7 +88,7 @@
    "name": "Gordito digital",
    "buy": 3.455,
    "sell": 3.47,
-   "timestamp": "2026-11-02T22:21:30Z"
+   "timestamp": "2026-11-02T22:36:30Z"
   },
   {
    "id": "defiperu",
@@ -96,7 +96,7 @@
    "name": "defiperu",
    "buy": 3.46,
    "sell": 3.475,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "timestamp": "2026-11-02T22:36:30Z"
   },
   {
    "id": "dichikash",
@@ -104,15 +104,15 @@
    "name": "dichikash",
    "buy": 3.459,
    "sell": 3.467,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "dinekash",
    "source": "dinekash",
    "name": "dinekash",
    "buy": 3.459,
-   "sell": 3.466,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "sell": 3.468,
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "dolarex",
@@ -120,39 +120,39 @@
    "name": "dolarex",
    "buy": 3.459,
    "sell": 3.467,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "dollarhouse",
    "source": "dollarhouse",
    "name": "dollarhouse",
    "buy": 3.458,
-   "sell": 3.467,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "sell": 3.468,
+   "timestamp": "2026-11-02T22:36:30Z"
   },
   {
    "id": "inkamoney",
    "source": "inkamoney",
    "name": "inkamoney",
-   "buy": 3.4510000000000005,
-   "sell": 3.469,
-   "timestamp": "2026-11-02T22:21:37Z"
+   "buy": 3.454,
+   "sell": 3.4709999999999996,
+   "timestamp": "2026-11-02T22:36:36Z"
   },
   {
    "id": "inticambio",
    "source": "inticambio",
    "name": "inticambio",
    "buy": 3.458,
-   "sell": 3.464,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "sell": 3.463,
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "kambioonline",
    "source": "kambioonline",
    "name": "kambioonline",
-   "buy": 3.46,
-   "sell": 3.466,
-   "timestamp": "2026-11-02T22:19:37Z"
+   "buy": 3.457,
+   "sell": 3.463,
+   "timestamp": "2026-11-02T22:32:02Z"
   },
   {
    "id": "marketdollar",
@@ -160,7 +160,7 @@
    "name": "marketdollar",
    "buy": 3.455,
    "sell": 3.47,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "masscambio",
@@ -168,23 +168,23 @@
    "name": "masscambio",
    "buy": 3.458,
    "sell": 3.47,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "metafx",
    "source": "metafx",
    "name": "metafx",
-   "buy": 3.456,
-   "sell": 3.468,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "buy": 3.455,
+   "sell": 3.467,
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "moneyhouse",
    "source": "moneyhouse",
    "name": "moneyhouse",
-   "buy": 3.459,
-   "sell": 3.465,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "buy": 3.458,
+   "sell": 3.464,
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "moneyplus",
@@ -192,23 +192,23 @@
    "name": "moneyplus",
    "buy": 3.458,
    "sell": 3.465,
-   "timestamp": "2026-11-02T22:21:29Z"
+   "timestamp": "2026-11-02T22:36:29Z"
   },
   {
    "id": "okane",
    "source": "okane",
    "name": "okane",
-   "buy": 3.456,
-   "sell": 3.468,
-   "timestamp": "2026-11-02T21:55:15Z"
+   "buy": 3.455,
+   "sell": 3.467,
+   "timestamp": "2026-11-02T22:32:51Z"
   },
   {
    "id": "srcambio",
    "source": "srcambio",
    "name": "srcambio",
    "buy": 3.455,
-   "sell": 3.47,
-   "timestamp": "2026-11-02T22:21:29Z"
+   "sell": 3.465,
+   "timestamp": "2026-11-02T22:36:29Z"
   },
   {
    "id": "tkambio",
@@ -216,7 +216,7 @@
    "name": "tkambio",
    "buy": 3.448,
    "sell": 3.473,
-   "timestamp": "2026-11-02T22:21:33Z"
+   "timestamp": "2026-11-02T22:36:32Z"
   },
   {
    "id": "tkambio-5000",
@@ -224,7 +224,7 @@
    "name": "tkambio_5000",
    "buy": 3.451,
    "sell": 3.47,
-   "timestamp": "2026-11-02T22:21:33Z"
+   "timestamp": "2026-11-02T22:36:32Z"
   },
   {
    "id": "tkambio-10000",
@@ -232,15 +232,15 @@
    "name": "tkambio_10000",
    "buy": 3.452,
    "sell": 3.469,
-   "timestamp": "2026-11-02T22:21:33Z"
+   "timestamp": "2026-11-02T22:36:32Z"
   },
   {
    "id": "tucambista",
    "source": "tucambista",
    "name": "tucambista",
    "buy": 3.452,
-   "sell": 3.479,
-   "timestamp": "2026-11-02T22:21:31Z"
+   "sell": 3.4785,
+   "timestamp": "2026-11-02T22:36:31Z"
   },
   {
    "id": "westernunion",
@@ -248,7 +248,7 @@
    "name": "westernunion",
    "buy": 3.442,
    "sell": 3.475,
-   "timestamp": "2026-11-02T22:21:32Z"
+   "timestamp": "2026-11-02T22:36:32Z"
   }
  ],
  "failures": [
