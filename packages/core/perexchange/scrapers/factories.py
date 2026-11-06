@@ -1,3 +1,4 @@
+import math
 import re
 
 from collections.abc import Callable, Mapping
@@ -13,6 +14,10 @@ from perexchange.time import PERU_TZ, parse_source_timestamp
 from perexchange.transport import send
 
 
+def is_price(value: float) -> bool:
+    return math.isfinite(value) and value > 0
+
+
 def rate_from_fields(
     data: Mapping[str, Any],
     source: str,
@@ -25,9 +30,9 @@ def rate_from_fields(
     try:
         buy_price = float(data[buy_key])
         sell_price = float(data[sell_key])
-    except (KeyError, ValueError, TypeError):
+    except (KeyError, ValueError, TypeError, OverflowError):
         return None
-    if buy_price <= 0 or sell_price <= 0:
+    if not (is_price(buy_price) and is_price(sell_price)):
         return None
     return ExchangeRate(
         source=source,

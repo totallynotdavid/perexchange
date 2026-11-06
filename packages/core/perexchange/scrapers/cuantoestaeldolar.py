@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from perexchange.models import ExchangeRate
-from perexchange.scrapers.factories import html_scraper
+from perexchange.scrapers.factories import html_scraper, is_price
 
 
 SOURCE = "cuantoestaeldolar"
@@ -91,7 +91,7 @@ def _parse_timestamp(raw: Any) -> datetime:
     if raw:
         try:
             return datetime.fromtimestamp(int(raw) / 1000, tz=UTC)
-        except (TypeError, ValueError, OSError):
+        except (TypeError, ValueError, OSError, OverflowError):
             pass
     return datetime.now(UTC)
 
@@ -110,10 +110,10 @@ def _house_to_rate(house: dict[str, Any]) -> ExchangeRate | None:
         rates = house["rates"]
         buy_price = float(rates["buy"]["cost"])
         sell_price = float(rates["sale"]["cost"])
-    except (KeyError, ValueError, TypeError):
+    except (KeyError, ValueError, TypeError, OverflowError):
         return None
 
-    if buy_price <= 0 or sell_price <= 0:
+    if not (is_price(buy_price) and is_price(sell_price)):
         return None
 
     return ExchangeRate(

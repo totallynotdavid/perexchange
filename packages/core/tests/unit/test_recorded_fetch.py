@@ -1,5 +1,7 @@
 """Fetch sources through `fetch_rates_report()` against recorded responses."""
 
+import json
+
 from datetime import UTC, datetime
 
 import httpx
@@ -79,3 +81,54 @@ async def test_a_source_that_does_not_answer_has_no_status_code():
 
     [failure] = report.failures
     assert failure.status_code is None
+
+
+def aggregator_page(*houses: dict[str, object]) -> str:
+    row = '"type":"ONLINE-HOUSE"' + json.dumps(list(houses))
+    return f"<script>self.__next_f.push({json.dumps([1, row])})</script>"
+
+
+def house(
+    title: str, buy: object = "3.3", sell: object = "3.4", **extra: object
+) -> dict[str, object]:
+    return {
+        "id": title,
+        "status": 1,
+        "title": title,
+        "rates": {"buy": {"cost": buy}, "sale": {"cost": sell}},
+        **extra,
+    }
+
+
+@pytest.mark.parametrize(
+    "bad_price",
+    ["NaN", "Infinity", 10**400],
+    ids=["not a number", "infinite", "too large for a float"],
+)
+async def test_an_aggregator_skips_a_house_with_an_unusable_price(bad_price):
+    page = aggregator_page(house("Broken", buy=bad_price), house("Working"))
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, text=page))
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        report = await fetch("cuantoestaeldolar", client)
+
+    assert [rate.name for rate in report.rates] == ["Working"]
+    assert report.failures == ()
+
+
+@pytest.mark.parametrize(
+    "stamp",
+    [10**30, 10**400],
+    ids=["beyond time_t", "beyond float"],
+)
+async def test_an_aggregator_with_an_impossible_timestamp_still_reports_the_rate(
+    stamp,
+):
+    page = aggregator_page(house("Working", timestamp=stamp))
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, text=page))
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        report = await fetch("cuantoestaeldolar", client)
+
+    [rate] = report.rates
+    assert abs(datetime.now(UTC) - rate.timestamp).total_seconds() < 60

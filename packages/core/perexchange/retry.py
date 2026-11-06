@@ -8,7 +8,14 @@ import httpx
 from perexchange.errors import SourceParseError
 
 
-PARSE_ERRORS = (ValueError, KeyError, TypeError, AttributeError, IndexError)
+PARSE_ERRORS = (
+    ValueError,
+    KeyError,
+    TypeError,
+    AttributeError,
+    IndexError,
+    OverflowError,
+)
 
 
 def _validate_retry_settings(
