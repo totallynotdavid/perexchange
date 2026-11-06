@@ -22,7 +22,16 @@ def test_parse_source_timestamp_returns_utc(value, zone, expected):
     assert parse_source_timestamp(value, datetime.now(UTC), zone) == expected
 
 
-def test_parse_source_timestamp_uses_fallback_for_invalid_data():
+@pytest.mark.parametrize(
+    "value",
+    [
+        "not a timestamp",
+        "0001-01-01T00:00:00+05:00",
+        "9999-12-31T23:59:59-05:00",
+    ],
+    ids=["not a date", "before year 1 in UTC", "after year 9999 in UTC"],
+)
+def test_parse_source_timestamp_uses_fallback_for_invalid_data(value):
     fallback = datetime.now(UTC)
 
-    assert parse_source_timestamp("not a timestamp", fallback) is fallback
+    assert parse_source_timestamp(value, fallback) is fallback
