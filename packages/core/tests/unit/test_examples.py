@@ -154,6 +154,20 @@ async def test_cache_fetches_once_inside_the_ttl_and_again_after_it():
     assert fetches == 2
 
 
+async def test_cache_does_not_keep_an_empty_fetch():
+    cache_module = load_example("cache")
+    answers = [[], [quote("a", 3.30, 3.40)]]
+
+    async def fetch() -> list[ExchangeRate]:
+        await asyncio.sleep(0)
+        return answers.pop(0)
+
+    cache = cache_module.RateCache(fetch=fetch, ttl=60.0, clock=lambda: 0.0)
+
+    assert await cache.get() == []
+    assert [rate.name for rate in await cache.get()] == ["a"]
+
+
 async def test_cache_example_runs(capsys):
     async with fixture_client() as client:
         await load_example("cache").main(client)

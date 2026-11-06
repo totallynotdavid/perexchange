@@ -35,7 +35,10 @@ class RateCache:
         async with self._lock:
             now = self._clock()
             if self._fetched_at is None or now - self._fetched_at >= self._ttl:
-                self._rates = await self._fetch()
+                rates = await self._fetch()
+                if not rates:
+                    return rates
+                self._rates = rates
                 self._fetched_at = now
             return self._rates
 
