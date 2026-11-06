@@ -153,6 +153,25 @@ def test_dollarhouse_prefers_displayed_rates_over_stale_hidden_inputs():
     assert as_triples(rates) == [("dollarhouse", 3.365, 3.372)]
 
 
+@pytest.mark.parametrize(
+    ("buy_text", "sell_text"),
+    [("S/ 3.3650", "S/ 3.3720"), ("S/3.3650", "S/3.3720"), ("S/ 3", "S/ 4")],
+    ids=["spaced", "unspaced", "integers"],
+)
+def test_dollarhouse_reads_the_displayed_rate_whatever_the_spacing(buy_text, sell_text):
+    page = (
+        f'<div class="exchange-rate purchase">COMPRA<span>{buy_text}</span></div>'
+        f'<div class="exchange-rate sale">VENTA<span>{sell_text}</span></div>'
+    )
+
+    [rate] = parser_for("dollarhouse")(page)
+
+    assert (rate.buy_price, rate.sell_price) == (
+        float(buy_text.removeprefix("S/")),
+        float(sell_text.removeprefix("S/")),
+    )
+
+
 @pytest.mark.parametrize("source_name", ["moneyplus", "srcambio"])
 def test_digital_platform_server_time_is_peru_time(source_name):
     # The fixture's `serverTime` has no offset and represents local Peru time.

@@ -1,3 +1,5 @@
+import re
+
 from datetime import UTC, datetime
 
 from bs4 import BeautifulSoup
@@ -9,6 +11,8 @@ from perexchange.scrapers.factories import html_scraper
 
 SOURCE = "dollarhouse"
 URL = "https://app.dollarhouse.pe/calculadorav2"
+
+_SOLES = re.compile(r"S/\s*(\d+(?:\.\d+)?)")
 
 
 def _parse_html(html_content: str) -> list[ExchangeRate]:
@@ -54,9 +58,9 @@ def _parse_html(html_content: str) -> list[ExchangeRate]:
 def _extract_rate_from_div(rate_div: Tag) -> float | None:
     span = rate_div.find("span")
     if span:
-        text = span.get_text(strip=True)
-        if text.startswith("S/"):
-            return _parse_float(text[3:])
+        match = _SOLES.fullmatch(span.get_text(strip=True))
+        if match:
+            return _parse_float(match.group(1))
     return None
 
 
