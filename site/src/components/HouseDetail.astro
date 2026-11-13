@@ -89,9 +89,16 @@ const series = [
       {variants.map((other) => (
         <li>
           <a href={`/house/${other.id}/`}>{isVariant(other) ? variantLabel(other) : "Standard rate"}</a>
-          <span class="num">
-            pay {formatPrice(other.sell)}, get {formatPrice(other.buy)}
-          </span>
+          <dl class="pair">
+            <div>
+              <dt>You pay</dt>
+              <dd class="num">S/ {formatPrice(other.sell)}</dd>
+            </div>
+            <div>
+              <dt>You get</dt>
+              <dd class="num">S/ {formatPrice(other.buy)}</dd>
+            </div>
+          </dl>
         </li>
       ))}
     </ul>

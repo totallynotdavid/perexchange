@@ -54,8 +54,9 @@ and how old the rate is. The blocks, in order:
 4. "1 house is not compared", a disclosure that names each house and why. It
    shows only when a house could not be read.
 
-At 62 rem and wider the card is a sticky column beside the table, and the `h1`
-is above both.
+At 62 rem and wider the card is a sticky 22 rem column beside the table, and the
+`h1` is above both. The "not compared" disclosure lines up with the table's
+column.
 
 ### `/history/`
 
@@ -72,7 +73,8 @@ is above both.
 3. Two cards, the price to buy and the price to sell, each with where the house
    stands.
 4. "Other rates from X", when the house has special rates or a standard one
-   besides this.
+   besides this. Each row links the rate's label, starting with a capital, and
+   shows "You pay" and "You get" with their prices.
 5. The `h2` "Rate history" and its chart with a legend, the 24 hour, 7 day and
    30 day range switch and a sentence per series.
 
@@ -223,7 +225,10 @@ The container is `min(100% - 2rem, 84rem)`. The page has three breakpoints, all
 At 390 px nothing scrolls sideways, and the card with the field, the answer and
 the button fits the first screen, so the answer is in view without scrolling.
 Docs tables and code blocks scroll inside their own box. The charts switch to a
-narrow drawing below 40 rem.
+narrow drawing below 40 rem. A chart is 20 rem tall, 15.5 rem below 40 rem, and
+its drawing stretches to fill the width. Its lines, dots and tick labels keep
+their size at every width: the strokes do not scale and the labels are HTML over
+the drawing.
 
 ## The calculator
 
@@ -241,9 +246,10 @@ library's documents.
 1. A two-item switch, "I want to buy US$" and "I want to sell US$". It is the
    only direction control. The first item is chosen.
 2. One amount field with focus. At its left edge a button shows the unit the
-   amount is typed in, `US$` or `S/`, with a ⇄ mark. Pressing it flips the unit
-   and rewrites the field to what the amount is worth in the other currency at
-   the best house's rate, so US$200 becomes S/ 691.00. An empty or invalid field
+   amount is typed in, `US$` or `S/`, with a two-arrow icon drawn in SVG like
+   the logo's, so it needs no font to render. Pressing it flips the unit and
+   rewrites the field to what the amount is worth in the other currency at the
+   best house's rate, so US$200 becomes S/ 691.00. An empty or invalid field
    stays as it is. The field's label for assistive technology is "Amount to buy"
    or "Amount to sell", and the button's name says what it will change to: "US$,
    change to soles".

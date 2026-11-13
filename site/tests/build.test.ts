@@ -753,9 +753,9 @@ describe("the best rate history page", () => {
     const html = await page("history/index.html", complete);
     const seven =
       html.match(/<figure id="chart-buy-7d"[\s\S]*?<\/figure>/)?.[0] ?? "";
-    const axis = [...seven.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((one) =>
-      one[1]!.trim(),
-    );
+    const axis = [
+      ...seven.matchAll(/<span class="tick [^"]*"[^>]*>([^<]*)<\/span>/g),
+    ].map((one) => one[1]!.trim());
 
     expect(axis.some((label) => /^\d{1,2} [A-Z][a-z]{2}$/.test(label))).toBe(
       true,

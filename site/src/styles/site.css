@@ -357,8 +357,13 @@ input::placeholder {
 
 @media (min-width: 62rem) {
   .layout {
-    grid-template-columns: minmax(20rem, 22rem) minmax(0, 1fr);
+    grid-template-columns: 22rem minmax(0, 1fr);
     gap: var(--space-12);
+  }
+
+  /* The list of houses not compared continues the results column, not the whole page. */
+  .layout + .missing {
+    margin-left: calc(22rem + var(--space-12));
   }
 }
 
@@ -516,8 +521,13 @@ input::placeholder {
 }
 
 .field .unit .swap {
-  color: var(--fg-muted);
-  font: 400 0.875rem/1 var(--font-sans);
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: var(--fg-muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .answer {
@@ -693,7 +703,8 @@ table.rates tbody tr:hover td {
 }
 
 table.rates tbody tr.best {
-  background: color-mix(in oklch, var(--positive) 6%, var(--bg-subtle));
+  /* oklab, because an oklch mix with a grey turns through unrelated hues on the way to green. */
+  background: color-mix(in oklab, var(--positive) 6%, var(--bg-subtle));
 }
 
 table.rates tbody th a {
@@ -818,8 +829,7 @@ details > table.rates {
 }
 
 .layout + .missing {
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border-subtle);
+  margin-top: 1rem;
 }
 
 .missing summary {
@@ -926,8 +936,9 @@ main > .cta {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0 1rem;
+  gap: 0.25rem 1rem;
   min-height: 3rem;
+  padding: 0.5rem 0;
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -935,9 +946,37 @@ main > .cta {
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.variants .num {
-  color: var(--fg-secondary);
+/* A house's own label for the rate, often lowercase, so it starts with a capital. */
+.variants li > a {
+  display: inline-block;
+  font-weight: 500;
+}
+
+.variants li > a::first-letter {
+  text-transform: uppercase;
+}
+
+.variants .pair {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+}
+
+.variants .pair div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.variants .pair dt {
+  color: var(--fg-muted);
   font-size: 0.8125rem;
+}
+
+.variants .pair dd {
+  margin: 0;
+  color: var(--fg);
+  font-size: 0.9375rem;
 }
 
 .chart-block {
@@ -978,30 +1017,62 @@ main > .cta {
   display: block;
 }
 
-.chart-block svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
+.plot-frame {
+  position: relative;
+  height: 20rem;
 }
 
-.chart-block svg.narrow {
+.plot-frame.narrow {
   display: none;
+  height: 15.5rem;
 }
 
 @media (max-width: 40rem) {
-  .chart-block svg.wide {
+  .plot-frame.wide {
     display: none;
   }
 
-  .chart-block svg.narrow {
+  .plot-frame.narrow {
     display: block;
   }
 }
 
-.chart-block svg text {
-  fill: var(--fg-muted);
-  font: 400 12px var(--font-mono);
+/* The drawing stretches to fill its frame. Strokes keep their width and the labels are
+   HTML, so neither grows with the frame. */
+.plot-frame svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.plot-frame svg path,
+.plot-frame svg line {
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-frame .tick {
+  position: absolute;
+  color: var(--fg-muted);
+  font: 400 0.75rem/1 var(--font-mono);
+  white-space: nowrap;
+}
+
+.plot-frame .tick.y {
+  transform: translateY(-50%);
+}
+
+.plot-frame .tick.x {
+  bottom: 0.25rem;
+}
+
+.plot-frame .tick.middle {
+  transform: translateX(-50%);
+}
+
+.plot-frame .tick.end {
+  transform: translateX(-100%);
 }
 
 .grid-line {
@@ -1025,12 +1096,17 @@ main > .cta {
   stroke-dasharray: 6 4;
 }
 
+.dot {
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
 .dot.sell {
-  fill: var(--accent);
+  stroke: var(--accent);
 }
 
 .dot.buy {
-  fill: var(--chart-buy);
+  stroke: var(--chart-buy);
 }
 
 .legend {

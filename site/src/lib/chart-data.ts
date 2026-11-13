@@ -11,8 +11,9 @@ const MAX_POINTS = 240;
 const MAX_GAP = 3 * 3_600_000;
 
 /**
- * Each chart is drawn at close to the size it is shown, so its text stays readable.
- * The narrow one is for a phone, and the page shows one of the two.
+ * The page stretches a drawing to its frame, so these sizes set the proportions the
+ * margins and tick spacing are planned for. The narrow one is for a phone, and the page
+ * shows one of the two.
  */
 const SIZES = {
   wide: { width: 760, height: 280, xTicks: 8 },

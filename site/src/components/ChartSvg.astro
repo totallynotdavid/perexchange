@@ -12,30 +12,46 @@ interface Props {
 }
 
 const { chart, titleId, title, kinds, size } = Astro.props;
+
+const across = (x: number) => `${((x / chart.width) * 100).toFixed(2)}%`;
+const down = (y: number) => `${((y / chart.height) * 100).toFixed(2)}%`;
+const fromRight = (x: number) => `${(100 - (x / chart.width) * 100).toFixed(2)}%`;
+// A zero-length segment with round caps draws a circle that stays round when the drawing stretches.
+const dot = (x: number, y: number) => `M${x} ${y}h0`;
 ---
 
-<svg class={`plot ${size}`} viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-labelledby={titleId}>
-  <title id={titleId}>{title}</title>
-  {chart.yTicks.map((tick) => (
-    <>
+<div class={`plot-frame ${size}`}>
+  <svg
+    class={`plot ${size}`}
+    viewBox={`0 0 ${chart.width} ${chart.height}`}
+    preserveAspectRatio="none"
+    role="img"
+    aria-labelledby={titleId}
+  >
+    <title id={titleId}>{title}</title>
+    {chart.yTicks.map((tick) => (
       <line class="grid-line" x1={chart.plot.left} x2={chart.plot.right} y1={tick.y} y2={tick.y} />
-      <text x={chart.plot.left - 8} y={tick.y + 4} text-anchor="end">
+    ))}
+    {chart.series.map((one) => (
+      <>
+        {one.dots.length > 1 && <path class={`line ${kinds[one.id]}`} d={one.path} />}
+        {(one.dots.length <= 2 ? one.dots : one.alone).map((point) => (
+          <path class={`dot ${kinds[one.id]}`} d={dot(point.x, point.y)} />
+        ))}
+        <path class={`dot ${kinds[one.id]}`} d={dot(one.last.x, one.last.y)} />
+      </>
+    ))}
+  </svg>
+  <div class="ticks" aria-hidden="true">
+    {chart.yTicks.map((tick) => (
+      <span class="tick y" style={`top: ${down(tick.y)}; right: calc(${fromRight(chart.plot.left)} + 8px)`}>
         {tick.label}
-      </text>
-    </>
-  ))}
-  {chart.xTicks.map((tick) => (
-    <text x={tick.x} y={chart.height - 6} text-anchor={tick.anchor}>
-      {tick.label}
-    </text>
-  ))}
-  {chart.series.map((one) => (
-    <>
-      {one.dots.length > 1 && <path class={`line ${kinds[one.id]}`} d={one.path} />}
-      {(one.dots.length <= 2 ? one.dots : one.alone).map((dot) => (
-        <circle class={`dot ${kinds[one.id]}`} cx={dot.x} cy={dot.y} r="3.5" />
-      ))}
-      <circle class={`dot ${kinds[one.id]}`} cx={one.last.x} cy={one.last.y} r="3.5" />
-    </>
-  ))}
-</svg>
+      </span>
+    ))}
+    {chart.xTicks.map((tick) => (
+      <span class={`tick x ${tick.anchor}`} style={`left: ${across(tick.x)}`}>
+        {tick.label}
+      </span>
+    ))}
+  </div>
+</div>
