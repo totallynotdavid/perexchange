@@ -186,13 +186,14 @@ stays below the three hours after which the site calls a snapshot
 - A reader of the data branch sees the old commit or the new one, whole. One
   commit holds both files, and a ref update is atomic. A cached copy, such as a
   raw file URL, may lag by a short time.
-- Vercel caches a rates page for 15 minutes
-  ([`astro.config.mjs`](../site/astro.config.mjs)). The function keeps each file
-  it read for 5 minutes ([`load.ts`](../site/src/lib/load.ts)), and GitHub
-  caches a raw file for 5. A visitor sees data up to about 25 minutes older than
-  the data branch. Two pages from different times can appear in one visit, one
-  after the other.
-- `/data/latest.json` tells clients to reuse it for 60 seconds
+- Vercel's CDN keeps a rates page for 5 minutes
+  ([`vercel.json`](../site/vercel.json)). Once that passes, the next request
+  waits for a new render, so an old page is never served. The function keeps
+  each file it read for 5 minutes ([`load.ts`](../site/src/lib/load.ts)), and
+  GitHub caches a raw file for 5. A visitor sees data up to about 15 minutes
+  older than the data branch. Two pages from different times can appear in one
+  visit, one after the other.
+- `/data/latest.json` is kept for 60 seconds by the CDN and by clients
   ([`vercel.json`](../site/vercel.json)).
 - The live site is never newer than the data branch. A run that fails leaves the
   branch where it was, and the pages keep showing it until the next run

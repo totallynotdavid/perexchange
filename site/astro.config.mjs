@@ -11,11 +11,11 @@ import rehypeRepoLinks from "./src/lib/repo-links.mjs";
 
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 
-// Vercel sets VERCEL during a build. The rates pages render on request there and are
-// cached for one snapshot interval. Anywhere else a Node server runs them.
-const adapter = process.env.VERCEL
-  ? vercel({ isr: { expiration: 15 * 60 } })
-  : node({ mode: "standalone" });
+// Vercel sets VERCEL during a build. The rates pages render on request there, and
+// vercel.json sets how long the CDN keeps them. ISR is off because it serves an
+// expired page before it renders a new one, so a page nobody opened for a day
+// shows day-old rates. Anywhere else a Node server runs them.
+const adapter = process.env.VERCEL ? vercel() : node({ mode: "standalone" });
 
 export default defineConfig({
   adapter,
