@@ -14,10 +14,9 @@ interface Props {
   /** When the rates were fetched. A rate is late when it is old next to this. */
   fetchedAt: string;
   caption: string;
-  startRank?: number;
 }
 
-const { quotes, best, side, now, fetchedAt, caption, startRank = 0 } = Astro.props;
+const { quotes, best, side, now, fetchedAt, caption } = Astro.props;
 ---
 
 <table class="rates">
@@ -49,7 +48,7 @@ const { quotes, best, side, now, fetchedAt, caption, startRank = 0 } = Astro.pro
         >
           <th scope="row">
             <span class="rank" aria-hidden="true">
-              {String(startRank + index + 1).padStart(2, "0")}
+              {String(index + 1).padStart(2, "0")}
             </span>
             <a
               href={link.href}

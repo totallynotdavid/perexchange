@@ -11,8 +11,6 @@ import type { Side } from "../lib/market.ts";
 
 export const prerender = false;
 
-const SHOWN = 5;
-
 function houseCount(count: number): string {
   return `${count} ${count === 1 ? "house" : "houses"}`;
 }
@@ -140,31 +138,17 @@ const missing = latest ? missingHouses(latest.rates, latest.failures, latest.gen
             {panels.map(({ side, order, ranked, best }) =>
               best === undefined ? null : (
                 <section class="results" data-side={side} aria-labelledby={`houses-${side}`}>
-                  <h2 id={`houses-${side}`}>
+                  <h2 id={`houses-${side}`} class="visually-hidden">
                     {houseCount(ranked.length)}, {order}
                   </h2>
                   <RateTable
-                    quotes={ranked.slice(0, SHOWN)}
+                    quotes={ranked}
                     best={best}
                     side={side}
                     now={now}
                     fetchedAt={latest.generated_at}
                     caption={`Houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
                   />
-                  {ranked.length > SHOWN && (
-                    <details class="others">
-                      <summary>Show the other {ranked.length - SHOWN} houses</summary>
-                      <RateTable
-                        quotes={ranked.slice(SHOWN)}
-                        best={best}
-                        side={side}
-                        now={now}
-                        fetchedAt={latest.generated_at}
-                        startRank={SHOWN}
-                        caption={`The other houses by ${side === "buy" ? "what you pay" : "what you get"} for US$1, best first`}
-                      />
-                    </details>
-                  )}
                 </section>
               ),
             )}

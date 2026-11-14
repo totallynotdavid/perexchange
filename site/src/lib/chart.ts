@@ -24,6 +24,8 @@ export interface Chart {
   width: number;
   height: number;
   plot: { left: number; top: number; right: number; bottom: number };
+  /** The times and prices at the plot's edges, so the page can place a point. */
+  domain: { start: number; end: number; low: number; high: number };
   series: DrawnSeries[];
   yTicks: { y: number; label: string }[];
   xTicks: { x: number; label: string; anchor: "start" | "middle" | "end" }[];
@@ -141,7 +143,15 @@ export function buildChart(
 
   const points = series.flatMap((one) => one.points);
   if (points.length === 0) {
-    return { width, height, plot, series: [], yTicks: [], xTicks: [] };
+    return {
+      width,
+      height,
+      plot,
+      domain: { start: 0, end: 0, low: 0, high: 0 },
+      series: [],
+      yTicks: [],
+      xTicks: [],
+    };
   }
 
   const times = points.map((point) => point.t);
@@ -212,6 +222,7 @@ export function buildChart(
     width,
     height,
     plot,
+    domain: { start: startT, end: endT, low: axis.min, high: axis.max },
     series: drawn,
     yTicks: axis.ticks.map((tick) => ({
       y: round(y(tick)),

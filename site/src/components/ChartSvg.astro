@@ -18,9 +18,19 @@ const down = (y: number) => `${((y / chart.height) * 100).toFixed(2)}%`;
 const fromRight = (x: number) => `${(100 - (x / chart.width) * 100).toFixed(2)}%`;
 // A zero-length segment with round caps draws a circle that stays round when the drawing stretches.
 const dot = (x: number, y: number) => `M${x} ${y}h0`;
+
+const { plot, domain, width, height } = chart;
+const scale = JSON.stringify({
+  left: plot.left / width,
+  right: plot.right / width,
+  top: plot.top / height,
+  bottom: plot.bottom / height,
+  ...domain,
+});
+const count = chart.series[0]?.dots.length ?? 0;
 ---
 
-<div class={`plot-frame ${size}`}>
+<div class={`plot-frame ${size}`} data-scale={scale}>
   <svg
     class={`plot ${size}`}
     viewBox={`0 0 ${chart.width} ${chart.height}`}
@@ -54,4 +64,22 @@ const dot = (x: number, y: number) => `M${x} ${y}h0`;
       </span>
     ))}
   </div>
+  {count > 1 && (
+    <div
+      class="scrub"
+      role="slider"
+      tabindex="0"
+      aria-label="Reading at a moment"
+      aria-valuemin="0"
+      aria-valuemax={count - 1}
+      aria-valuenow={count - 1}
+      aria-valuetext="Latest"
+    >
+      <span class="guide" style={`top: ${down(plot.top)}; bottom: ${down(height - plot.bottom)}`} hidden />
+      <span class="when" hidden />
+      {chart.series.map((one) => (
+        <span class={`marker ${kinds[one.id]}`} data-series={one.id} hidden />
+      ))}
+    </div>
+  )}
 </div>

@@ -30,7 +30,8 @@ Every page has the same header and footer. The header holds the brand and four
 links: Rates, History, Docs and GitHub, with the current page marked. The GitHub
 link is hidden below 40 rem. The open data's own document is in the docs
 navigation, so the header and footer do not repeat it. The footer is one
-sentence: "Rates are what each house publishes, not offers."
+sentence: "Rates are what each house publishes, not offers." It sits at the
+bottom of the window when the page is shorter than the window.
 
 A page says only what a reader needs to act on. The page's name is its `h1`, and
 nothing above it repeats the name. A number or age is shown once, where the
@@ -48,9 +49,7 @@ and how old the rate is. The blocks, in order:
    the house), the button, and under it "Rate from 15 min ago". When that rate
    is 3 hours old or more, a second line asks the reader to check it with the
    house before going.
-3. The `h2` "26 houses, cheapest first" (or "highest payout first" on the
-   selling side) and the table of the first five houses, with the rest behind
-   "Show the other 21 houses".
+3. The table of every house.
 4. "1 house is not compared", a disclosure that names each house and why. It
    shows only when a house could not be read.
 
@@ -75,8 +74,8 @@ column.
 4. "Other rates from X", when the house has special rates or a standard one
    besides this. Each row links the rate's label, starting with a capital, and
    shows "You pay" and "You get" with their prices.
-5. The `h2` "Rate history" and its chart with a legend, the 24 hour, 7 day and
-   30 day range switch and a sentence per series.
+5. The `h2` "Rate history" and its chart, with the 24 hour, 7 day and 30 day
+   range switch and a readout per series.
 
 ### `/docs/`
 
@@ -218,7 +217,7 @@ The container is `min(100% - 2rem, 84rem)`. The page has three breakpoints, all
 
 | Breakpoint | What changes                                                                                                                                                                                         |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 40 rem     | Cards take more padding, the answer grows to 56/64, the chart's range switch moves beside its legend                                                                                                 |
+| 40 rem     | Cards take more padding, the answer grows to 56/64                                                                                                                                                   |
 | 52 rem     | The docs navigation moves from a row above the text to a column beside it                                                                                                                            |
 | 62 rem     | The home page becomes two columns: a sticky card with the switch, the amount field, the answer and the button, and the table beside it. The answer returns to 40/44. Headings take their larger size |
 
@@ -289,9 +288,8 @@ follows. A script updates both while the page is open.
 
 ### The table
 
-The table ranks the houses by rate, best first, and shows the first five. A
-disclosure, "Show the other N houses", holds the rest in the same columns. Its
-columns are:
+The table ranks every house by rate, best first. A rank number starts each row,
+so the table needs no heading to say its order or count. Its columns are:
 
 - **House.** The name is a link to the house's own site, and its target covers
   the whole row, so a thumb has a row-high target. A rate 3 hours or more older
@@ -303,8 +301,9 @@ columns are:
   column and its head appear only while the amount is valid.
 - **Details**, a link to the house's page on this site.
 
-The table's `h2` gives the count and the order, "14 houses, cheapest first". The
-count is shown there and nowhere else.
+The column heads sit on the bottom line, so a two-line head does not lift the
+others, and "House" starts where the names start. The section's `h2`, "14
+houses, cheapest first", is for screen readers only.
 
 The amount, the side and the unit are kept in `localStorage` under
 `perexchange:amount`, `perexchange:side` and `perexchange:unit`. A blocked store
@@ -360,11 +359,17 @@ storage of its own.
   counts back from the newest point. How many days All reads is in the
   [site README](../site/README.md).
 - The line is a single series with one dot per point, drawn in SVG by
-  `lib/chart.ts`, with a wide and a narrow drawing like the house charts. A
-  chart with several series has a legend; this one has none.
-- One sentence above the line states the change as a number, such as "Up S/
-  0.0050 (0.1%) in 7 days, from S/ 3.4500 to S/ 3.4550." The same sentence is
-  the chart's text description. Nothing repeats it under the chart.
+  `lib/chart.ts`, with a wide and a narrow drawing like the house charts.
+- A readout above the line gives each series its line sample, its name, the
+  latest price and the change over the range, "+0.0050 (0.1%)". It is the
+  legend, so the chart has no other. The drawing's text description gives the
+  latest price, the low and the high.
+- Hovering, dragging or pressing the arrow keys on the plot picks a reading. A
+  dashed guide marks it, the time shows on the time axis, a marker sits on each
+  line, and the readout shows the prices at that moment without the change.
+  Leaving the plot returns the readout to the latest prices. There is no
+  floating tooltip, because a finger would cover it. `lib/scrub.ts` does this
+  from the drawn points the page carries.
 - The price axis spans at least 4% of the price, centred on the data, so a move
   of a cent or two reads as the small move it is. A larger move widens the axis
   to fit.
@@ -415,7 +420,7 @@ switches are CSS.
 | `/history/`                 | The history cannot be read               | A red card with a "Try again" link                                                                              |
 | `/`, `/history/`, `/house/` | `latest.json` cannot be read             | Status 503 and a red card with a "Try again" link                                                               |
 | `/house/`                   | The history cannot be read               | The rates show; the chart area becomes a red card with a "Try again" link                                       |
-| `/house/`                   | A range holds no reading, or one reading | A dashed card saying so, or a point and the sentence "One reading so far, so there is no line yet"              |
+| `/house/`                   | A range holds no reading, or one reading | A dashed card saying so, or a point and its price with no change                                                |
 | `/house/` for an unknown id | The id is not in the snapshot            | Status 404 and the not-found page                                                                               |
 | Any other address           | No such page                             | The not-found page with links to the rates and the docs                                                         |
 

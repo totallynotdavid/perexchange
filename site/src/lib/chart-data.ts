@@ -1,7 +1,7 @@
 import { buildChart } from "./chart.ts";
 import type { Chart, ChartPoint } from "./chart.ts";
-import { formatDay, formatPrice } from "./format.ts";
-import { HOUSE_RANGES, RANGE_LABELS, downsample, sliceRange } from "./range.ts";
+import { formatPrice } from "./format.ts";
+import { HOUSE_RANGES, downsample, sliceRange } from "./range.ts";
 import type { Range } from "./range.ts";
 
 /** Enough points for a 30 day line at the widest chart. */
@@ -39,32 +39,31 @@ export interface SeriesSummary {
   high: number | null;
 }
 
-export function describeChange(summary: SeriesSummary, range: Range): string {
+/** The move from the first reading in the range to the latest, signed. Empty with fewer than two readings. */
+export function changeText(summary: SeriesSummary): string {
   const { first, latest } = summary;
-  if (first === null || latest === null || summary.count === 0) {
+  if (first === null || latest === null || summary.count < 2) {
     return "";
   }
-  if (summary.count === 1) {
-    return "One reading so far, so there is no line yet.";
-  }
-  const span =
-    range === "all"
-      ? `since ${formatDay(first.t)}`
-      : `in ${RANGE_LABELS[range].toLowerCase()}`;
   const change = Math.round((latest - first.v) * 10_000) / 10_000;
   if (change === 0) {
-    return `Unchanged ${span}, at S/ ${formatPrice(latest)}.`;
+    return "No change";
   }
   const percent = (Math.abs(change) / first.v) * 100;
-  const size = percent < 0.1 ? "under 0.1%" : `${percent.toFixed(1)}%`;
-  return `${change > 0 ? "Up" : "Down"} S/ ${formatPrice(Math.abs(change))} (${size}) ${span}, from S/ ${formatPrice(first.v)} to S/ ${formatPrice(latest)}.`;
+  const size = percent < 0.1 ? "<0.1%" : `${percent.toFixed(1)}%`;
+  return `${change > 0 ? "+" : "−"}${formatPrice(Math.abs(change))} (${size})`;
 }
+
+/** A drawn point as the page script reads it: minutes since the epoch, and the price. */
+export type Reading = [minute: number, value: number];
 
 export interface RangeChart {
   range: Range;
   wide: Chart;
   narrow: Chart;
   summaries: SeriesSummary[];
+  /** The drawn points of each series, so the page can read the line under the pointer. */
+  readings: { id: string; points: Reading[] }[];
 }
 
 function summarize(series: SeriesInput): SeriesSummary {
@@ -114,6 +113,13 @@ export function rangeCharts(
       wide: draw(SIZES.wide),
       narrow: draw(SIZES.narrow),
       summaries: inRange.map(summarize),
+      readings: drawn.map((one) => ({
+        id: one.id,
+        points: one.points.map((point): Reading => [
+          Math.round(point.t / 60_000),
+          point.v,
+        ]),
+      })),
     };
   });
 }

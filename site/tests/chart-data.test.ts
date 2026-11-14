@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { describeChange, rangeCharts } from "../src/lib/chart-data.ts";
+import { changeText, rangeCharts } from "../src/lib/chart-data.ts";
 import type { SeriesInput } from "../src/lib/chart-data.ts";
 
 const HOUR = 3_600_000;
@@ -26,10 +26,9 @@ const moves = (from: number, to: number, days = 7): SeriesInput[] => [
   },
 ];
 
-function change(from: number, to: number, range: "7d" | "all" = "7d"): string {
-  const charts = rangeCharts(moves(from, to), END, ["7d", "all"]);
-  const chart = charts.find((one) => one.range === range);
-  return describeChange(chart!.summaries[0], range);
+function change(from: number, to: number): string {
+  const [chart] = rangeCharts(moves(from, to), END, ["7d"]);
+  return changeText(chart.summaries[0]);
 }
 
 describe("rangeCharts", () => {
@@ -84,33 +83,27 @@ describe("rangeCharts", () => {
   });
 });
 
-describe("describeChange", () => {
-  it("says how far the price moved, in soles and in percent", () => {
-    expect(change(3.451, 3.436)).toBe(
-      "Down S/ 0.0150 (0.4%) in 7 days, from S/ 3.4510 to S/ 3.4360.",
-    );
-    expect(change(3.436, 3.45)).toBe(
-      "Up S/ 0.0140 (0.4%) in 7 days, from S/ 3.4360 to S/ 3.4500.",
-    );
+describe("changeText", () => {
+  it("signs the move over the range, in soles and in percent", () => {
+    expect(change(3.451, 3.436)).toBe("−0.0150 (0.4%)");
+    expect(change(3.436, 3.45)).toBe("+0.0140 (0.4%)");
   });
 
-  it("says unchanged when the price did not move", () => {
-    expect(change(3.436, 3.436)).toBe("Unchanged in 7 days, at S/ 3.4360.");
+  it("marks a move under a tenth of a percent as such", () => {
+    expect(change(3.436, 3.437)).toBe("+0.0010 (<0.1%)");
   });
 
-  it("names the day the record starts when the range is all", () => {
-    expect(change(3.451, 3.436, "all")).toContain("since 1 Oct");
+  it("says no change when the price did not move", () => {
+    expect(change(3.436, 3.436)).toBe("No change");
   });
 
-  it("says so when there is one reading and no line", () => {
+  it("is empty with one reading, since nothing moved yet", () => {
     const [chart] = rangeCharts(
       [{ id: "sell", label: "x", kind: "sell", points: [{ t: END, v: 3.4 }] }],
       END,
       ["7d"],
     );
 
-    expect(describeChange(chart.summaries[0], "7d")).toBe(
-      "One reading so far, so there is no line yet.",
-    );
+    expect(changeText(chart.summaries[0])).toBe("");
   });
 });

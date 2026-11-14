@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { bindBoard } from "../src/lib/calculator.ts";
 import { bindSide, storageOf } from "../src/lib/choices.ts";
+import { bindCharts } from "../src/lib/scrub.ts";
 import { loadLatest } from "../src/lib/load.ts";
 import { recordCompleteSnapshot, recordSnapshots } from "./record.ts";
 import { scratchDir } from "./scratch.ts";
@@ -162,18 +163,16 @@ describe("the site built from a recorded snapshot", () => {
     expect(home).not.toContain("not compared");
   });
 
-  it("lists five houses and keeps the rest behind a disclosure", async () => {
+  it("lists every house in one table", async () => {
     const html = await page("index.html", complete);
     const buy = html
       .slice(html.indexOf('class="results" data-side="buy"'))
       .split("</section>")[0];
-    const [shown, rest] = buy.split("<details");
 
+    expect(buy).not.toContain("<details");
     expect(
-      shown.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr[ >]/g),
-    ).toHaveLength(5);
-    expect(text(rest)).toContain("Show the other 8 houses");
-    expect(rest.match(/<tr[ >]/g)).toHaveLength(8 + 1);
+      buy.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr[ >]/g),
+    ).toHaveLength(13);
   });
 
   it("ranks a house's own rate and keeps its special rates on its own page", async () => {
@@ -200,7 +199,7 @@ describe("the site built from a recorded snapshot", () => {
     expect(html).toContain('id="chart-house-24h"');
     expect(html).toContain("<svg");
     expect(text(html)).toMatch(
-      /(Up|Down) S\/ 0\.\d{4} \(.*\) in 24 hours, from S\/ 3\.\d{4} to S\/ 3\.\d{4}\./,
+      /You pay to buy dollars S\/ 3\.\d{4} [+−]0\.\d{4} \(/,
     );
   });
 
@@ -407,7 +406,7 @@ describe("the amount field and the answer on the served home page", () => {
     expect(home.head()).toBe("You pay for US$1,250.50");
   });
 
-  it("prices the houses behind the disclosure as well", async () => {
+  it("prices every house, down to the last", async () => {
     const home = await openHome();
     home.type("10");
 
@@ -720,7 +719,7 @@ describe("the best rate history page", () => {
     expect(win.localStorage.getItem("perexchange:side")).toBe("buy");
   });
 
-  it("says how far the best rate moved in words, for each range", async () => {
+  it("shows the best rate and how far it moved, for each range", async () => {
     const html = await page("history/index.html", complete);
     const buy = html.split('data-side="sell"')[0];
     const figure = (range: string) =>
@@ -731,15 +730,37 @@ describe("the best rate history page", () => {
       );
 
     expect(text(buy)).toContain("7 days 30 days All");
-    expect(figure("7d")).toContain(
-      "Up S/ 0.0050 (0.1%) in 7 days, from S/ 3.4500 to S/ 3.4550.",
-    );
-    expect(figure("30d")).toContain(
-      "Down S/ 0.0100 (0.3%) in 30 days, from S/ 3.4650 to S/ 3.4550.",
-    );
-    expect(figure("all")).toMatch(
-      /Down S\/ 0\.0200 \(0\.6%\) since \d+ \w{3}, from S\/ 3\.4750 to S\/ 3\.4550\./,
-    );
+    expect(figure("7d")).toContain("S/ 3.4550 +0.0050 (0.1%)");
+    expect(figure("30d")).toContain("S/ 3.4550 −0.0100 (0.3%)");
+    expect(figure("all")).toContain("S/ 3.4550 −0.0200 (0.6%)");
+  });
+
+  it("shows the rate at a moment the keys pick, and the latest again on leaving", async () => {
+    const win = new Window({ url: `${complete.origin}/history/`, width: 1280 });
+    win.document.write(await page("history/index.html", complete));
+    const doc = win.document as unknown as Document;
+    bindCharts(doc);
+    const figure = doc.getElementById("chart-buy-7d") as HTMLElement;
+    const slider = figure.querySelector(".wide .scrub") as HTMLElement;
+    const value = () => figure.querySelector("[data-value]")?.textContent;
+    const press = (key: string) =>
+      slider.dispatchEvent(
+        new win.KeyboardEvent("keydown", { key }) as unknown as Event,
+      );
+
+    expect(value()).toBe("3.4550");
+
+    press("Home");
+
+    expect(value()).toBe("3.4500");
+    expect(figure.hasAttribute("data-scrubbing")).toBe(true);
+    expect(slider.getAttribute("aria-valuenow")).toBe("0");
+    expect(slider.querySelector(".guide")?.hasAttribute("hidden")).toBe(false);
+
+    slider.dispatchEvent(new win.FocusEvent("blur") as unknown as Event);
+
+    expect(value()).toBe("3.4550");
+    expect(figure.hasAttribute("data-scrubbing")).toBe(false);
   });
 
   it("charts the cheapest base rate and never a special rate", async () => {
