@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-17T15:37:38Z",
+ "generated_at": "2026-11-17T15:52:38Z",
  "library_version": "2.1.0",
  "rates": [
   {
@@ -7,40 +7,40 @@
    "source": "cambioseguro",
    "name": "cambioseguro",
    "buy": 3.395,
-   "sell": 3.422,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "sell": 3.423,
+   "timestamp": "2026-11-17T15:52:31Z"
   },
   {
    "id": "cambioseguro-comparative",
    "source": "cambioseguro",
    "name": "cambioseguro_comparative",
-   "buy": 3.375,
-   "sell": 3.4411,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "buy": 3.3783,
+   "sell": 3.4332,
+   "timestamp": "2026-11-17T15:52:31Z"
   },
   {
    "id": "cambioseguro-paralelo",
    "source": "cambioseguro",
    "name": "cambioseguro_paralelo",
-   "buy": 3.3823,
-   "sell": 3.4363,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "buy": 3.3764,
+   "sell": 3.4382,
+   "timestamp": "2026-11-17T15:52:31Z"
   },
   {
    "id": "cambiafx",
    "source": "cambiafx",
    "name": "cambiafx",
-   "buy": 3.402,
-   "sell": 3.417,
-   "timestamp": "2026-11-17T15:37:31Z"
+   "buy": 3.401,
+   "sell": 3.416,
+   "timestamp": "2026-11-17T15:52:31Z"
   },
   {
    "id": "chapacambio",
    "source": "chapacambio",
    "name": "chapacambio",
-   "buy": 3.398,
-   "sell": 3.424,
-   "timestamp": "2026-11-17T10:35:20Z"
+   "buy": 3.392,
+   "sell": 3.422,
+   "timestamp": "2026-11-17T10:50:23Z"
   },
   {
    "id": "chaskidolar",
@@ -48,31 +48,31 @@
    "name": "chaskidolar",
    "buy": 3.4,
    "sell": 3.4179999999999997,
-   "timestamp": "2026-11-17T15:37:33Z"
+   "timestamp": "2026-11-17T15:52:33Z"
   },
   {
    "id": "cambio-mundial",
    "source": "cuantoestaeldolar",
    "name": "Cambio Mundial",
-   "buy": 3.408,
-   "sell": 3.414,
-   "timestamp": "2026-11-17T15:35:17Z"
+   "buy": 3.405,
+   "sell": 3.411,
+   "timestamp": "2026-11-17T15:39:58Z"
   },
   {
    "id": "dichikash",
    "source": "cuantoestaeldolar",
    "name": "Dichikash",
-   "buy": 3.407,
-   "sell": 3.417,
-   "timestamp": "2026-11-17T14:59:10Z"
+   "buy": 3.406,
+   "sell": 3.418,
+   "timestamp": "2026-11-17T15:50:24Z"
   },
   {
    "id": "cambio-digital",
    "source": "cuantoestaeldolar",
    "name": "Cambio Digital",
-   "buy": 3.408,
-   "sell": 3.413,
-   "timestamp": "2026-11-17T15:36:09Z"
+   "buy": 3.405,
+   "sell": 3.411,
+   "timestamp": "2026-11-17T15:51:11Z"
   },
   {
    "id": "cambiosol",
@@ -80,7 +80,7 @@
    "name": "cambiosol",
    "buy": 3.4,
    "sell": 3.416,
-   "timestamp": "2026-11-17T15:36:20Z"
+   "timestamp": "2026-11-17T15:51:20Z"
   },
   {
    "id": "gordito-digital",
@@ -88,7 +88,7 @@
    "name": "Gordito digital",
    "buy": 3.405,
    "sell": 3.42,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "defiperu",
@@ -96,7 +96,7 @@
    "name": "defiperu",
    "buy": 3.408,
    "sell": 3.42,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "dinekash",
@@ -104,7 +104,7 @@
    "name": "dinekash",
    "buy": 3.401,
    "sell": 3.42,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "dolarex",
@@ -112,39 +112,39 @@
    "name": "dolarex",
    "buy": 3.405,
    "sell": 3.413,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "dollarhouse",
    "source": "dollarhouse",
    "name": "dollarhouse",
-   "buy": 3.407,
-   "sell": 3.415,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "buy": 3.405,
+   "sell": 3.412,
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "inkamoney",
    "source": "inkamoney",
    "name": "inkamoney",
-   "buy": 3.4040000000000004,
-   "sell": 3.416,
-   "timestamp": "2026-11-17T15:37:38Z"
+   "buy": 3.4000000000000004,
+   "sell": 3.415,
+   "timestamp": "2026-11-17T15:52:38Z"
   },
   {
    "id": "inticambio",
    "source": "inticambio",
    "name": "inticambio",
-   "buy": 3.408,
-   "sell": 3.413,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "buy": 3.407,
+   "sell": 3.412,
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "kambioonline",
    "source": "kambioonline",
    "name": "kambioonline",
    "buy": 3.406,
-   "sell": 3.411,
-   "timestamp": "2026-11-17T15:35:28Z"
+   "sell": 3.412,
+   "timestamp": "2026-11-17T15:50:59Z"
   },
   {
    "id": "marketdollar",
@@ -152,7 +152,7 @@
    "name": "marketdollar",
    "buy": 3.4,
    "sell": 3.43,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "masscambio",
@@ -160,7 +160,7 @@
    "name": "masscambio",
    "buy": 3.405,
    "sell": 3.5,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "mercadocambiario",
@@ -174,17 +174,17 @@
    "id": "metafx",
    "source": "metafx",
    "name": "metafx",
-   "buy": 3.402,
-   "sell": 3.416,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "buy": 3.403,
+   "sell": 3.417,
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "moneyhouse",
    "source": "moneyhouse",
    "name": "moneyhouse",
-   "buy": 3.406,
-   "sell": 3.412,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "buy": 3.407,
+   "sell": 3.413,
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "moneyplus",
@@ -192,7 +192,7 @@
    "name": "moneyplus",
    "buy": 3.4,
    "sell": 3.425,
-   "timestamp": "2026-11-17T15:37:31Z"
+   "timestamp": "2026-11-17T15:52:31Z"
   },
   {
    "id": "okane",
@@ -208,39 +208,39 @@
    "name": "srcambio",
    "buy": 3.4,
    "sell": 3.413,
-   "timestamp": "2026-11-17T15:37:31Z"
+   "timestamp": "2026-11-17T15:52:31Z"
   },
   {
    "id": "tkambio",
    "source": "tkambio",
    "name": "tkambio",
-   "buy": 3.398,
-   "sell": 3.423,
-   "timestamp": "2026-11-17T15:37:34Z"
+   "buy": 3.396,
+   "sell": 3.421,
+   "timestamp": "2026-11-17T15:52:34Z"
   },
   {
    "id": "tkambio-5000",
    "source": "tkambio",
    "name": "tkambio_5000",
-   "buy": 3.401,
-   "sell": 3.42,
-   "timestamp": "2026-11-17T15:37:34Z"
+   "buy": 3.399,
+   "sell": 3.418,
+   "timestamp": "2026-11-17T15:52:34Z"
   },
   {
    "id": "tkambio-10000",
    "source": "tkambio",
    "name": "tkambio_10000",
-   "buy": 3.402,
-   "sell": 3.419,
-   "timestamp": "2026-11-17T15:37:34Z"
+   "buy": 3.4,
+   "sell": 3.417,
+   "timestamp": "2026-11-17T15:52:34Z"
   },
   {
    "id": "tucambista",
    "source": "tucambista",
    "name": "tucambista",
-   "buy": 3.398,
-   "sell": 3.422,
-   "timestamp": "2026-11-17T15:37:32Z"
+   "buy": 3.397,
+   "sell": 3.421,
+   "timestamp": "2026-11-17T15:52:32Z"
   },
   {
    "id": "westernunion",
@@ -248,7 +248,7 @@
    "name": "westernunion",
    "buy": 3.395,
    "sell": 3.42,
-   "timestamp": "2026-11-17T15:37:34Z"
+   "timestamp": "2026-11-17T15:52:34Z"
   }
  ],
  "failures": [
