@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-18T19:10:01Z",
+ "generated_at": "2026-11-18T19:25:01Z",
  "library_version": "2.1.0",
  "rates": [
   {
@@ -8,7 +8,7 @@
    "name": "cambioseguro",
    "buy": 3.409,
    "sell": 3.44,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "cambioseguro-comparative",
@@ -16,7 +16,7 @@
    "name": "cambioseguro_comparative",
    "buy": 3.3964,
    "sell": 3.4549,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "cambioseguro-paralelo",
@@ -24,7 +24,7 @@
    "name": "cambioseguro_paralelo",
    "buy": 3.3935,
    "sell": 3.4603,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "cambiafx",
@@ -32,7 +32,7 @@
    "name": "cambiafx",
    "buy": 3.426,
    "sell": 3.441,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:54Z"
   },
   {
    "id": "cambiosol",
@@ -40,7 +40,7 @@
    "name": "cambiosol",
    "buy": 3.425,
    "sell": 3.441,
-   "timestamp": "2026-11-18T19:09:58Z"
+   "timestamp": "2026-11-18T19:24:56Z"
   },
   {
    "id": "chapacambio",
@@ -56,7 +56,7 @@
    "name": "chaskidolar",
    "buy": 3.4219999999999997,
    "sell": 3.44,
-   "timestamp": "2026-11-18T19:09:56Z"
+   "timestamp": "2026-11-18T19:24:56Z"
   },
   {
    "id": "cambio-mundial",
@@ -78,17 +78,25 @@
    "id": "cambio-digital",
    "source": "cuantoestaeldolar",
    "name": "Cambio Digital",
-   "buy": 3.429,
+   "buy": 3.43,
    "sell": 3.438,
-   "timestamp": "2026-11-18T18:53:44Z"
+   "timestamp": "2026-11-18T19:20:21Z"
   },
   {
    "id": "gordito-digital",
    "source": "cuantoestaeldolar",
    "name": "Gordito digital",
-   "buy": 3.43,
-   "sell": 3.445,
-   "timestamp": "2026-11-18T19:09:57Z"
+   "buy": 3.425,
+   "sell": 3.44,
+   "timestamp": "2026-11-18T19:24:57Z"
+  },
+  {
+   "id": "metafx",
+   "source": "cuantoestaeldolar",
+   "name": "MetaFX",
+   "buy": 3.424,
+   "sell": 3.438,
+   "timestamp": "2026-11-18T19:10:10Z"
   },
   {
    "id": "defiperu",
@@ -96,7 +104,7 @@
    "name": "defiperu",
    "buy": 3.429,
    "sell": 3.445,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "dichikash",
@@ -104,7 +112,7 @@
    "name": "dichikash",
    "buy": 3.425,
    "sell": 3.448,
-   "timestamp": "2026-11-18T19:09:56Z"
+   "timestamp": "2026-11-18T19:24:56Z"
   },
   {
    "id": "dinekash",
@@ -112,7 +120,7 @@
    "name": "dinekash",
    "buy": 3.423,
    "sell": 3.438,
-   "timestamp": "2026-11-18T19:09:56Z"
+   "timestamp": "2026-11-18T19:24:56Z"
   },
   {
    "id": "dolarex",
@@ -120,7 +128,7 @@
    "name": "dolarex",
    "buy": 3.426,
    "sell": 3.434,
-   "timestamp": "2026-11-18T19:09:56Z"
+   "timestamp": "2026-11-18T19:24:58Z"
   },
   {
    "id": "dollarhouse",
@@ -128,7 +136,7 @@
    "name": "dollarhouse",
    "buy": 3.426,
    "sell": 3.433,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "inkamoney",
@@ -136,23 +144,23 @@
    "name": "inkamoney",
    "buy": 3.423,
    "sell": 3.4379999999999997,
-   "timestamp": "2026-11-18T19:10:01Z"
+   "timestamp": "2026-11-18T19:25:01Z"
   },
   {
    "id": "inticambio",
    "source": "inticambio",
    "name": "inticambio",
-   "buy": 3.428,
+   "buy": 3.429,
    "sell": 3.434,
-   "timestamp": "2026-11-18T19:09:57Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "kambioonline",
    "source": "kambioonline",
    "name": "kambioonline",
-   "buy": 3.43,
-   "sell": 3.436,
-   "timestamp": "2026-11-18T19:04:30Z"
+   "buy": 3.429,
+   "sell": 3.435,
+   "timestamp": "2026-11-18T19:21:48Z"
   },
   {
    "id": "marketdollar",
@@ -160,7 +168,7 @@
    "name": "marketdollar",
    "buy": 3.425,
    "sell": 3.44,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "masscambio",
@@ -168,15 +176,7 @@
    "name": "masscambio",
    "buy": 3.405,
    "sell": 3.5,
-   "timestamp": "2026-11-18T19:09:55Z"
-  },
-  {
-   "id": "metafx",
-   "source": "metafx",
-   "name": "metafx",
-   "buy": 3.424,
-   "sell": 3.438,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "moneyhouse",
@@ -184,7 +184,7 @@
    "name": "moneyhouse",
    "buy": 3.428,
    "sell": 3.434,
-   "timestamp": "2026-11-18T19:09:55Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "moneyplus",
@@ -192,7 +192,7 @@
    "name": "moneyplus",
    "buy": 3.425,
    "sell": 3.45,
-   "timestamp": "2026-11-18T19:09:54Z"
+   "timestamp": "2026-11-18T19:24:54Z"
   },
   {
    "id": "okane",
@@ -208,7 +208,7 @@
    "name": "srcambio",
    "buy": 3.42,
    "sell": 3.44,
-   "timestamp": "2026-11-18T19:09:54Z"
+   "timestamp": "2026-11-18T19:24:54Z"
   },
   {
    "id": "tkambio",
@@ -216,7 +216,7 @@
    "name": "tkambio",
    "buy": 3.423,
    "sell": 3.448,
-   "timestamp": "2026-11-18T19:09:57Z"
+   "timestamp": "2026-11-18T19:24:57Z"
   },
   {
    "id": "tkambio-5000",
@@ -224,7 +224,7 @@
    "name": "tkambio_5000",
    "buy": 3.426,
    "sell": 3.445,
-   "timestamp": "2026-11-18T19:09:57Z"
+   "timestamp": "2026-11-18T19:24:57Z"
   },
   {
    "id": "tkambio-10000",
@@ -232,7 +232,7 @@
    "name": "tkambio_10000",
    "buy": 3.427,
    "sell": 3.444,
-   "timestamp": "2026-11-18T19:09:57Z"
+   "timestamp": "2026-11-18T19:24:57Z"
   },
   {
    "id": "tucambista",
@@ -240,7 +240,7 @@
    "name": "tucambista",
    "buy": 3.421,
    "sell": 3.447,
-   "timestamp": "2026-11-18T19:09:56Z"
+   "timestamp": "2026-11-18T19:24:55Z"
   },
   {
    "id": "westernunion",
@@ -248,7 +248,7 @@
    "name": "westernunion",
    "buy": 3.42,
    "sell": 3.446,
-   "timestamp": "2026-11-18T19:09:58Z"
+   "timestamp": "2026-11-18T19:24:57Z"
   }
  ],
  "failures": [
@@ -263,6 +263,12 @@
    "reason": "blocked",
    "error_type": "HTTPStatusError",
    "message": "Client error '403 Forbidden' for url 'https://www.mercadocambiario.pe/api/mercado/get/admin-data'"
+  },
+  {
+   "source": "metafx",
+   "reason": "blocked",
+   "error_type": "HTTPStatusError",
+   "message": "Client error '401 Unauthorized' for url 'https://metafxperu.com/obtener_tasas.php'"
   }
  ]
 }
