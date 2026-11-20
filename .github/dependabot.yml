@@ -12,6 +12,9 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      - dependency-name: python-dateutil
+      - dependency-name: typescript
 
   - package-ecosystem: uv
     directories:
@@ -25,6 +28,9 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      - dependency-name: python-dateutil
+      - dependency-name: typescript
 
   - package-ecosystem: github-actions
     directories:
@@ -39,3 +45,6 @@ updates:
           - major
           - minor
           - patch
+    ignore:
+      - dependency-name: python-dateutil
+      - dependency-name: typescript
