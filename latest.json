@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-21T22:47:04Z",
+ "generated_at": "2026-11-21T23:47:19Z",
  "library_version": "2.1.0",
  "rates": [
   {
@@ -8,7 +8,7 @@
    "name": "cambioseguro",
    "buy": 3.437,
    "sell": 3.463,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:13Z"
   },
   {
    "id": "cambioseguro-comparative",
@@ -16,7 +16,7 @@
    "name": "cambioseguro_comparative",
    "buy": 3.4265,
    "sell": 3.4741,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:13Z"
   },
   {
    "id": "cambioseguro-paralelo",
@@ -24,7 +24,7 @@
    "name": "cambioseguro_paralelo",
    "buy": 3.4262,
    "sell": 3.4866,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:13Z"
   },
   {
    "id": "cambiafx",
@@ -32,7 +32,15 @@
    "name": "cambiafx",
    "buy": 3.446,
    "sell": 3.466,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:13Z"
+  },
+  {
+   "id": "cambiosol",
+   "source": "cambiosol",
+   "name": "cambiosol",
+   "buy": 3.4,
+   "sell": 3.5,
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "chapacambio",
@@ -48,7 +56,7 @@
    "name": "chaskidolar",
    "buy": 3.434,
    "sell": 3.46,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "cambio-mundial",
@@ -59,12 +67,12 @@
    "timestamp": "2026-11-21T18:01:24Z"
   },
   {
-   "id": "dichikash",
+   "id": "mercado-cambiario",
    "source": "cuantoestaeldolar",
-   "name": "Dichikash",
+   "name": "Mercado Cambiario",
    "buy": 3.442,
-   "sell": 3.479,
-   "timestamp": "2026-11-21T22:37:32Z"
+   "sell": 3.456,
+   "timestamp": "2026-11-05T21:21:05Z"
   },
   {
    "id": "cambio-digital",
@@ -75,20 +83,12 @@
    "timestamp": "2026-11-21T17:54:25Z"
   },
   {
-   "id": "cambiosol",
-   "source": "cuantoestaeldolar",
-   "name": "cambiosol",
-   "buy": 3.44,
-   "sell": 3.455,
-   "timestamp": "2026-11-21T18:57:41Z"
-  },
-  {
    "id": "gordito-digital",
    "source": "cuantoestaeldolar",
    "name": "Gordito digital",
    "buy": 3.4,
    "sell": 3.5,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:13Z"
   },
   {
    "id": "defiperu",
@@ -96,7 +96,15 @@
    "name": "defiperu",
    "buy": 3.437,
    "sell": 3.47,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:13Z"
+  },
+  {
+   "id": "dichikash",
+   "source": "dichikash",
+   "name": "dichikash",
+   "buy": 3.44,
+   "sell": 3.481,
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "dinekash",
@@ -104,7 +112,7 @@
    "name": "dinekash",
    "buy": 3.43,
    "sell": 3.47,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "dolarex",
@@ -112,7 +120,7 @@
    "name": "dolarex",
    "buy": 3.4,
    "sell": 3.48,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "dollarhouse",
@@ -120,7 +128,7 @@
    "name": "dollarhouse",
    "buy": 3.449,
    "sell": 3.456,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:13Z"
   },
   {
    "id": "inkamoney",
@@ -128,7 +136,7 @@
    "name": "inkamoney",
    "buy": 3.4370000000000003,
    "sell": 3.4579999999999997,
-   "timestamp": "2026-11-21T22:47:04Z"
+   "timestamp": "2026-11-21T23:47:19Z"
   },
   {
    "id": "inticambio",
@@ -136,7 +144,7 @@
    "name": "inticambio",
    "buy": 3.444,
    "sell": 3.45,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "kambioonline",
@@ -152,7 +160,7 @@
    "name": "marketdollar",
    "buy": 3.44,
    "sell": 3.465,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "masscambio",
@@ -160,15 +168,7 @@
    "name": "masscambio",
    "buy": 3.405,
    "sell": 4.05,
-   "timestamp": "2026-11-21T22:46:58Z"
-  },
-  {
-   "id": "mercadocambiario",
-   "source": "mercadocambiario",
-   "name": "mercadocambiario",
-   "buy": 3.447,
-   "sell": 3.469,
-   "timestamp": "2026-11-21T09:00:01Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "metafx",
@@ -176,7 +176,7 @@
    "name": "metafx",
    "buy": 3.436,
    "sell": 3.453,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "moneyhouse",
@@ -184,7 +184,7 @@
    "name": "moneyhouse",
    "buy": 3.44,
    "sell": 3.448,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "moneyplus",
@@ -192,7 +192,7 @@
    "name": "moneyplus",
    "buy": 3.435,
    "sell": 3.47,
-   "timestamp": "2026-11-21T22:46:57Z"
+   "timestamp": "2026-11-21T23:47:12Z"
   },
   {
    "id": "okane",
@@ -208,7 +208,7 @@
    "name": "srcambio",
    "buy": 3.44,
    "sell": 3.46,
-   "timestamp": "2026-11-21T22:46:57Z"
+   "timestamp": "2026-11-21T23:47:12Z"
   },
   {
    "id": "tkambio",
@@ -216,7 +216,7 @@
    "name": "tkambio",
    "buy": 3.43,
    "sell": 3.464,
-   "timestamp": "2026-11-21T22:47:00Z"
+   "timestamp": "2026-11-21T23:47:15Z"
   },
   {
    "id": "tkambio-5000",
@@ -224,7 +224,7 @@
    "name": "tkambio_5000",
    "buy": 3.433,
    "sell": 3.461,
-   "timestamp": "2026-11-21T22:47:00Z"
+   "timestamp": "2026-11-21T23:47:15Z"
   },
   {
    "id": "tkambio-10000",
@@ -232,7 +232,7 @@
    "name": "tkambio_10000",
    "buy": 3.434,
    "sell": 3.46,
-   "timestamp": "2026-11-21T22:47:00Z"
+   "timestamp": "2026-11-21T23:47:15Z"
   },
   {
    "id": "tucambista",
@@ -240,7 +240,7 @@
    "name": "tucambista",
    "buy": 3.4385,
    "sell": 3.4665,
-   "timestamp": "2026-11-21T22:46:58Z"
+   "timestamp": "2026-11-21T23:47:14Z"
   },
   {
    "id": "westernunion",
@@ -248,7 +248,7 @@
    "name": "westernunion",
    "buy": 3.435,
    "sell": 3.465,
-   "timestamp": "2026-11-21T22:47:00Z"
+   "timestamp": "2026-11-21T23:47:15Z"
   }
  ],
  "failures": [
@@ -259,16 +259,10 @@
    "message": "Client error '403 Forbidden' for url 'https://www.cambiomundial.com/backend/tasaCambio/daily'"
   },
   {
-   "source": "cambiosol",
-   "reason": "changed",
-   "error_type": "SourceParseError",
-   "message": "Failed to parse exchange rates from https://cambiosol.pe/. The structure may have changed."
-  },
-  {
-   "source": "dichikash",
-   "reason": "changed",
-   "error_type": "SourceParseError",
-   "message": "Failed to parse exchange rates from https://dichikash.com/ajax/dolar-compra.php. The structure may have changed."
+   "source": "mercadocambiario",
+   "reason": "blocked",
+   "error_type": "HTTPStatusError",
+   "message": "Client error '403 Forbidden' for url 'https://www.mercadocambiario.pe/api/mercado/get/admin-data'"
   }
  ]
 }
